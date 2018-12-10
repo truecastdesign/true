@@ -1,5 +1,6 @@
 True - Micro MVC Framework for PHP
 =======================================
+V 1.0.10
 
 These classes form the basic functionality of True framework
 
