@@ -43,7 +43,7 @@ class App
 	 * @param string $files - use the config path starting from web root with no starting slash
 	 * example: system/config/site.ini
 	 * @return void
-	 * @author Daniel Baldwin - danielbaldwin@gmail.com
+	 * @author Daniel Baldwin
 	 **/
 	public function load($files)
 	{
@@ -79,7 +79,7 @@ class App
 	 * @param string $file, file path from web root. example: modules/modname/config.ini
 	 * @param string $key (optional) if provided only the value of given key will be returned
 	 * @return object|string, will return object of no key is provided and a string if a key is given.
-	 * @author Daniel Baldwin - danielbaldwin@gmail.com
+	 * @author Daniel Baldwin
 	 **/
 	public function getConfig(string $file, string $key=null)
 	{
@@ -98,7 +98,7 @@ class App
 	 *
 	 * @param string $key the key you want to return the value for.
 	 * @return string
-	 * @author Daniel Baldwin - danielbaldwin@gmail.com
+	 * @author Daniel Baldwin
 	 **/
 	public function __get($key)
 	{	
@@ -113,7 +113,7 @@ class App
 	 * @param string $key
 	 * @param string $value
 	 * @return void
-	 * @author Daniel Baldwin - danb@truecastdesign.com
+	 * @author Daniel Baldwin
 	 **/
 	public function __set($key, $value)
 	{
@@ -147,7 +147,7 @@ class App
 	 * @param $data, array of objects for configs with sections and just an object for no sections for ini file
 	 * @param $append, true if you want to append to end of file
 	 * @return void
-	 * @author Daniel Baldwin - danielbaldwin@gmail.com
+	 * @author Daniel Baldwin
 	 **/
 	public function write(string $filename, $data, bool $append)
 	{
@@ -193,9 +193,10 @@ class App
      * Add GET route (Retrieve a representation of a resource.)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function get($pattern, $callable, $customControllerPath = false)
     {
@@ -206,9 +207,10 @@ class App
      * Add POST route (Create, Create a new resource to an existing URL.)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function post($pattern, $callable, $customControllerPath = false)
     {
@@ -219,65 +221,70 @@ class App
      * Add PUT route (Create or Update, Create a new resource to a new URL, or modify an existing resource to an existing URL.)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function put($pattern, $callable, $customControllerPath = false)
     {
-        return $this->router(['PUT'], $pattern, $callable, $customControllerPath);
+        $this->router(['PUT'], $pattern, $callable, $customControllerPath);
     }
 
     /**
      * Add PATCH route (partial update a resources. Use when you only need to update one field of the resource)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function patch($pattern, $callable, $customControllerPath = false)
     {
-        return $this->router(['PATCH'], $pattern, $callable, $customControllerPath);
+        $this->router(['PATCH'], $pattern, $callable, $customControllerPath);
     }
 
     /**
      * Add DELETE route (Delete an existing resource.)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function delete($pattern, $callable, $customControllerPath = false)
     {
-        return $this->router(['DELETE'], $pattern, $callable, $customControllerPath);
+        $this->router(['DELETE'], $pattern, $callable, $customControllerPath);
     }
 
     /**
      * Add OPTIONS route (determine the options and/or requirements associated with a resource, or the capabilities of a server,)
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function options($pattern, $callable, $customControllerPath = false)
     {
-        return $this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
+        $this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
     }
 
     /**
      * Add route for any HTTP method
      *
      * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine
+     * @param  callable|string  $callable The route callback routine or controller if string
+     * @param  bool $customControllerPath Custom controller path if true
      *
-     * @return \Slim\Interfaces\RouteInterface
+     * @return null
      */
     public function any($pattern, $callable, $customControllerPath = false)
     {
-        return $this->router(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $customControllerPath);
+        $this->router(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $customControllerPath);
     }
 
 	/**
@@ -298,7 +305,7 @@ class App
      * $request->https true or false
      * $request->name domain with sub domain part www.domain.com
      * @return void
-     * @author Daniel Baldwin - danb@truecastdesign.com
+     * @author Daniel Baldwin
      **/
     public function router(array $method, $pattern, $callable, $customControllerPath = false)
     {
@@ -325,7 +332,16 @@ class App
             } else {
                 $callbackArgs->https = false;
             }
-            $callbackArgs->name = $_SERVER['SERVER_NAME'];
+            $callbackArgs->name = $_SERVER['HTTP_HOST'];
+
+            $urlParts = \True\Functions::parseUrl($_SERVER['HTTP_HOST']);
+
+            $callbackArgs->domain = $urlParts->domain;
+            $callbackArgs->subdomain = $urlParts->subdomain;
+            $callbackArgs->extension = $urlParts->extension;
+            $callbackArgs->file = $urlParts->file;
+            $callbackArgs->query = $urlParts->query;
+            $callbackArgs->hash = $urlParts->hash;
 
             $j = 0;
             foreach ($patternElements as $element) {

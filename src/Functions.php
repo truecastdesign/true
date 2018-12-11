@@ -76,10 +76,65 @@ class Functions
     }
 
     /**
+     * Parse a url and return the parts
+     *
+     * @param string $url loginname:password@sub.site.org:29000/pear/validate.html?happy=me&sad=you#url
+     * @return object
+     * @author Daniel Baldwin
+     **/
+    public static function parseUrl($url)
+    {
+    	$r  = "!^(?:(?P<scheme>\w+)://)?(?:(?P<login>\w+):(?P<pass>\w+)@)?(?P<host>(?:(?P<subdomain>[\w\.]+)\.)?(?P<domain>\w+\.(?P<extension>\w+)))(?::(?P<port>\d+))?(?P<path>[\w/]*/(?P<file>\w+(?:\.\w+)?)?)?(?:\?(?P<arg>[\w=&]+))?(?:#(?P<anchor>\w+))?!";
+	    #$r = "!$r!"; 
+
+	    preg_match ($r, $url, $match );
+	    
+	    $output = (object)[];
+	    
+	    if(array_key_exists('scheme', $match))
+	    	$output->scheme = $match['scheme'];
+	    
+	    if(array_key_exists('login', $match))
+	    	$output->login = $match['login'];
+	    
+	    if(array_key_exists('pass', $match))
+	    	$output->password = $match['pass'];
+	    
+	    if(array_key_exists('host', $match))
+	    	$output->host = $match['host'];
+	    
+	    if(array_key_exists('subdomain', $match))
+	    	$output->subdomain = $match['subdomain'];
+	    
+	    if(array_key_exists('domain', $match))
+	    	$output->domain = $match['domain'];
+	    
+	    if(array_key_exists('extension', $match))
+	    	$output->extension = $match['extension'];
+	    
+	    if(array_key_exists('port', $match))
+	    	$output->port = $match['port'];
+
+	    if(array_key_exists('path', $match))
+	    	$output->path = $match['path'];
+
+	    if(array_key_exists('file', $match))
+	    	$output->file = $match['file'];
+
+	    if(array_key_exists('arg', $match))
+	    	$output->query = $match['arg'];
+
+	    if(array_key_exists('anchor', $match))
+	    	$output->hash = $match['anchor'];
+
+	    return $output;
+    }
+
+    /**
      * Get the browser name and version
      *
      * @return array [name=>'', version=>'']
-     * @author Daniel Baldwin - danb@truecastdesign.com
+     * @author Daniel Baldwin
      **/
     function getBrowser()
     {
@@ -176,7 +231,7 @@ class Functions
      *
      * @param array $params ['name'=>'', 'version'=>'']
      * @return bool true it does
-     * @author Daniel Baldwin - danb@truecastdesign.com
+     * @author Daniel Baldwin
      **/
     function supportsGrid(array $params)
     {
