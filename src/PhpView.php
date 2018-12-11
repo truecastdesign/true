@@ -7,16 +7,24 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.2
+ * @version 5.2.4
  */
 class PhpView
 {
-	public static $version = "5.2.3";
+	public static $version = "5.2.4";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
 	private $vars = [];
-	private $metaData = [];
+	private $metaData = [];# = ['_metaTitle'=>'', '_metaDescription'=>'', ];
+
+	// [_metaTitle] => Ultimate Mission: A Christian Life Empowerment Group
+ //    [_metaDescription] => We are a lay ministry training and project management group. Christian charity.
+ //    [_metaLinkText] => 
+ //    [_metaNoCache] => 
+ //    [_css] => 
+ //    [_js] => 
+ //    [_html] => 
 
 	public function __construct($args = null)
 	{
@@ -163,16 +171,20 @@ class PhpView
 		# add title and description to globals array
 		if($metaData == null)
 			$metaData = [];
-		$this->metaData['_metaTitle'] = (isset($metaData['title'])? trim($metaData['title']):'');
-		$this->metaData['_metaDescription'] = (isset($metaData['description'])? trim($metaData['description']):'');
-		$this->metaData['_metaLinkText'] = (isset($metaData['linkText'])? trim($metaData['linkText']):'');
-		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
-		$jsList = [];
-		$cssList = [];
+		
+		if(isset($metaData['title']))
+			$this->metaData['_metaTitle'] = trim($metaData['title']);
+		
+		if(isset($metaData['description']))
+			$this->metaData['_metaDescription'] = trim($metaData['description']);
+		
+		if(isset($metaData['linkText']))
+			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
 
-		$metaData = $this->addInGlobalAssets($metaData, 'css');
-		$metaData = $this->addInGlobalAssets($metaData, 'js');
-	 
+		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
+
+		$this->addInGlobalAssets($metaData, 'css');
+		$this->addInGlobalAssets($metaData, 'js');	 
 	}
 
 	/**
