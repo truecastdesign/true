@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.0.10
+ * @version 1.1.1
  */
 
 class App
@@ -281,90 +281,111 @@ class App
     }
 
 	/**
-	 * router for True framework
-	 * Creates a request object that is passed as the first parameter to the callback function.
-	 * $request->method # the request method i.e. post, get, put, delete, update, etc.
-	 * $request->post # value object of posted message
-	 * $request->post->var1 # value of key var1
-	 * $request->get # value object of get request
-	 * $request->cookie # value object of cookies
-	 * $request->files # value object of files
-	 * $request->server # value object of server variables
-	 * #### still need to implement
-	 *
-	 * @param string $method post, put, get, delete as the method name
-	 * $App->post('path or action after the main one in the routes file', function() { // run code });
-	 * $App->get('/getScore/:id', function ($id){})
-	 * $App->get('/path:', 'page-controller.php') # controller inside app/controllers folder
-	 * $App->get('/path:', 'vendor/brand/src/page-controller.php', true)  # custom path from base path
-	 * @return void
-	 * @author Daniel Baldwin - danb@truecastdesign.com
-	 **/
-	public function router(array $method, $pattern, $callable, $customControllerPath = false)
-	{
-		if($this->match)
-			return false;
+     * REST api main method
+     *
+     * @param string $method post, put, get, delete as the method name
+     * $App->post('path or action after the main one in the routes file', function() { // run code });
+     * $App->get('/getScore/:id', function ($request){ echo $request->route->id; })
+     * $App->get('/path:', 'page-controller.php') # controller inside app/controllers folder
+     * $App->get('/path:', 'vendor/brand/src/page-controller.php', true)  # custom path from base path
+     * The object that is passed to the callback function will be a value object.
+     * $request->route->{variable name} the route match path variable that have a colon in front of them will come in on the route key.
+     * $request->{method name: post,get,delete,put,patch,etc}->{variable name} values using the post method will come in on the post key.
+     * Other server values available:
+     * $request->uri
+     * $request->ip client ip
+     * $request->method request method
+     * $request->https true or false
+     * $request->name domain with sub domain part www.domain.com
+     * @return void
+     * @author Daniel Baldwin - danb@truecastdesign.com
+     **/
+    public function router(array $method, $pattern, $callable, $customControllerPath = false)
+    {
+        if ($this->match) {
+            return false;
+        }
 
-		# check if method matches
-		if(in_array($_SERVER['REQUEST_METHOD'], $method))
-		{
-			$this->match = true;
-			$patternElements = explode('/',$pattern);
-			$requestUrl = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL),'?');
-			$requestUrl = str_replace(['../'], ['/'], $requestUrl);
-			$urlElements = explode('/',$requestUrl);
-			$callbackArgs = (object)[];
+        $_SERVER['REQUEST_METHOD'] = strtoupper($_SERVER['REQUEST_METHOD']);
 
-			$j = 0;
-			foreach($patternElements as $element)
-			{
-				$urlElement = current($urlElements);
-				if(strstr($element, ':') !== false)
-				{
-					$variableName = ltrim($element, ':');
-					$pathParts = array_slice($urlElements, $j);
+        # check if method matches
+        if (in_array($_SERVER['REQUEST_METHOD'], $method)) {
+            $this->match = true;
+            $patternElements = explode('/', $pattern);
+            $requestUrl = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
+            $requestUrl = str_replace(['../'], ['/'], $requestUrl);
+            $urlElements = explode('/', $requestUrl);
+            $callbackArgs = new \stdClass();
+            $requestKey = strtolower($_SERVER['REQUEST_METHOD']);
+            $callbackArgs->uri = $_SERVER['REQUEST_URI'];
+            $callbackArgs->method = $_SERVER['REQUEST_METHOD'];
+            $callbackArgs->ip = $_SERVER['REMOTE_ADDR'];
+            if (array_key_exists('HTTPS', $_SERVER)) {
+                $callbackArgs->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
+            } else {
+                $callbackArgs->https = false;
+            }
+            $callbackArgs->name = $_SERVER['SERVER_NAME'];
 
-					$callbackArgs->{$variableName} = implode('/', $pathParts);
-				}
-				else
-				{
-					if($urlElement != $element)
-						$this->match = false;
-				}
-				$i = next($urlElements);
-				$j++;
-			}
-			#print_r($callbackArgs);
-			# given pattern matches the request url
-			if($this->match)
-			{
-				if(in_array($_SERVER['REQUEST_METHOD'], ['POST','PUT']))
-				{
-					$strJSON = file_get_contents('php://input');
-					if(!empty($strJSON))
-					{
-						$callbackArgs = (object) array_merge((array) json_decode($strJSON), (array) $callbackArgs);
-					}
-				}
-				elseif(in_array($_SERVER['REQUEST_METHOD'], ['GET']))
-				{
-					$callbackArgs = (object) array_merge($_GET, (array) $callbackArgs);
-				}
-				
-				if(is_string($callable))
-				{
-					$this->includeController($callable, $callbackArgs, $customControllerPath);
-				}
+            $j = 0;
+            foreach ($patternElements as $element) {
+                $urlElement = current($urlElements);
+                if (strstr($element, ':') !== false) {
+                    $variableName = ltrim($element, ':');
+                    $pathParts = array_slice($urlElements, $j);
+                    if (count($pathParts) == 0 and empty($variableName)) {
+                        continue;
+                    }
 
-				elseif(is_callable($callable))
-				{
-					$request[] = $callbackArgs;
-					
-					call_user_func_array($callable, $request);
-				}	
-			}
-		}
-	}
+                    $value = implode('/', $pathParts);
+
+                    if (empty($value)) {
+                        continue;
+                    }
+                    
+                    $urlElementArray[$variableName] = $value;
+                    
+                    $callbackArgs->route = (object) $urlElementArray;
+                    
+                } else {
+                    if ($urlElement != $element) {
+                        $this->match = false;
+                    }
+
+                }
+                $i = next($urlElements);
+                $j++;
+            }
+
+            # given pattern matches the request url
+            if ($this->match) {
+                $requestBody = file_get_contents('php://input');
+                if (!empty($requestBody)) {
+
+                    $xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
+                    $json = json_encode($xml);
+                    $array = json_decode($json, true);
+                    if (!empty($xml)) {
+                        $callbackArgs->$requestKey = (object) $array;
+                    } else {
+                        $callbackArgs->$requestKey = (object) json_decode($requestBody, true);
+                    }
+                }
+
+                if (count($_GET) > 0) {
+                    $callbackArgs->$requestKey = (object) $_GET;
+                }
+
+                if (is_string($callable)) {
+                    $this->includeController($callable, $callbackArgs, $customControllerPath);
+                } elseif (is_callable($callable)) {
+                    $request[] = $callbackArgs;
+
+                    call_user_func_array($callable, $request);
+                }
+            }
+        }
+    }
 
 	public function includeController($callableController, $request, $customControllerPath)
 	{
