@@ -1,0 +1,22 @@
+{
+  "name": "truecastdesign/true",
+  "type" : "library",
+  "description": "This library provides the base classes for running the True framework.",
+  "keywords": ["framework","php","micro"],
+  "license": "MIT",
+
+  "authors": [
+  {
+    "name": "Daniel Baldwin",
+    "email": "danielbaldwin@gmail.com"
+  }
+  ],
+  "require": {
+  "php": ">=5.5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "True\\":"vendor/truecastdesign/true/src"
+    }
+  }
+}
