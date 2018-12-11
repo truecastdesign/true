@@ -1,11 +1,20 @@
 True - Base classes for True framework
 =======================================
-V 1.1.0
+V 1.1.2
 
 These classes form the basic functionality of True framework
 
 
 Requires PHP 5.5 or newer.
+
+Install
+-------
+
+To install with composer:
+
+```sh
+$ composer require truecastdesign/true
+```
 
 Usage
 -----
