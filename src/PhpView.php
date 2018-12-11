@@ -7,24 +7,16 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.4
+ * @version 5.2.5
  */
 class PhpView
 {
-	public static $version = "5.2.4";
+	public static $version = "5.2.5";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
 	private $vars = [];
-	private $metaData = [];# = ['_metaTitle'=>'', '_metaDescription'=>'', ];
-
-	// [_metaTitle] => Ultimate Mission: A Christian Life Empowerment Group
- //    [_metaDescription] => We are a lay ministry training and project management group. Christian charity.
- //    [_metaLinkText] => 
- //    [_metaNoCache] => 
- //    [_css] => 
- //    [_js] => 
- //    [_html] => 
+	private $metaData = [];
 
 	public function __construct($args = null)
 	{
@@ -104,16 +96,11 @@ class PhpView
 		foreach($outputArray[1] as $partial)
 		{
 			ob_start();
-			/*if($fullPath)
-				include $partial;
-			else*/
+
 			include BP.'/app/views/_partials/'.$partial;
 			$replaceTags[] = ob_get_clean();
 			$searchTags[] = "{partial:".$partial."}";
 		}
-
-		# remove any unkown template tags {} 
-		#preg_match_all("/\{(.*)}/", $fileContents, $outputArray);
 		
 		if(is_array($outputArray[0]))
 		foreach($outputArray[0] as $tag)
