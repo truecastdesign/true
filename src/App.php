@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.2
+ * @version 1.1.3
  */
 
 class App
@@ -128,7 +128,7 @@ class App
      * @param  array $args
      * @return mixed
      */
-    public function __call($method, $args)
+    /*public function __call($method, $args)
     {
         if ($this->container->has($method)) {
             $obj = $this->container->get($method);
@@ -138,7 +138,7 @@ class App
         }
 
         trigger_error("Method $method is not a valid method",512);
-    }
+    }*/
 	
 	/**
 	 * Write a data object to a ini file
