@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.5
+ * @version 5.2.6
  */
 class PhpView
 {
-	public static $version = "5.2.5";
+	public static $version = "5.2.6";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -20,7 +20,7 @@ class PhpView
 
 	public function __construct($args = null)
 	{
-		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:__BP__.'/app/views/'); # from root; end with /; ex: __DIR__.'/app/views/'
+		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: __DIR__.'/app/views/'
 		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/'); # from root; end with /; ex: __DIR__.'/app/views/'
 		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:$_SERVER['DOCUMENT_ROOT'].'/../app/views/_layouts/base.phtml'); # from root; end with /; ex: __DIR__.'/app/views/'
 		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); # put in base_path dir; ex: 404-error.phtml
@@ -108,7 +108,7 @@ class PhpView
 			$replaceTags[] = '';
 			$searchTags[] = $tag;
 		}		
-
+		print_r($replaceTags);
 		# find the break point for the meta data
 		$fileParts = explode("{endmeta}", $fileContents, 2);
 
@@ -207,7 +207,7 @@ class PhpView
 
 				if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 				{
-					$assetList[] = __BP__.'/'.rtrim($value, '/');
+					$assetList[] = BP.'/'.rtrim($value, '/');
 				}
 				elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
 				{

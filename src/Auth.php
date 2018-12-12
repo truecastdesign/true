@@ -35,7 +35,7 @@ class Auth
     	$token = hash("sha256", $randomChars.$salt);
 
     	# save token to file
-    	if(file_put_contents(__BP__.'/vendor/truecastdesign/true/auth_tokens', $token."\n", FILE_APPEND | LOCK_EX) === false)
+    	if(file_put_contents(BP.'/vendor/truecastdesign/true/auth_tokens', $token."\n", FILE_APPEND | LOCK_EX) === false)
     	{
     		trigger_error("Token could not be written to a file!", 256);
     		return "Token could not be written to a file!";
@@ -55,11 +55,11 @@ class Auth
      **/
     public function revokeToken($token)
     {
-    	$contents = file_get_contents(__BP__.'/vendor/truecastdesign/true/auth_tokens');
+    	$contents = file_get_contents(BP.'/vendor/truecastdesign/true/auth_tokens');
 
     	$updatedContents = str_replace($token."\n", '', $contents);
 
-    	if(file_put_contents(__BP__.'/vendor/truecastdesign/true/auth_tokens', $updatedContents, LOCK_EX) === false)
+    	if(file_put_contents(BP.'/vendor/truecastdesign/true/auth_tokens', $updatedContents, LOCK_EX) === false)
     	{
     		trigger_error("Token could not be revoked. Could not write to file!", 256);
     		return "Token could not be revoked. Could not write to file!";
@@ -75,7 +75,7 @@ class Auth
      **/
     public function checkToken($token)
     {
-		if( strpos(file_get_contents(__BP__.'/vendor/truecastdesign/true/auth_tokens'), $token) !== false)
+		if( strpos(file_get_contents(BP.'/vendor/truecastdesign/true/auth_tokens'), $token) !== false)
 			return true;
 		else
 			return false;
