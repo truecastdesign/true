@@ -108,7 +108,7 @@ class PhpView
 			$replaceTags[] = '';
 			$searchTags[] = $tag;
 		}		
-		print_r($replaceTags);
+		
 		# find the break point for the meta data
 		$fileParts = explode("{endmeta}", $fileContents, 2);
 
