@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.0.1
+ * @version 1.1.0
  */
 class Functions
 {
