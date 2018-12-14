@@ -76,7 +76,7 @@ class PhpView
 				
 		if(isset($this->vars['base_path']) and !$fullPath)
 			$taView = $this->vars['base_path'].$taView;
-		
+
 		if(file_exists($taView) === false)
 		{
 			header("HTTP/1.1 404 Not Found");
@@ -108,7 +108,7 @@ class PhpView
 			$replaceTags[] = '';
 			$searchTags[] = $tag;
 		}		
-		
+
 		# find the break point for the meta data
 		$fileParts = explode("{endmeta}", $fileContents, 2);
 
@@ -207,7 +207,7 @@ class PhpView
 
 				if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 				{
-					$assetList[] = BP.'/'.rtrim($value, '/');
+					$assetList[] = __BP__.'/'.rtrim($value, '/');
 				}
 				elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
 				{

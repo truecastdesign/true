@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.3
+ * @version 1.1.4
  */
 
 class App
@@ -17,12 +17,12 @@ class App
     private $debug = false;
 
     /**
-     * Create new application
-     *
-     * @param ContainerInterface|array $container Either a ContainerInterface or an associative array of app settings
-     * @throws InvalidArgumentException when no container is provided that implements ContainerInterface
-     */
-    public function __construct($files = null)
+      * Create new application
+      *
+      * @param ContainerInterface|array $container Either a ContainerInterface or an associative array of app settings
+      * @throws InvalidArgumentException when no container is provided that implements ContainerInterface
+      */
+     public function __construct($files = null)
     {
         $this->load($files);
 
@@ -117,28 +117,8 @@ class App
      **/
     public function __set($key, $value)
     {
-        $this->container[$key] = $value;
+          $this->container[$key] = $value;
     }
-
-    /**
-     * Calling a non-existant method on App checks to see if there's an item
-     * in the container that is callable and if so, calls it.
-     *
-     * @param  string $method
-     * @param  array $args
-     * @return mixed
-     */
-    /*public function __call($method, $args)
-    {
-        if ($this->container->has($method)) {
-            $obj = $this->container->get($method);
-            if (is_callable($obj)) {
-                return call_user_func_array($obj, $args);
-            }
-        }
-
-        trigger_error("Method $method is not a valid method",512);
-    }*/
     
     /**
      * Write a data object to a ini file
@@ -190,218 +170,214 @@ class App
     }
 
     /**
-     * Add GET route (Retrieve a representation of a resource.)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function get($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['GET'], $pattern, $callable, $customControllerPath);
-    }
+      * Add GET route (Retrieve a representation of a resource.)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function get($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['GET'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add POST route (Create, Create a new resource to an existing URL.)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function post($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['POST'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add PUT route (Create or Update, Create a new resource to a new URL, or modify an existing resource to an existing URL.)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function put($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['PUT'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add PATCH route (partial update a resources. Use when you only need to update one field of the resource)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function patch($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['PATCH'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add DELETE route (Delete an existing resource.)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function delete($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['DELETE'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add OPTIONS route (determine the options and/or requirements associated with a resource, or the capabilities of a server,)
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function options($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
+     }
+
+     /**
+      * Add route for any HTTP method
+      *
+      * @param  string $pattern  The route URI pattern
+      * @param  callable|string  $callable The route callback routine or controller if string
+      * @param  bool $customControllerPath Custom controller path if true
+      *
+      * @return null
+      */
+     public function any($pattern, $callable, $customControllerPath = false)
+     {
+          $this->router(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $customControllerPath);
+     }
 
     /**
-     * Add POST route (Create, Create a new resource to an existing URL.)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function post($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['POST'], $pattern, $callable, $customControllerPath);
-    }
+      * REST api main method
+      *
+      * @param string $method post, put, get, delete as the method name
+      * $App->post('path or action after the main one in the routes file', function() { // run code });
+      * $App->get('/getScore/:id', function ($request){ echo $request->route->id; })
+      * $App->get('/path:', 'page-controller.php') # controller inside app/controllers folder
+      * $App->get('/path:', 'vendor/brand/src/page-controller.php', true)  # custom path from base path
+      * The object that is passed to the callback function will be a value object.
+      * $request->route->{variable name} the route match path variable that have a colon in front of them will come in on the route key.
+      * $request->{method name: post,get,delete,put,patch,etc}->{variable name} values using the post method will come in on the post key.
+      * Other server values available:
+      * $request->uri
+      * $request->ip client ip
+      * $request->method request method
+      * $request->https true or false
+      * $request->name domain with sub domain part www.domain.com
+      * @return void
+      * @author Daniel Baldwin
+      **/
+     public function router(array $method, $pattern, $callable, $customControllerPath = false)
+     {
+          if ($this->match) {
+                return false;
+          }
 
-    /**
-     * Add PUT route (Create or Update, Create a new resource to a new URL, or modify an existing resource to an existing URL.)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function put($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['PUT'], $pattern, $callable, $customControllerPath);
-    }
+          $_SERVER['REQUEST_METHOD'] = strtoupper($_SERVER['REQUEST_METHOD']);
 
-    /**
-     * Add PATCH route (partial update a resources. Use when you only need to update one field of the resource)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function patch($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['PATCH'], $pattern, $callable, $customControllerPath);
-    }
-
-    /**
-     * Add DELETE route (Delete an existing resource.)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function delete($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['DELETE'], $pattern, $callable, $customControllerPath);
-    }
-
-    /**
-     * Add OPTIONS route (determine the options and/or requirements associated with a resource, or the capabilities of a server,)
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function options($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
-    }
-
-    /**
-     * Add route for any HTTP method
-     *
-     * @param  string $pattern  The route URI pattern
-     * @param  callable|string  $callable The route callback routine or controller if string
-     * @param  bool $customControllerPath Custom controller path if true
-     *
-     * @return null
-     */
-    public function any($pattern, $callable, $customControllerPath = false)
-    {
-        $this->router(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $customControllerPath);
-    }
-
-    /**
-     * REST api main method
-     *
-     * @param string $method post, put, get, delete as the method name
-     * $App->post('path or action after the main one in the routes file', function() { // run code });
-     * $App->get('/getScore/:id', function ($request){ echo $request->route->id; })
-     * $App->get('/path:', 'page-controller.php') # controller inside app/controllers folder
-     * $App->get('/path:', 'vendor/brand/src/page-controller.php', true)  # custom path from base path
-     * The object that is passed to the callback function will be a value object.
-     * $request->route->{variable name} the route match path variable that have a colon in front of them will come in on the route key.
-     * $request->{method name: post,get,delete,put,patch,etc}->{variable name} values using the post method will come in on the post key.
-     * Other server values available:
-     * $request->uri
-     * $request->ip client ip
-     * $request->method request method
-     * $request->https true or false
-     * $request->name domain with sub domain part www.domain.com
-     * @return void
-     * @author Daniel Baldwin
-     **/
-    public function router(array $method, $pattern, $callable, $customControllerPath = false)
-    {
-        if ($this->match) {
-            return false;
-        }
-
-        $_SERVER['REQUEST_METHOD'] = strtoupper($_SERVER['REQUEST_METHOD']);
-
-        # check if method matches
-        if (in_array($_SERVER['REQUEST_METHOD'], $method)) {
-            $this->match = true;
-            $patternElements = explode('/', $pattern);
-            $requestUrl = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
-            $requestUrl = str_replace(['../'], ['/'], $requestUrl);
-            $urlElements = explode('/', $requestUrl);
-            $callbackArgs = new \stdClass();
-            $requestKey = strtolower($_SERVER['REQUEST_METHOD']);
-            $callbackArgs->uri = $_SERVER['REQUEST_URI'];
-            $callbackArgs->method = $_SERVER['REQUEST_METHOD'];
-            $callbackArgs->ip = $_SERVER['REMOTE_ADDR'];
-            if (array_key_exists('HTTPS', $_SERVER)) {
-                $callbackArgs->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
-            } else {
-                $callbackArgs->https = false;
-            }
-            $callbackArgs->name = $_SERVER['HTTP_HOST'];
-
-            $urlParts = \True\Functions::parseUrl($_SERVER['HTTP_HOST']);
-
-            $callbackArgs->domain = $urlParts->domain;
-            $callbackArgs->subdomain = $urlParts->subdomain;
-            $callbackArgs->extension = $urlParts->extension;
-            $callbackArgs->file = $urlParts->file;
-            $callbackArgs->query = $urlParts->query;
-            $callbackArgs->hash = $urlParts->hash;
-
-            $j = 0;
-            foreach ($patternElements as $element) {
-                $urlElement = current($urlElements);
-                if (strstr($element, ':') !== false) {
-                    $variableName = ltrim($element, ':');
-                    $pathParts = array_slice($urlElements, $j);
-                    if (count($pathParts) == 0 and empty($variableName)) {
-                        continue;
-                    }
-
-                    $value = implode('/', $pathParts);
-
-                    if (empty($value)) {
-                        continue;
-                    }
-                    
-                    $urlElementArray[$variableName] = $value;
-                    
-                    $callbackArgs->route = (object) $urlElementArray;
-                    
+          # check if method matches
+          if (in_array($_SERVER['REQUEST_METHOD'], $method)) {
+                $this->match = true;
+                $patternElements = explode('/', $pattern);
+                $requestUrl = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
+                $requestUrl = str_replace(['../'], ['/'], $requestUrl);
+                $urlElements = explode('/', $requestUrl);
+                $callbackArgs = new \stdClass();
+                $requestKey = strtolower($_SERVER['REQUEST_METHOD']);
+                $callbackArgs->uri = $_SERVER['REQUEST_URI'];
+                $callbackArgs->method = $_SERVER['REQUEST_METHOD'];
+                $callbackArgs->ip = $_SERVER['REMOTE_ADDR'];
+                if (array_key_exists('HTTPS', $_SERVER)) {
+                     $callbackArgs->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
                 } else {
-                    if ($urlElement != $element) {
-                        $this->match = false;
+                     $callbackArgs->https = false;
+                }
+                $callbackArgs->name = $_SERVER['HTTP_HOST'];
+
+                $urlParts = \True\Functions::parseUrl($_SERVER['HTTP_HOST']);
+
+                $callbackArgs->domain = $urlParts->domain;
+                $callbackArgs->subdomain = $urlParts->subdomain;
+                $callbackArgs->extension = $urlParts->extension;
+                $callbackArgs->file = $urlParts->file;
+                $callbackArgs->query = $urlParts->query;
+
+                $j = 0;
+                foreach ($patternElements as $element) {
+                    $urlElement = current($urlElements);
+                     
+                    if (strstr($element, ':') !== false) {
+                          
+                        $variableName = ltrim($element, ':');
+                        $pathParts = array_slice($urlElements, $j);
+                        if (count($pathParts) == 0 and empty($variableName)) {
+                            continue;
+                        }
+
+                        $value = implode('/', $pathParts);
+
+                        $urlElementArray[$variableName] = $value;
+
+                        $callbackArgs->route = (object) $urlElementArray;                         
+                    } 
+                    else {
+                        if ($urlElement != $element) {
+                            $this->match = false;
+                        }
                     }
-
-                }
-                $i = next($urlElements);
-                $j++;
-            }
-
-            # given pattern matches the request url
-            if ($this->match) {
-                $requestBody = file_get_contents('php://input');
-                if (!empty($requestBody)) {
-
-                    $xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
-                    $json = json_encode($xml);
-                    $array = json_decode($json, true);
-                    if (!empty($xml)) {
-                        $callbackArgs->$requestKey = (object) $array;
-                    } else {
-                        $callbackArgs->$requestKey = (object) json_decode($requestBody, true);
-                    }
+                    $i = next($urlElements);
+                    $j++;
                 }
 
-                if (count($_GET) > 0) {
-                    $callbackArgs->$requestKey = (object) $_GET;
-                }
+                # given pattern matches the request url
+                if ($this->match) {
+                     $requestBody = file_get_contents('php://input');
+                     if (!empty($requestBody)) {
 
-                if (is_string($callable)) {
-                    $this->includeController($callable, $callbackArgs, $customControllerPath);
-                } elseif (is_callable($callable)) {
-                    $request[] = $callbackArgs;
+                          $xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
+                          $json = json_encode($xml);
+                          $array = json_decode($json, true);
+                          if (!empty($xml)) {
+                                $callbackArgs->$requestKey = (object) $array;
+                          } else {
+                                $callbackArgs->$requestKey = (object) json_decode($requestBody, true);
+                          }
+                     }
 
-                    call_user_func_array($callable, $request);
+                     if (count($_GET) > 0) {
+                          $callbackArgs->$requestKey = (object) $_GET;
+                     }
+
+                     if (is_string($callable)) {
+                          $this->includeController($callable, $callbackArgs, $customControllerPath);
+                     } elseif (is_callable($callable)) {
+                          $request[] = $callbackArgs;
+
+                          call_user_func_array($callable, $request);
+                     }
                 }
-            }
-        }
-    }
+          }
+     }
 
     public function includeController($callableController, $request, $customControllerPath)
     {
@@ -415,9 +391,9 @@ class App
             $path = 'index';
         
         if($customControllerPath)
-            return BP.'/'.$path.'.php';
+            return __BP__.'/'.$path.'.php';
         else
-            return BP.'/app/controllers/'.$path.'.php';
+            return __BP__.'/app/controllers/'.$path.'.php';
     }
 
     public function output($data)
