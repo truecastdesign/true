@@ -11,7 +11,7 @@ namespace True;
  */
 class PhpView
 {
-	public static $version = "5.2.6";
+	public static $version = "5.2.7";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -116,11 +116,11 @@ class PhpView
 		if(isset($fileParts[1]))
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
 
-		if(isset($fileParts[0]) and isset($fileParts[1]))
-			$this->processMetaData( parse_ini_string($fileParts[0]) );
-		
 		# override for file based meta data with $App->view->meta_name
 		$this->processMetaData($this->vars);
+
+		if(isset($fileParts[0]) and isset($fileParts[1]))
+			$this->processMetaData( parse_ini_string($fileParts[0]) );
 
 		if(!$this->metaData['_metaNoCache'])
 		{
@@ -207,7 +207,7 @@ class PhpView
 
 				if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 				{
-					$assetList[] = __BP__.'/'.rtrim($value, '/');
+					$assetList[] = BP.'/'.rtrim($value, '/');
 				}
 				elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
 				{
@@ -327,7 +327,7 @@ class PhpView
 			}
 
 			if($cacheFilename !== false)
-				$jsScripts .= "\t".'<script src="'.$jsCachePath.'"></script>'."\n";
+				$jsScripts .= '<script src="'.$jsCachePath.'"></script>'."\n";
 			
 			return $jsScripts;
 		}
@@ -359,7 +359,7 @@ class PhpView
 			{
 				$file = str_replace('*', '', $file);
 
-				$jsScripts .= "\t".'<script src="'.$file.'"></script>'."\n";
+				$jsScripts .= '<script src="'.$file.'"></script>'."\n";
 			}
 			
 			# check to make sure there is some js code to put in file, else there probably was noting but CDN files.
