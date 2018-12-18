@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.4
+ * @version 1.1.5
  */
 
 class App
@@ -391,9 +391,9 @@ class App
             $path = 'index';
         
         if($customControllerPath)
-            return __BP__.'/'.$path.'.php';
+            return BP.'/'.$path.'.php';
         else
-            return __BP__.'/app/controllers/'.$path.'.php';
+            return BP.'/app/controllers/'.$path.'.php';
     }
 
     public function output($data)
