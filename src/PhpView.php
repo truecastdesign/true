@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.6
+ * @version 5.2.8
  */
 class PhpView
 {
-	public static $version = "5.2.7";
+	public static $version = "5.2.8";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -46,8 +46,8 @@ class PhpView
 	 * Meta data example (use ini format): 
 	 * title="The text that goes in the title tag"
 	 * description="The text that goes in the meta description tag"
-	 * css="assets/css/site.css, vendor/company/project/assets/css/style.css, app/assets/css/style2.css"
-	 * js="assets/js/site.js, https://cdn.domain.com/script.js, vendor/company/project/assets/js/file.js, app/assets/js/file.js"
+	 * css="/assets/css/site.css, /vendor/company/project/assets/css/style.css, /app/assets/css/style2.css"
+	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"
 	 * no_cache # use no_cache for pages you don't want the browser to cache
 	 * sort=1 # sort the pages so they display in a navigation in a certain order
 	 * not_live # not live to the public
