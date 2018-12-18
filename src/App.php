@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.5
+ * @version 1.1.6
  */
 
 class App
@@ -315,12 +315,21 @@ class App
                 $callbackArgs->name = $_SERVER['HTTP_HOST'];
 
                 $urlParts = \True\Functions::parseUrl($_SERVER['HTTP_HOST']);
-
-                $callbackArgs->domain = $urlParts->domain;
-                $callbackArgs->subdomain = $urlParts->subdomain;
-                $callbackArgs->extension = $urlParts->extension;
-                $callbackArgs->file = $urlParts->file;
-                $callbackArgs->query = $urlParts->query;
+                
+                if(isset($urlParts->domain))
+                  $callbackArgs->domain = $urlParts->domain;
+                
+                if(isset($urlParts->subdomain))
+                  $callbackArgs->subdomain = $urlParts->subdomain;
+                
+                if(isset($urlParts->extension))
+                  $callbackArgs->extension = $urlParts->extension;
+                
+                if(isset($urlParts->file))
+                  $callbackArgs->file = $urlParts->file;
+                
+                if(isset($urlParts->query))
+                  $callbackArgs->query = $urlParts->query;
 
                 $j = 0;
                 foreach ($patternElements as $element) {
