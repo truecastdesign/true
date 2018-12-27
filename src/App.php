@@ -403,6 +403,8 @@ class App
               $callbackArgs->$requestKey = (object) $_GET;
            }
 
+           $callbackArgs->headers = (object) getallheaders();
+
            if (is_string($callable)) {
               $this->includeController($callable, $callbackArgs, $customControllerPath);
            } 
