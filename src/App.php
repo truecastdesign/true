@@ -427,8 +427,8 @@ class App
 	public function controller($path, $customControllerPath = false)
 	{
 		if (empty($path)) $path = 'index';
-		if ($customControllerPath) return __BP__ . '/' . $path . '.php';
-		else return __BP__ . '/app/controllers/' . $path . '.php';
+		if ($customControllerPath) return BP. '/' . $path . '.php';
+		else return BP. '/app/controllers/' . $path . '.php';
 	}
 
 	public function output($data)
