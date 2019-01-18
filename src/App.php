@@ -1,11 +1,11 @@
 <?php
-namespaceTrue;
+namespace True;
 /**
  * App class for main framework interactions
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.9
+ * @version 1.2.0
  */
 class App
 {
@@ -431,12 +431,21 @@ class App
 		else return BP. '/app/controllers/' . $path . '.php';
 	}
 
+	/**
+	 * For outputting formatted content for debugging
+	 * @param  array|object|string $data items you want outputted
+	 * @return null     
+	 */
 	public function output($data)
 	{
-		if (is_array($data) OR is_object($data)) {
+		if(is_array($data) OR is_object($data)) {
+			echo "<pre>";
 			print_r($data);
+			echo "</pre>";
 		} else {
+			echo "<pre>";
 			echo $data;
+			echo "</pre>";
 		}
 	}
 
