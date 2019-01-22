@@ -4,7 +4,6 @@ V 1.3.3
 
 These classes form the basic functionality of True framework.
 
-
 Requires PHP 5.5 or newer.
 
 Install
