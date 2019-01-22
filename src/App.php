@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.2
+ * @version 1.3.3
  */
 class App
 {
@@ -622,14 +622,7 @@ class App
 			}
 		}
 		if (!isset($headers['Authorization'])) {
-			if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
-				 $headers['Authorization'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-			} elseif (isset($_SERVER['PHP_AUTH_USER'])) {
-				 $basic_pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : '';
-				 $headers['Authorization'] = 'Basic ' . base64_encode($_SERVER['PHP_AUTH_USER'] . ':' . $basic_pass);
-			} elseif (isset($_SERVER['PHP_AUTH_DIGEST'])) {
-				 $headers['Authorization'] = $_SERVER['PHP_AUTH_DIGEST'];
-			}
+			$headers['Authorization'] = $_SERVER['Authorization'];
 		}
 		return $headers;
 	}
