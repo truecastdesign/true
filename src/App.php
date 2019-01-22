@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.0
+ * @version 1.3.1
  */
 class App
 {
@@ -317,7 +317,7 @@ class App
 			$requestUrl = strtok(filter_var(ltrim($_SERVER["REQUEST_URI"], '/') , FILTER_SANITIZE_URL) , '?');
 			$requestUrl = str_replace(['../'], ['/'], $requestUrl);
 			$urlElements = explode('/', $requestUrl);
-			$callbackArgs = new stdClass();
+			$callbackArgs = (object)[];
 			$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
 			$callbackArgs->uri = $_SERVER['REQUEST_URI'];
 			$callbackArgs->method = $_SERVER['REQUEST_METHOD'];
@@ -330,7 +330,7 @@ class App
 			}
 
 			$callbackArgs->name = $_SERVER['HTTP_HOST'];
-			$urlParts = TrueFunctions::parseUrl($_SERVER['HTTP_HOST']);
+			$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
 			$callbackArgs->domain = $urlParts->domain;
 			$callbackArgs->subdomain = $urlParts->subdomain;
 			$callbackArgs->extension = $urlParts->extension;
