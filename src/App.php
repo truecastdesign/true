@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.2.0
+ * @version 1.3.0
  */
 class App
 {
@@ -459,6 +459,50 @@ class App
 	public static function go(string $filename)
 	{
 		header("Location: " . $filename);
+		exit;
+	}
+
+	/**
+	* Perform a 301 redirect of the url if needed.
+	*
+	* @param array $params ['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']
+	* @return type
+	* @throws conditon
+	**/
+	public static function redirect($params)
+	{
+		# check to make sure all keys are passed.
+		if ( array_diff(['request', 'lookup', 'type'], array_keys($params)) ) {
+			trigger_error("One of the required parameters is missing from your array passed.", 256);
+			return false;
+		}   
+	  
+		extract($params);
+	  
+		$redirectList = json_decode(file_get_contents($lookup), true);
+
+		if (json_last_error() !== 0) {
+			trigger_error("There was an error parsing the redirects json file. Error: ".json_last_error(), 256);
+			return false;
+		}
+
+		$requestUri = ltrim($request,'/');
+
+		if (array_key_exists($requestUri, $redirectList)) {
+			$redirect = $redirectList[$requestUri];
+		} else {
+			return false;
+		}        
+
+		switch ($type) {
+			case "301": $header = "301 Moved Permanently"; break; # redirects permanently from one URL to another passing link equity to the redirected page
+			case "303": $header = "303 See Other"; break; # forces a GET request to the new URL even if original request was POST
+			case "307": $header = "307 Temporary Redirect"; break; # forces a GET request to the new URL even if original request was POST
+			case "308": $header = "308 Permanent Redirect"; break; # The request and all future requests should be repeated using another URI, using same method
+		}
+
+		header("HTTP/1.1 $header"); 
+		header("Location: /$redirect");
 		exit;
 	}
 

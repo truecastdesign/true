@@ -1,6 +1,6 @@
 True - Base classes for True framework
 =======================================
-V 1.2.0
+V 1.3.0
 
 These classes form the basic functionality of True framework.
 
@@ -58,6 +58,28 @@ $App->load(BP.'/app/config/site.ini');
 
 # check routes
 require __DIR__.'/app/routes.php';
+```
+
+### /app/routes.php
+
+```php
+$App->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
+
+$App->any('/path/:id', function($request) use ($App) {
+	$vars = [];
+	require BP.'/app/controllers/filename.php';
+	$App->view->render('_templates/filename.phtml', $vars);
+});
+
+$App->any('/*:path', function($request) use ($App) {
+	$vars = []; 
+	@include $App->controller($request->route->path);
+	
+	# check selected nav item
+	$vars['selNav'] = ['/'.$request->route->path => true];
+	
+	$App->view->render($request->route->path.'.phtml', $vars);
+});
 ```
 
 Usage
