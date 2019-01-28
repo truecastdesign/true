@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.0
+ * @version 1.4.2
  */
 class App
 {
@@ -331,11 +331,26 @@ class App
 
 			$callbackArgs->name = $_SERVER['HTTP_HOST'];
 			$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
-			$callbackArgs->domain = $urlParts->domain;
-			$callbackArgs->subdomain = $urlParts->subdomain;
-			$callbackArgs->extension = $urlParts->extension;
-			$callbackArgs->file = $urlParts->file;
-			$callbackArgs->query = $urlParts->query;
+			
+			if (isset($urlParts->domain)) {
+				$callbackArgs->domain = $urlParts->domain;
+			}
+
+			if (isset($urlParts->subdomain)) {
+				$callbackArgs->subdomain = $urlParts->subdomain;
+			}
+
+			if (isset($urlParts->extension)) {
+				$callbackArgs->extension = $urlParts->extension;
+			}
+			
+			if (isset($urlParts->file)) {
+				$callbackArgs->file = $urlParts->file;
+			}
+
+			if (isset($urlParts->query)) {
+				$callbackArgs->query = $urlParts->query;
+			}			
 
 			// if not * found, than check to make sure pattern elements count and url elements count match
 
@@ -652,7 +667,7 @@ class App
 				 $headers[$copy_server[$key]] = $value;
 			}
 		}
-		if (!isset($headers['Authorization'])) {
+		if (!isset($headers['Authorization']) and isset($_SERVER['Authorization'])) {
 			$headers['Authorization'] = $_SERVER['Authorization'];
 		}
 		return $headers;
