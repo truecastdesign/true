@@ -1,6 +1,6 @@
 True - Base classes for True framework
 =======================================
-V 1.3.3
+V 1.4.0
 
 These classes form the basic functionality of True framework.
 
@@ -35,19 +35,18 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 ```php
 <?php
-require __DIR__.'/../init.php';
+require '../init.php';
 ```
 
 ### /init.php
 
 ```php
 <?php
-<?php
 session_start();
 
 error_reporting(E_ALL & ~E_NOTICE);
 
-require __DIR__.'/vendor/autoload.php';
+require 'vendor/autoload.php';
 
 define('BP', __DIR__);
 
@@ -56,7 +55,7 @@ $App = new \True\App;
 $App->load(BP.'/app/config/site.ini');
 
 # check routes
-require __DIR__.'/app/routes.php';
+require 'app/routes.php';
 ```
 
 ### /app/routes.php

@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.3
+ * @version 1.4.0
  */
 class App
 {
@@ -562,6 +562,37 @@ class App
 	}
 
 	/**
+	  * Display system errors to page nicely
+	  *
+	  * @param Type $var Description
+	  * @return type
+	  * @throws conditon
+	  **/
+	public function displayErrors($params = [])
+	{
+		extract($params);
+		if (!isset($noticeBox))
+			$noticeBox = 'displayNoticeBox';
+
+		if (!isset($debugError))
+			$debugError = 'displayDebugError';
+
+		if (!isset($userError))
+			$userError = 'displayUserError';
+
+		if (!isset($userWarning))
+			$userWarning = 'displayUserWarning';
+
+		if (!isset($userNotice))
+			$userNotice = 'displayUserNotice';
+		  
+		echo (empty($GLOBALS['pageErrors'])? '':'<div id="'.$noticeBox.'"><div id="'.$debugError.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['pageErrors'].'</div></div></div>');
+		echo (empty($GLOBALS['errorUserError'])? '':'<div id="'.$noticeBox.'"><div id="'.$userError.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserError'].'</div></div></div>');
+		echo (empty($GLOBALS['errorUserWarning'])? '':'<div id="'.$noticeBox.'"><div id="'.$userWarning.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserWarning'].'</div></div></div>');
+		echo (empty($GLOBALS['errorUserNotice'])? '':'<div id="'.$noticeBox.'"><div id="'.$userNotice.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserNotice'].'</div></div></div>');
+	}
+
+	/**
 	 * normalize a Value by determining the Type
 	 *
 	 * @param string $value value
@@ -597,11 +628,11 @@ class App
 	}
 
 	/**
-   * Get all HTTP header key/values as an associative array for the current request.
-   * Written by ralouphie - https://github.com/ralouphie
-   *
-   * @return string[string] The HTTP header key/value pairs.
-   */
+	* Get all HTTP header key/values as an associative array for the current request.
+	* Written by ralouphie - https://github.com/ralouphie
+	*
+	* @return string[string] The HTTP header key/value pairs.
+	*/
 	protected function getallheaders()
 	{
 		$headers = array();
