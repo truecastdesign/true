@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.8
+ * @version 5.2.9
  */
 class PhpView
 {
-	public static $version = "5.2.8";
+	public static $version = "5.2.9";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -244,8 +244,8 @@ class PhpView
 	{
 		$firstPartFilename = $this->generateFileHash($cssList);
 	
-		$cssCachePath = $this->vars['assets_path'].'css/css-cache/';
-		$cssCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'css/css-cache/';
+		$cssCachePath = $this->vars['assets_path'].'css/cache/';
+		$cssCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'css/cache/';
 				
 		if(!empty($firstPartFilename))
 		{
@@ -306,8 +306,8 @@ class PhpView
 
 		$cacheFilename = $this->generateFileHash($jsFiles);
 
-		$jsCachePath = $this->vars['assets_path'].'js/js-cache/'.$cacheFilename.'.js';
-		$jsCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'js/js-cache/'.$cacheFilename.'.js';
+		$jsCachePath = $this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
+		$jsCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
 		
 		$jsScripts = '';
 		$cachedJSStr = '';
