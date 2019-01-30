@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "True\\":"vendor/truecastdesign/true/src"
+      "True\\":"src"
     }
   }
 }
