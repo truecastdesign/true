@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.9
+ * @version 5.2.10
  */
 class PhpView
 {
@@ -111,6 +111,11 @@ class PhpView
 
 		# find the break point for the meta data
 		$fileParts = explode("{endmeta}", $fileContents, 2);
+		
+		# if no {endmeta}, just use the file contents
+		if (count($fileParts) == 1) {
+			$fileParts[1] = $fileContents;
+		}
 
 		# find and replace special tags
 		if(isset($fileParts[1]))

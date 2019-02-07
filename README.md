@@ -1,6 +1,6 @@
 True - Base classes for True framework
 =======================================
-V 1.4.4
+V 1.4.5
 
 These classes form the basic functionality of True framework.
 
@@ -65,8 +65,16 @@ $App->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.jso
 
 $App->any('/path/:id', function($request) use ($App) {
 	$vars = [];
+	
+	# include controller
 	require BP.'/app/controllers/filename.php';
-	$App->view->render('_templates/filename.phtml', $vars);
+
+	# set the title and description meta data if the page is dynamically generated
+	$App->view->title = "Title Tag Text";
+	$App->view->description = "Meta description text.";
+
+	# render the view
+	$App->view->render('_layouts/filename.phtml', $vars);
 });
 
 $App->any('/*:path', function($request) use ($App) {
