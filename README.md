@@ -1,6 +1,6 @@
 True - Base classes for True framework
 =======================================
-V 1.5.0
+V 1.5.1
 
 These classes form the basic functionality of True framework.
 

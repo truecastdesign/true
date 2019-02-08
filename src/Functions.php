@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.0
+ * @version 1.3.1
  */
 class Functions
 {
@@ -76,58 +76,60 @@ class Functions
 	}
 
 	/**
-		* Parse a url and return the parts
-		*
-		* @param string $url loginname:password@sub.site.org:29000/pear/validate.html?happy=me&sad=you#url
-		* @return object
-		* @author Daniel Baldwin
-		**/
-	public static function parseUrl($url)
+	* Parse a url and return the parts
+	*
+	* @param string $url loginname:password@sub.site.org:29000/pear/validate.html?happy=me&sad=you#url
+	* @return object
+	* @author Daniel Baldwin
+	**/
+	public static function parseUrl($url, $extra=false)
 	{
-		$r  = "!^(?:(?P<scheme>\w+)://)?(?:(?P<login>\w+):(?P<pass>\w+)@)?(?P<host>(?:(?P<subdomain>[\w\.]+)\.)?(?P<domain>\w+\.(?P<extension>\w+)))(?::(?P<port>\d+))?(?P<path>[\w/]*/(?P<file>\w+(?:\.\w+)?)?)?(?:\?(?P<arg>[\w=&]+))?(?:#(?P<anchor>\w+))?!";
-		 #$r = "!$r!"; 
+		$output = (object)[];
 
-		 preg_match ($r, $url, $match );
-		 
-		 $output = (object)[];
-		 
-		 if(array_key_exists('scheme', $match))
-			$output->scheme = $match['scheme'];
-		 
-		 if(array_key_exists('login', $match))
-			$output->login = $match['login'];
-		 
-		 if(array_key_exists('pass', $match))
-			$output->password = $match['pass'];
-		 
-		 if(array_key_exists('host', $match))
-			$output->host = $match['host'];
-		 
-		 if(array_key_exists('subdomain', $match))
-			$output->subdomain = $match['subdomain'];
-		 
-		 if(array_key_exists('domain', $match))
-			$output->domain = $match['domain'];
-		 
-		 if(array_key_exists('extension', $match))
-			$output->extension = $match['extension'];
-		 
-		 if(array_key_exists('port', $match))
-			$output->port = $match['port'];
+		$file = basename($url); 
+		if (strstr($file, '.')) {
+			if (strstr($file, '#')) {
+				list($first, $last) = explode("#", $file);
+				$file = $first;
+			}
+			if (strstr($file, '?')) {
+				list($first, $last) = explode("?", $file);
+				$file = $first;
+			}
 
-		 if(array_key_exists('path', $match))
-			$output->path = $match['path'];
-
-		 if(array_key_exists('file', $match))
-			$output->file = $match['file'];
-
-		 if(array_key_exists('arg', $match))
-			$output->query = $match['arg'];
-
-		 if(array_key_exists('anchor', $match))
-			$output->hash = $match['anchor'];
-
-		 return $output;
+			$output->file = $file;
+		}
+		
+		$parts = parse_url($url);
+		if (array_key_exists('scheme', $parts))
+			$output->scheme = $parts['scheme'];
+		if (array_key_exists('host', $parts))
+			$output->host = $parts['host'];
+		if (array_key_exists('path', $parts))
+			$output->full_path = $parts['path'];
+		
+		if (!empty($output->full_path)) {
+			$pathParts = pathinfo($output->full_path);
+			if (is_array($pathParts)) {
+				$output->path = $pathParts['dirname'];
+				$output->extension = $pathParts['extension'];
+				$output->filename = $pathParts['filename'];
+			}
+		}
+		
+		if ($extra) {
+			$output->port = $parts['port'];
+			if (array_key_exists('user', $parts))
+				$output->user = $parts['user'];
+			if (array_key_exists('pass', $parts))
+				$output->password = $parts['pass'];
+			if (array_key_exists('query', $parts))
+				$output->query = $parts['query'];
+			if (array_key_exists('fragment', $parts))
+				$output->hash = $parts['fragment'];
+		}
+	
+		return $output;
 	}
 
 	/**
@@ -138,92 +140,92 @@ class Functions
 		**/
 	function getBrowser()
 	{
-			$u_agent = $_SERVER['HTTP_USER_AGENT'];
-			$bname = 'Unknown';
-			$platform = 'Unknown';
-			$version= "";
+		$u_agent = $_SERVER['HTTP_USER_AGENT'];
+		$bname = 'Unknown';
+		$platform = 'Unknown';
+		$version= "";
 
-			//First get the platform?
-			if (preg_match('/linux|android/i', $u_agent)) {
-				$platform = 'linux';
-			}
-			elseif (preg_match('/macintosh|mac os x/i', $u_agent)) {
-				$platform = 'mac';
-			}
-			elseif (preg_match('/windows|win32/i', $u_agent)) {
-				$platform = 'windows';
-			}
+		//First get the platform?
+		if (preg_match('/linux|android/i', $u_agent)) {
+			$platform = 'linux';
+		}
+		elseif (preg_match('/macintosh|mac os x/i', $u_agent)) {
+			$platform = 'mac';
+		}
+		elseif (preg_match('/windows|win32/i', $u_agent)) {
+			$platform = 'windows';
+		}
 
-			// Next get the name of the useragent yes seperately and for good reason
-			if (preg_match('/android/i', $u_agent)) {
-				$ub = "Android";
-			}
-			elseif(preg_match('/MSIE/i',$u_agent) && !preg_match('/Opera/i',$u_agent))
-			{
-				$ub = "MSIE";
-			}
-			elseif(preg_match('/Trident/i',$u_agent))
-			{
-				$ub = "MSIE";
-				$version = '11.0';
-			}
-			elseif(preg_match('/Windows NT 10/i',$u_agent) && preg_match('/Edge/i',$u_agent)){
-				$ub = "Edge";
-			}
-			elseif(preg_match('/Firefox/i',$u_agent))
-			{
-				$ub = "Firefox";
-			}
-			elseif(preg_match('/Chrome/i',$u_agent))
-			{
-				$ub = "Chrome";
-			}
-			elseif(preg_match('/Safari/i',$u_agent))
-			{
-				$ub = "Safari";
-			}
-			elseif(preg_match('/Opera/i',$u_agent))
-			{
-				$ub = "Opera";
-			}
-			elseif(preg_match('/Netscape/i',$u_agent))
-			{
-				$ub = "Netscape";
-			}
+		// Next get the name of the useragent yes seperately and for good reason
+		if (preg_match('/android/i', $u_agent)) {
+			$ub = "Android";
+		}
+		elseif(preg_match('/MSIE/i',$u_agent) && !preg_match('/Opera/i',$u_agent))
+		{
+			$ub = "MSIE";
+		}
+		elseif(preg_match('/Trident/i',$u_agent))
+		{
+			$ub = "MSIE";
+			$version = '11.0';
+		}
+		elseif(preg_match('/Windows NT 10/i',$u_agent) && preg_match('/Edge/i',$u_agent)){
+			$ub = "Edge";
+		}
+		elseif(preg_match('/Firefox/i',$u_agent))
+		{
+			$ub = "Firefox";
+		}
+		elseif(preg_match('/Chrome/i',$u_agent))
+		{
+			$ub = "Chrome";
+		}
+		elseif(preg_match('/Safari/i',$u_agent))
+		{
+			$ub = "Safari";
+		}
+		elseif(preg_match('/Opera/i',$u_agent))
+		{
+			$ub = "Opera";
+		}
+		elseif(preg_match('/Netscape/i',$u_agent))
+		{
+			$ub = "Netscape";
+		}
 
-			// finally get the correct version number
-			$known = array('Version', $ub, 'other');
-			$pattern = '#(?<browser>' . join('|', $known) .
-				')[/ ]+(?<version>[0-9.|a-zA-Z.]*)#';
-			if (!preg_match_all($pattern, $u_agent, $matches)) {
-				// we have no matching number just continue
+		// finally get the correct version number
+		$known = array('Version', $ub, 'other');
+		$pattern = '#(?<browser>' . join('|', $known) .
+			')[/ ]+(?<version>[0-9.|a-zA-Z.]*)#';
+		if (!preg_match_all($pattern, $u_agent, $matches)) {
+			// we have no matching number just continue
+		}
+
+		// see how many we have
+		if($version == '') {
+			$i = count($matches['browser']);
+			if ($i != 1) {
+				 //we will have two since we are not using 'other' argument yet
+				 //see if version is before or after the name
+				 if (strripos($u_agent,"Version") < strripos($u_agent,$ub)){
+						$version= $matches['version'][0];
+				 }
+				 else {
+						$version= $matches['version'][1];
+				 }
 			}
-
-			// see how many we have
-			if($version == '') {
-				$i = count($matches['browser']);
-				if ($i != 1) {
-					 //we will have two since we are not using 'other' argument yet
-					 //see if version is before or after the name
-					 if (strripos($u_agent,"Version") < strripos($u_agent,$ub)){
-							$version= $matches['version'][0];
-					 }
-					 else {
-							$version= $matches['version'][1];
-					 }
-				}
-				else {
-					 $version= $matches['version'][0];
-				}
+			else {
+				 $version= $matches['version'][0];
 			}
+		}
 
-			// check if we have a number
-			if ($version==null || $version=="") {$version="?";}
+		// check if we have a number
+		if ($version==null || $version=="") {$version="?";}
 
-			return array(
-				'name'      => $ub,
-				'version'   => $version
-			);
+		return array(
+			'name'      => $ub,
+			'version'   => $version
+		);
 	}
 
 	/**
@@ -235,30 +237,30 @@ class Functions
 		**/
 	function supportsGrid(array $params)
 	{
-			switch($params['name']) {
-				case 'Safari':
-					 if(version_compare($params['version'], '10.1', '>=')) 
-							return true;
-				break;
-				case 'Chrome':
-					 if(version_compare($params['version'], '57', '>=')) 
-							return true;
-				break;
-				case 'Edge':
-					 if(version_compare($params['version'], '16', '>=')) 
-							return true;
-				break;
-				case 'Firefox':
-					 if(version_compare($params['version'], '52', '>=')) 
-							return true;
-				break;
-				case 'Opera':
-					 if(version_compare($params['version'], '44', '>=')) 
-							return true;
-				break;
-				
-			}
-			return false;
+		switch($params['name']) {
+			case 'Safari':
+				 if(version_compare($params['version'], '10.1', '>=')) 
+						return true;
+			break;
+			case 'Chrome':
+				 if(version_compare($params['version'], '57', '>=')) 
+						return true;
+			break;
+			case 'Edge':
+				 if(version_compare($params['version'], '16', '>=')) 
+						return true;
+			break;
+			case 'Firefox':
+				 if(version_compare($params['version'], '52', '>=')) 
+						return true;
+			break;
+			case 'Opera':
+				 if(version_compare($params['version'], '44', '>=')) 
+						return true;
+			break;
+			
+		}
+		return false;
 	}
 
 	/**
