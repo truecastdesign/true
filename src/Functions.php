@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.2.1
+ * @version 1.3.0
  */
 class Functions
 {
@@ -503,5 +503,44 @@ class Functions
 		if($direction == 'desc')
 			$sorted_arr = array_reverse($sorted_arr);
 		return $sorted_arr; 
+	} 
+
+	/**
+	* [unique_multidim description]
+	* @param  array|object $array your multidimensional array or value object
+	* @param  string $key   field to test by
+	* @return object or array depending on what you pass it.
+	*/
+	public static function unique_multidim($array, $key)
+	{ 
+		$temp_array = array(); 
+		$i = 0; 
+		$key_array = array(); 
+
+		if (is_object(reset($array))) {
+			$returnType = 'object';
+
+			foreach ($array as $val) { 
+				if (!in_array($val->$key, $key_array)) { 
+					$key_array[$i] = $val->$key; 
+					$temp_array[$i] = $val; 
+				} 
+				$i++; 
+			} 
+		} else {
+			foreach ($array as $val) { 
+				if (!in_array($val[$key], $key_array)) { 
+					$key_array[$i] = $val[$key]; 
+					$temp_array[$i] = $val; 
+				} 
+				$i++; 
+			} 
+		}
+
+		if ($returnType == 'object') {
+			return (object) $temp_array;
+		} else {
+			return $temp_array;
+		}		 
 	} 
 }
