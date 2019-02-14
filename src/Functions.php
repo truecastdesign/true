@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.1
+ * @version 1.3.2
  */
 class Functions
 {
@@ -272,29 +272,83 @@ class Functions
 		*/
 	public static function txt2html($txt)
 	{
-			//Kills double spaces and spaces inside tags.
+		# Do a basic trim
+		$txt = trim($txt);
+
+		# Kills double spaces and spaces inside tags.
 		while( !( strpos($txt,'  ') === FALSE ) ) $txt = str_replace('  ',' ',$txt);
 		$txt = str_replace(' >','>',$txt);
 		$txt = str_replace('< ','<',$txt);
 
-		//Transforms accents in html entities.
+		# Transforms accents in html entities.
 		$txt = htmlentities($txt);
 
-		//We need some HTML entities back!
+		# We need some HTML entities back!
 		$txt = str_replace('&quot;','"',$txt);
 		$txt = str_replace('&lt;','<',$txt);
 		$txt = str_replace('&gt;','>',$txt);
 		$txt = str_replace('&','&',$txt);
 
-		//Ajdusts links - anything starting with HTTP opens in a new window
+		$eol = "\n";
+
+		# Basic change of line endings
+		if(strpos($txt,"\r\n")) $txt = str_replace("\r\n", $eol, $txt);
+		elseif(strpos($txt,"\r")) $txt = str_replace("\r", $eol, $txt);
+
+		# Create lists from lines starting with # and
+		$lines = explode("\n", $txt);
+
+		$foundList = false;
+		$foundListType = null;
+		$txt = '';
+
+		# loop through each line
+		foreach($lines as $line)
+		{
+			if(preg_match("/^([#*]+) (.*)?$/s", $line, $match))
+			{
+				$parts = explode("\n", $match[2]); # break list item on line ending
+				$content = $parts[0]; # get the text before the line ending
+
+				if($foundList == false)
+				{
+					if($match[1] == '*')
+					{
+						$txt .= "<ul>\r";
+						$foundListType = 'ul';	
+					}
+					elseif($match[1] == '#')
+					{
+						$txt .= "<ol>\r";
+						$foundListType = 'ol';
+					}
+				}
+				$foundList = true;
+				$txt .= "\t<li>".$content."</li>\r";
+			}
+			else
+			{
+				if($foundList == true)
+				{
+					if($foundListType == 'ul')
+						$txt .= "</ul>\n";
+					elseif($foundListType == 'ol')
+						$txt .= "</ol>\n";
+
+					$foundList = false;
+					$foundListType = null;
+				}
+
+				$txt .= $line."\n";
+			}
+		}
+
+		//Adjusts links - anything starting with HTTP opens in a new window
 		$txt = self::stri_replace("<a href=\"http://","<a target=\"_blank\" href=\"http://",$txt);
 		$txt = self::stri_replace("<a href=http://","<a target=\"_blank\" href=http://",$txt);
 
-		//Basic formatting
-		if(strpos($txt,"\r\n")) $eol = "\r\n";
-		elseif(strpos($txt,"\n")) $eol = "\n";
-		elseif(strpos($txt,"\r")) $eol = "\r";
 		
+
 		$html = '<p>'.str_replace($eol.$eol,"</p><p>",$txt).'</p>';
 		$html = str_replace($eol,"<br>",$html);
 		$html = str_replace("<p></p>","<p>&nbsp;</p>",$html);
@@ -304,9 +358,12 @@ class Functions
 
 		foreach($tags as $tag)
 		{
-			 $html = self::stri_replace("<p><$tag>","<$tag>",$html);
-			 $html = self::stri_replace("</$tag></p>","</$tag>",$html);
+		  $html = self::stri_replace("<p><$tag>","<$tag>",$html);
+		  $html = self::stri_replace("</$tag></p>","</$tag>",$html);
 		}
+
+		if(strpos($html,"\r")) 
+			$html = str_replace("\r", $eol, $html);
 
 		return $html;
 	}
