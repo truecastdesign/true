@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.3
+ * @version 1.4.4
  */
 class App
 {
@@ -628,7 +628,7 @@ class App
 			return 'Benchmark not started';
 		}
 
-		return "Completed in ".round(microtime(true) * 1000) - $this->startTime." ms/n";
+		return "Completed in ".(round(microtime(true) * 1000) - $this->startTime)." ms - ";
 	}
 
 	/**
