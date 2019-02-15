@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.2
+ * @version 1.4.3
  */
 class App
 {
@@ -605,6 +605,30 @@ class App
 		echo (empty($GLOBALS['errorUserError'])? '':'<div id="'.$noticeBox.'"><div id="'.$userError.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserError'].'</div></div></div>');
 		echo (empty($GLOBALS['errorUserWarning'])? '':'<div id="'.$noticeBox.'"><div id="'.$userWarning.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserWarning'].'</div></div></div>');
 		echo (empty($GLOBALS['errorUserNotice'])? '':'<div id="'.$noticeBox.'"><div id="'.$userNotice.'" onclick="closeNoticeBox()"><div>'.$GLOBALS['errorUserNotice'].'</div></div></div>');
+	}
+
+	/**
+	 * Use to benchmark a process
+	 *
+	 * @return null
+	 */
+	public function benchmarkStart()
+	{
+		$this->startTime = round(microtime(true) * 1000);
+	}
+
+	/**
+	 * Use to benchmark a process
+	 *
+	 * @return String echo out the method response. 
+	 */
+	public function benchmarkEnd()
+	{
+		if ($this->startTime == 0) {
+			return 'Benchmark not started';
+		}
+
+		return "Completed in ".round(microtime(true) * 1000) - $this->startTime." ms/n";
 	}
 
 	/**
