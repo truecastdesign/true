@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.10
+ * @version 5.2.11
  */
 class PhpView
 {
-	public static $version = "5.2.9";
+	public static $version = "5.2.11";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -92,17 +92,16 @@ class PhpView
 		# insert template into page if needed
 		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
 		
-		if(is_array($outputArray[1]))
+		if (is_array($outputArray[1]))
 		foreach($outputArray[1] as $partial)
 		{
 			ob_start();
-
-			include BP.'/app/views/_partials/'.$partial;
+				include BP.'/app/views/_partials/'.$partial;
 			$replaceTags[] = ob_get_clean();
 			$searchTags[] = "{partial:".$partial."}";
 		}
 		
-		if(is_array($outputArray[0]))
+		if (is_array($outputArray[0]))
 		foreach($outputArray[0] as $tag)
 		{
 			$replaceTags[] = '';
@@ -115,20 +114,22 @@ class PhpView
 		# if no {endmeta}, just use the file contents
 		if (count($fileParts) == 1) {
 			$fileParts[1] = $fileContents;
+			unset($fileParts[0]);
 		}
 
 		# find and replace special tags
-		if(isset($fileParts[1]))
+		if (isset($fileParts[1])) {
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
+		}
 
 		# override for file based meta data with $App->view->meta_name
 		$this->processMetaData($this->vars);
 
-		if(isset($fileParts[0]) and isset($fileParts[1]))
+		if(isset($fileParts[0]) and isset($fileParts[1])) {
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
+		}
 
-		if(!$this->metaData['_metaNoCache'])
-		{
+		if(!$this->metaData['_metaNoCache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
 			header_remove("Pragma");
 			header("Pragma: no-cache");
