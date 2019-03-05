@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.2
+ * @version 1.4.0
  */
 class Functions
 {
@@ -408,6 +408,20 @@ class Functions
 		else return false;
 	}
 
+	/**
+	 * Check if all the given keys exist in an array
+	 * @param  array $keys  ['key1','key2']
+	 * @param  array $array ['key1'=>1, 'key3'=>3]
+	 * @return bool true if all the given keys exist in the given array, false if any are missing.
+	 */
+	public function keys_exist($keys, $array)
+	{
+		if (0 === count(array_diff($keys, array_keys($array)))) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	public static function truncateStr($strString, $nLength = 15, $strTrailing = "...") 
 	{
