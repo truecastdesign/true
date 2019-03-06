@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1 
+ * @version 1.1.1
  */
 class DataCleaner
 {
@@ -106,8 +106,12 @@ class DataCleaner
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function phoneFormat($ph, $type=1) 
+	public function phoneFormat($ph, $type=1, $noCountryCode=false) 
 	{
+		if (strstr($ph, 'x')) {
+			return $ph;
+		}
+
 		$onlynums = preg_replace('/[^0-9]/','',$ph);
 
 		if(strlen($onlynums)==10) 
@@ -140,7 +144,11 @@ class DataCleaner
 			}
 			elseif(strlen($onlynums)==11) 
 			{
-				return "$countryCode-$areacode-$exch-$num";
+				if ($noCountryCode) {
+					return "$areacode-$exch-$num";
+				} else {
+					return "$countryCode-$areacode-$exch-$num";
+				}				
 			}
 			break;
 
@@ -151,7 +159,11 @@ class DataCleaner
 			}
 			elseif(strlen($onlynums)==11) 
 			{
-				return "$countryCode ($areacode) $exch-$num";
+				if ($noCountryCode) {
+					return "($areacode) $exch-$num";
+				} else {
+					return "$countryCode ($areacode) $exch-$num";
+				}
 			}
 			break;
 		}
@@ -160,9 +172,9 @@ class DataCleaner
 
 	public function titleCase($string) 
 	{
-		$word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc');
+		$word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc', 'Mac');
 		$lowercase_exceptions = array('the', 'van', 'den', 'von', 'und', 'der', 'de', 'da', 'of', 'and', "l'", "d'");
-		$uppercase_exceptions = array('III', 'IV', 'VI', 'VII', 'VIII', 'IX');
+		$uppercase_exceptions = array('III', 'IV', 'VI', 'VII', 'VIII', 'IX', 'P.O.');
 	 
 		$string = strtolower($string);
 		foreach ($word_splitters as $delimiter)
@@ -188,7 +200,7 @@ class DataCleaner
 		return $string; 
 	}
 
-	public function postalCodeFormat($sring, $country='US')
+	public function postalCodeFormat($string, $country='US')
 	{
 		switch ($country) {
 			case 'US':
@@ -196,21 +208,24 @@ class DataCleaner
 				if (strlen($string) > 5) {
 					
 					$first5 = substr($string, 0,5);
-					$last4 = substr($string,5,4);
+					$last4 = substr($string,4,4);
 					$string = $first5.'-'.$last4;
 				}
 				return $string;
 			break;
 			case 'CA':
-				$string = preg_replace('/[^0-9a-zA-Z]/','',$string);
+				$string = preg_replace('/[^0-9a-zA-Z]/','',$string); 
 				$first3 = substr($string, 0,3);
-				$last3 = substr($string,4,3);
+				$last3 = substr($string,3,3);
 				$string = strtoupper($first3).' '.strtoupper($last3);
+				return $string;
 			break;
 			case 'AU':
 				$string = preg_replace('/[^0-9]/','',$string);
 				return $string;
 			break;
+			default:
+				return $string;
 		}
 	}
 
