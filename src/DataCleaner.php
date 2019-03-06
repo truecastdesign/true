@@ -5,62 +5,62 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.0 
+ * @version 1.1 
  */
 class DataCleaner
 {
-	function streetAddress($str)
+	public function streetAddress($str)
 	{
 		return preg_replace("/[^A-Za-z0-9\.\-\,\#\ \;\:\'\°\/]/", '', $str);
 	}
 	
-	function intOnly($str)
+	public function intOnly($str)
 	{
 		#return filter_var($str,FILTER_VALIDATE_INT);
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 	
-	function alphaOnly($str)
+	public function alphaOnly($str)
 	{
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
 	
-	function alphaInt($str)
+	public function alphaInt($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9]/", '', $str);
 	}
 	
-	function name($str)
+	public function name($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\ \.\-\&\/\(\)\,\']/", '', $str); 
 	}
 	
-	function decimal($str)
+	public function decimal($str)
 	{
 		return preg_replace("/[^0-9\.\-]/", '', $str);
 	}
 	
-	function filePath($str)
+	public function filePath($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-]/", '', $str);
 	}
 	
-	function dbField($str)
+	public function dbField($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-\_\ ]/", '', $str);
 	}
 	
-	function creditCard($str)
+	public function creditCard($str)
 	{
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 
-	function postalCode($str)
+	public function postalCode($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-\ ]/", '', $str);
 	}
 	
-	function addDashes($CC_Num, $CC_Type)
+	public function addDashes($CC_Num, $CC_Type)
 	{ 
 		switch($CC_Type)
 		{
@@ -78,22 +78,22 @@ class DataCleaner
 		return $NewCC; 
 	}
 	
-	function email($str)
+	public function email($str)
 	{
 		return filter_var($str,FILTER_SANITIZE_EMAIL);
 	}
 	
-	function url($str)
+	public function url($str)
 	{
 		return filter_var($str,FILTER_SANITIZE_URL);
 	}
 	
-	function ip($str)
+	public function ip($str)
 	{
 		return filter_var($str,FILTER_VALIDATE_IP);
 	}
 
-	function float($str)
+	public function float($str)
 	{
 		return filter_var($str, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 	}
@@ -106,7 +106,7 @@ class DataCleaner
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	function phoneFormat($ph, $type=1) 
+	public function phoneFormat($ph, $type=1) 
 	{
 		$onlynums = preg_replace('/[^0-9]/','',$ph);
 
@@ -158,7 +158,7 @@ class DataCleaner
 		
 	}
 
-	function titleCase($string) 
+	public function titleCase($string) 
 	{
 		$word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc');
 		$lowercase_exceptions = array('the', 'van', 'den', 'von', 'und', 'der', 'de', 'da', 'of', 'and', "l'", "d'");
@@ -188,7 +188,33 @@ class DataCleaner
 		return $string; 
 	}
 
-	function splitName($name)
+	public function postalCodeFormat($sring, $country='US')
+	{
+		switch ($country) {
+			case 'US':
+				$string = preg_replace('/[^0-9]/','',$string);
+				if (strlen($string) > 5) {
+					
+					$first5 = substr($string, 0,5);
+					$last4 = substr($string,5,4);
+					$string = $first5.'-'.$last4;
+				}
+				return $string;
+			break;
+			case 'CA':
+				$string = preg_replace('/[^0-9a-zA-Z]/','',$string);
+				$first3 = substr($string, 0,3);
+				$last3 = substr($string,4,3);
+				$string = strtoupper($first3).' '.strtoupper($last3);
+			break;
+			case 'AU':
+				$string = preg_replace('/[^0-9]/','',$string);
+				return $string;
+			break;
+		}
+	}
+
+	public function splitName($name)
 	{
 	    $name = trim($name);
 	    $last_name = (strpos($name, ' ') === false) ? '' : preg_replace('#.*\s([\w-]*)$#', '$1', $name);
