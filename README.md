@@ -1,6 +1,6 @@
 True - Base classes for True framework
 =======================================
-V 1.5.9
+V 1.5.10
 
 These classes form the basic functionality of True framework.
 
@@ -86,6 +86,12 @@ $App->any('/*:path', function($request) use ($App) {
 	
 	$App->view->render($request->route->path.'.phtml', $vars);
 });
+
+Put all code in a controller for a route
+
+$App->get('/path/:id', 'filename.php'); 
+# It will look in the /app/controllers dir for the file filename.php and include it.
+# The $App object and the $request object will be available inside the filename.php script.
 ```
 
 Usage

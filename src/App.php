@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.5
+ * @version 1.4.6
  */
 class App
 {
@@ -432,18 +432,30 @@ class App
 		}
 	}
 
+	/**
+	 * [includeController description]
+	 * @param  string $callableController		controller file name
+	 * @param  object $request						passed in request object
+	 * @param  boolean $customControllerPath	True if you want to include a custom path
+	 * @return null                       		This does the file including for you.
+	 */
 	public function includeController($callableController, $request, $customControllerPath)
 	{
-		$App = $this;
+		$App = $this; 
 		include $this->controller($callableController, $customControllerPath);
-
 	}
 
+	/**
+	 * Return the full controller path
+	 * @param  string  $path                 The filename or the path inside the controller dir and the filename
+	 * @param  boolean $customControllerPath Whether or not to look inside the controller dir or start as base path
+	 * @return string                        Return server root path to controller file
+	 */
 	public function controller($path, $customControllerPath = false)
 	{
-		if (empty($path)) $path = 'index';
-		if ($customControllerPath) return BP. '/' . $path . '.php';
-		else return BP. '/app/controllers/' . $path . '.php';
+		if (empty($path)) $path = 'index.php';
+		if ($customControllerPath) return BP. '/' . $path;
+		else return BP. '/app/controllers/' . $path;
 	}
 
 	/**
