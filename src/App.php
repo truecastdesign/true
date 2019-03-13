@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.6
+ * @version 1.4.7
  */
 class App
 {
@@ -453,9 +453,19 @@ class App
 	 */
 	public function controller($path, $customControllerPath = false)
 	{
-		if (empty($path)) $path = 'index.php';
-		if ($customControllerPath) return BP. '/' . $path;
-		else return BP. '/app/controllers/' . $path;
+		if (!strstr($path, '.php')) {
+			$path = $path.'.php';
+		}
+
+		if (empty($path)) {
+			$path = 'index.php';
+		} 
+
+		if ($customControllerPath) {
+			return BP. '/' . $path;
+		} else {
+			return BP. '/app/controllers/' . $path;
+		} 
 	}
 
 	/**
