@@ -453,13 +453,13 @@ class App
 	 */
 	public function controller($path, $customControllerPath = false)
 	{
+		if (empty($path)) {
+			$path = 'index.php';
+		}
+
 		if (!strstr($path, '.php')) {
 			$path = $path.'.php';
 		}
-
-		if (empty($path)) {
-			$path = 'index.php';
-		} 
 
 		if ($customControllerPath) {
 			return BP. '/' . $path;
