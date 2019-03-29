@@ -508,6 +508,7 @@ class App
 	**/
 	public static function redirect($params)
 	{
+		$redirect = null;
 		# check to make sure all keys are passed.
 		if ( array_diff(['request', 'lookup', 'type'], array_keys($params)) ) {
 			trigger_error("One of the required parameters is missing from your array passed.", 256);
@@ -528,9 +529,28 @@ class App
 		if (array_key_exists($requestUri, $redirectList)) {
 			$redirect = $redirectList[$requestUri];
 		} else {
-			return false;
-		}        
-
+			foreach ($redirectList as $key=>$value) {
+				$match = strstr($key, '*', true);
+				if ($match !== false) {
+					$strLen = strlen($match);
+					$matchingPartOfRequest = substr($requestUri, 0,$strLen);
+					if ($match == $matchingPartOfRequest) {
+						# check whether to add end of url to end of redirct or not 
+						if (strpos($value, '*') !== false) {
+							$requestLen = strlen($requestUri) - $strLen;
+							$redirect = str_replace('*','',$value).substr($requestUri, -$requestLen);
+						} else {
+							$redirect = $value;
+						}						
+					}
+				}
+			}
+			
+			if ($redirect === null) {
+				return false;
+			}
+		}
+		
 		switch ($type) {
 			case "301": $header = "301 Moved Permanently"; break; # redirects permanently from one URL to another passing link equity to the redirected page
 			case "303": $header = "303 See Other"; break; # forces a GET request to the new URL even if original request was POST
