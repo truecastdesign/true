@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.8
+ * @version 1.4.9
  */
 class App
 {
@@ -43,6 +43,8 @@ class App
 	 */
 	public function load($files)
 	{
+		$this->container['config'] = (object)[];
+
 		// multiple files
 		if (strpos($files, ',')) {
 			$filesList = explode(',', $files);
@@ -501,6 +503,12 @@ class App
 
 	/**
 	* Perform a 301 redirect of the url if needed.
+	* json file should use keys for request uri and values for redirected uri
+	* json format: {
+	"path1/path2/":"path3/",
+	"path4/path5/*":"path4/path6/*",  <- matches "path4/path5/path8/" redirects to "path4/path6/path8/" The path that matches the * on the request is moved over to the end of the redirect uri in place of the *
+	"path7/path9/*":"path7/path10/",  <- matches "path7/path9/path8/" redirects to "path7/path10/" The path that matches the * on the request is NOT moved over to the end of the redirect uri because there is no * on the redirect
+	}
 	*
 	* @param array $params ['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']
 	* @return type
