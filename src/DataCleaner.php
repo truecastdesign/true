@@ -1,4 +1,4 @@
-<?
+<?php
 namespace True;
 /**
  * DataCleaner is a class with methods for cleaning all kinds of data that a website might encounter.

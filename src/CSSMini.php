@@ -1,4 +1,4 @@
-<?
+<?php
 namespace True;
 /**
  * CSS minify class
