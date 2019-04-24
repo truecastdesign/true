@@ -18,7 +18,7 @@ class Auth
      * loginTokensDb : should be a sqlite database with a 'auth' table with 'username', 'password', 'token', and 'user_id' fields
      * @param array $params [bearerTokensFile, loginTokensDb]
      */
-    public function __construct($params)
+    public function __construct($params = null)
     {
         if (isset($params['bearerTokensFile'])) {
             $this->bearerTokensFile = $params['bearerTokensFile'];
