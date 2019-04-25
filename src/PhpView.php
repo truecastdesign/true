@@ -22,7 +22,7 @@ class PhpView
 	{
 		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: __DIR__.'/app/views/'
 		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/'); # from root; end with /; ex: __DIR__.'/app/views/'
-		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:$_SERVER['DOCUMENT_ROOT'].'/../app/views/_layouts/base.phtml'); # from root; end with /; ex: __DIR__.'/app/views/'
+		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); # from root; end with /; ex: __DIR__.'/app/views/'
 		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); # put in base_path dir; ex: 404-error.phtml
 		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); # put in base_path dir; ex: 401-error.phtml
 		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); # put in base_path dir; ex: 403-error.phtml
@@ -251,7 +251,7 @@ class PhpView
 		$firstPartFilename = $this->generateFileHash($cssList);
 	
 		$cssCachePath = $this->vars['assets_path'].'css/cache/';
-		$cssCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'css/cache/';
+		$cssCacheRootPath = BP.$this->vars['assets_path'].'css/cache/';
 				
 		if(!empty($firstPartFilename))
 		{
@@ -313,7 +313,7 @@ class PhpView
 		$cacheFilename = $this->generateFileHash($jsFiles);
 
 		$jsCachePath = $this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
-		$jsCacheRootPath = $_SERVER['DOCUMENT_ROOT'].'/'.$this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
+		$jsCacheRootPath = BP.$this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
 		
 		$jsScripts = '';
 		$cachedJSStr = '';

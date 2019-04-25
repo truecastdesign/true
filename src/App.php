@@ -316,7 +316,7 @@ class App
 			$this->match = true;
 			$parametersFound = false;
 			$patternElements = explode('/', ltrim($pattern, '/'));
-			$requestUrl = strtok(filter_var(ltrim($_SERVER["REQUEST_URI"], '/') , FILTER_SANITIZE_URL) , '?');
+			$requestUrl = ltrim(strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL) , '?'), '/');
 			$requestUrl = str_replace(['../'], ['/'], $requestUrl);
 			$urlElements = explode('/', $requestUrl);
 			$callbackArgs = (object)[];
