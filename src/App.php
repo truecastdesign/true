@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.9
+ * @version 1.4.10
  */
 class App
 {
@@ -659,7 +659,9 @@ class App
 		
 		echo (empty($GLOBALS['errorUserNotice'])? '':'<div id="'.$noticeBox.'"><div id="'.$userNotice.'"><div>'.$GLOBALS['errorUserNotice'].'</div><button id="displayUserCloseButton"></button></div></div>');
 		
-		echo "<script>document.querySelector('#displayUserCloseButton').onclick = function() {document.querySelector('#{$noticeBox}').parentNode.removeChild(document.querySelector('#{$noticeBox}'))}</script>";
+		if (!empty($GLOBALS['pageErrors']) or !empty($GLOBALS['errorUserError']) or !empty($GLOBALS['errorUserWarning']) or !empty($GLOBALS['errorUserNotice']) ) {
+			echo "<script>document.querySelector('#displayUserCloseButton').onclick = function() {document.querySelector('#{$noticeBox}').parentNode.removeChild(document.querySelector('#{$noticeBox}'))}</script>";
+		}
 	}
 
 	/**
