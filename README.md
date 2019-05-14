@@ -138,7 +138,8 @@ if (is_numeric($userId)) {
 }
 ```
 
-### Using PHPView
+Using PHPView
+-------------
 
 View files need to be named {name}.phtml
 
