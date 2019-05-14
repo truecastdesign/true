@@ -138,6 +138,19 @@ if (is_numeric($userId)) {
 }
 ```
 
+### Using PHPView
+
+View files need to be named {name}.phtml
+
+They go in the /app/views directory
+
+Urls with /name match the file /app/views/name.phtml
+Urls with /name/othername match the file /app/views/name/othername.phtml
+
+There should be a base view that has all the site html tags that surround the main content of the page that comes from the page view files. It will insert the contents of, for example name.phtml, and insert it whereever <?=$_html?> is in the base view.
+
+
+
 Usage
 -----
 
