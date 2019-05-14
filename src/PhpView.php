@@ -11,7 +11,7 @@ namespace True;
  */
 class PhpView
 {
-	public static $version = "5.2.11";
+	public static $version = "5.2.12";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -20,9 +20,9 @@ class PhpView
 
 	public function __construct($args = null)
 	{
-		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: __DIR__.'/app/views/'
-		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/'); # from root; end with /; ex: __DIR__.'/app/views/'
-		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); # from root; end with /; ex: __DIR__.'/app/views/'
+		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: BP.'/app/views/'
+		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/public_html/assets/'); # from root; end with /; ex: '/public_html/assets/'
+		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); # from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
 		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); # put in base_path dir; ex: 404-error.phtml
 		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); # put in base_path dir; ex: 401-error.phtml
 		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); # put in base_path dir; ex: 403-error.phtml
