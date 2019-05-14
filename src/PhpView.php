@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.11
+ * @version 5.2.13
  */
 class PhpView
 {
-	public static $version = "5.2.12";
+	public static $version = "5.2.13";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -44,10 +44,10 @@ class PhpView
 	 * Render views. Use .phtml file
 	 * Format files with meta data at the top with {endmeta} before the html starts
 	 * Meta data example (use ini format): 
-	 * title="The text that goes in the title tag"
-	 * description="The text that goes in the meta description tag"
-	 * css="/assets/css/site.css, /vendor/company/project/assets/css/style.css, /app/assets/css/style2.css"
-	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"
+	 * title="The text that goes in the title tag" -> access using $_metaTitle
+	 * description="The text that goes in the meta description tag" -> access using $_metaDescription
+	 * css="/assets/css/site.css, /vendor/company/project/assets/css/style.css, /app/assets/css/style2.css" -> access using $_css
+	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"  -> access using $_js
 	 * no_cache # use no_cache for pages you don't want the browser to cache
 	 * sort=1 # sort the pages so they display in a navigation in a certain order
 	 * not_live # not live to the public
@@ -55,6 +55,7 @@ class PhpView
 	 * not_in_nav # remove it from nav but not from public view
 	 * limit_access # restrict access to only users who are part of the provided group or groups
 	 * groups[] = members # groups that are allowed to access this page
+	 * head_html="<script type="module" src="path/to/file.js"></script>" -> access using $_headHTML
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
@@ -173,6 +174,9 @@ class PhpView
 		
 		if(isset($metaData['linkText']))
 			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
+
+		if(isset($metaData['head_html']))
+			$this->metaData['_headHTML'] = trim($metaData['head_html']);
 
 		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
 
