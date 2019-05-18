@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.13
+ * @version 5.2.14
  */
 class PhpView
 {
-	public static $version = "5.2.13";
+	public static $version = "5.2.14";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -21,7 +21,8 @@ class PhpView
 	public function __construct($args = null)
 	{
 		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: BP.'/app/views/'
-		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/public_html/assets/'); # from root; end with /; ex: '/public_html/assets/'
+		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/'); # from root; end with /; ex: '/assets/'
+		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/public_html/assets/'); # from root; end with /; ex: BP.'/public_html/assets/'
 		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); # from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
 		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); # put in base_path dir; ex: 404-error.phtml
 		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); # put in base_path dir; ex: 401-error.phtml
@@ -177,6 +178,8 @@ class PhpView
 
 		if(isset($metaData['head_html']))
 			$this->metaData['_headHTML'] = trim($metaData['head_html']);
+		else
+			$this->metaData['_headHTML'] = '';
 
 		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
 
@@ -255,7 +258,7 @@ class PhpView
 		$firstPartFilename = $this->generateFileHash($cssList);
 	
 		$cssCachePath = $this->vars['assets_path'].'css/cache/';
-		$cssCacheRootPath = BP.$this->vars['assets_path'].'css/cache/';
+		$cssCacheRootPath = $this->vars['base_assets_path'].'css/cache/';
 				
 		if(!empty($firstPartFilename))
 		{
@@ -317,7 +320,7 @@ class PhpView
 		$cacheFilename = $this->generateFileHash($jsFiles);
 
 		$jsCachePath = $this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
-		$jsCacheRootPath = BP.$this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
+		$jsCacheRootPath = $this->vars['base_assets_path'].'js/cache/'.$cacheFilename.'.js';
 		
 		$jsScripts = '';
 		$cachedJSStr = '';
