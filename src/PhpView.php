@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.14
+ * @version 5.2.15
  */
 class PhpView
 {
-	public static $version = "5.2.14";
+	public static $version = "5.2.15";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -197,19 +197,14 @@ class PhpView
 	 **/
 	private function addInGlobalAssets($metaData = [], $type = '')
 	{
-		$assetList = [];
-
-		if(!is_array($metaData))
-			$metaData = [];
-		
 		if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
+		{
 			$metaData[$type] = trim($this->vars[$type]). ','. $metaData[$type];
-	
+		}	
 		elseif(array_key_exists($type,$this->vars))
+		{
 			$metaData[$type] = trim($this->vars[$type]);
-
-		else
-			$metaData[$type] = '';	
+		}
 
 		if(array_key_exists($type,$metaData))
 		{
