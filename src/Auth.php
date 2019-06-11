@@ -293,11 +293,12 @@ class Auth
      * create hash for password
      *
      * @param string $value password to hash
+     * @param int $cost default is 15, higher numbers are more secure.
      * @return string full hashed password for putting in database
      * @author Daniel Baldwin
      */
-    public function hashPassword($value)
+    public function hashPassword($value, $cost = 15)
     {
-        return password_hash($value, PASSWORD_BCRYPT, ["cost"=>15]);
+        return password_hash($value, PASSWORD_BCRYPT, ["cost"=>$cost]);
     }
 }
