@@ -298,6 +298,6 @@ class Auth
      */
     public function hashPassword($value)
     {
-        return password_hash($value, PASSWORD_BCRYPT);
+        return password_hash($value, PASSWORD_BCRYPT, ["cost"=>15]);
     }
 }
