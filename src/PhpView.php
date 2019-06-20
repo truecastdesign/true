@@ -7,16 +7,21 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.15
+ * @version 5.2.16
  */
 class PhpView
 {
-	public static $version = "5.2.15";
+	public static $version = "5.2.16";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
 	private $vars = [];
-	private $metaData = [];
+	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_metaNoCache'=>'', '_js'=>'', '_css'=>''];
+
+	# in the route or controller, set meta data using $App->view->meta_name. 
+	# meta_names are: title, description, css, js, no_cache, sort, not_live, label, not_in_nav
+	# They work the same as the inline meta data in the view file
+	# These inline meta data in the view file will override these if they are set.
 
 	public function __construct($args = null)
 	{
@@ -71,16 +76,17 @@ class PhpView
 		$replaceTags = [];
 		$searchTags = [];
 
-		if(empty($taView) or $taView == '.phtml') 
+		if (empty($taView) or $taView == '.phtml') {
 			$taView = 'index.phtml';
-		
+		}
+
 		header('X-Powered-By: True 6');
 				
-		if(isset($this->vars['base_path']) and !$fullPath)
+		if (isset($this->vars['base_path']) and !$fullPath) {
 			$taView = $this->vars['base_path'].$taView;
-
-		if(file_exists($taView) === false)
-		{
+		}
+		
+		if (file_exists($taView) === false) {
 			header("HTTP/1.1 404 Not Found");
 			$this->metaData['_metaTitle'] = "File Not Found";
 			$taView = $this->vars['base_path'].$this->vars['404'];
@@ -94,20 +100,21 @@ class PhpView
 		# insert template into page if needed
 		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
 		
-		if (is_array($outputArray[1]))
-		foreach($outputArray[1] as $partial)
-		{
-			ob_start();
-				include BP.'/app/views/_partials/'.$partial;
-			$replaceTags[] = ob_get_clean();
-			$searchTags[] = "{partial:".$partial."}";
+		if (is_array($outputArray[1])) {
+			foreach ($outputArray[1] as $partial)
+			{
+				ob_start();
+					include BP.'/app/views/_partials/'.$partial;
+				$replaceTags[] = ob_get_clean();
+				$searchTags[] = "{partial:".$partial."}";
+			}
 		}
 		
-		if (is_array($outputArray[0]))
-		foreach($outputArray[0] as $tag)
-		{
-			$replaceTags[] = '';
-			$searchTags[] = $tag;
+		if (is_array($outputArray[0])) {
+			foreach ($outputArray[0] as $tag) {
+				$replaceTags[] = '';
+				$searchTags[] = $tag;
+			}
 		}		
 
 		# find the break point for the meta data
@@ -131,7 +138,7 @@ class PhpView
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
 		}
 
-		if(!$this->metaData['_metaNoCache']) {
+		if (!$this->metaData['_metaNoCache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
 			header_remove("Pragma");
 			header("Pragma: no-cache");
@@ -140,22 +147,23 @@ class PhpView
 			header("Cache-Control: post-check=0, pre-check=0", false);
 		}		
 
-		if(isset($fileParts[1]))
+		if (isset($fileParts[1])) {
 			$this->metaData['_html'] = $fileParts[1];
-		elseif(isset($fileParts[0]))
+		}
+		elseif (isset($fileParts[0])) {
 			$this->metaData['_html'] = $fileParts[0];
-		else
+		}
+		else {
 			$this->metaData['_html'] = '';
-
-		if(isset($this->vars['layout']))
-		{
+		}
+		
+		if (isset($this->vars['layout'])) {
 			extract($this->metaData);
 			extract($variables);
 			global $App;
 			require_once $this->vars['layout'];
 		}	
-		else
-		{
+		else {
 			extract($variables);
 			echo $this->metaData['_html'];
 		}
@@ -167,19 +175,24 @@ class PhpView
 		if($metaData == null)
 			$metaData = [];
 		
-		if(isset($metaData['title']))
+		if(isset($metaData['title'])) {
 			$this->metaData['_metaTitle'] = trim($metaData['title']);
+		}			
 		
-		if(isset($metaData['description']))
+		if(isset($metaData['description'])) {
 			$this->metaData['_metaDescription'] = trim($metaData['description']);
+		}
 		
-		if(isset($metaData['linkText']))
+		if(isset($metaData['linkText'])) {
 			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
+		}
 
-		if(isset($metaData['head_html']))
+		if(isset($metaData['head_html'])) {
 			$this->metaData['_headHTML'] = trim($metaData['head_html']);
-		else
+		}
+		else {
 			$this->metaData['_headHTML'] = '';
+		}
 
 		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
 
