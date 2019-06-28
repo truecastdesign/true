@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.10
+ * @version 1.4.11
  */
 class App
 {
@@ -319,39 +319,49 @@ class App
 			$requestUrl = ltrim(strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL) , '?'), '/');
 			$requestUrl = str_replace(['../'], ['/'], $requestUrl);
 			$urlElements = explode('/', $requestUrl);
-			$callbackArgs = (object)[];
+			$request = (object)[];
 			$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
-			$callbackArgs->uri = $_SERVER['REQUEST_URI'];
-			$callbackArgs->method = $_SERVER['REQUEST_METHOD'];
-			$callbackArgs->ip = $_SERVER['REMOTE_ADDR'];
+			$request->uri = $_SERVER['REQUEST_URI'];
+			$request->method = $_SERVER['REQUEST_METHOD'];
+			$request->ip = $_SERVER['REMOTE_ADDR'];
+
+			$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
+			$request->contentType = $contentParts[0];
+
+			$request->userAgent = $_SERVER['HTTP_USER_AGENT'];
+			$request->referrer = $_SERVER['HTTP_REFERER'];
+
+			$request->headers = (object) $this->getallheaders();
+
 			if (array_key_exists('HTTPS', $_SERVER)) {
-				$callbackArgs->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
+				$request->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
 			}
 			else {
-				$callbackArgs->https = false;
+				$request->https = false;
 			}
 
-			$callbackArgs->name = $_SERVER['HTTP_HOST'];
+			$request->name = $_SERVER['HTTP_HOST'];
+			
 			$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
 			
 			if (isset($urlParts->domain)) {
-				$callbackArgs->domain = $urlParts->domain;
+				$request->domain = $urlParts->domain;
 			}
 
 			if (isset($urlParts->subdomain)) {
-				$callbackArgs->subdomain = $urlParts->subdomain;
+				$request->subdomain = $urlParts->subdomain;
 			}
 
 			if (isset($urlParts->extension)) {
-				$callbackArgs->extension = $urlParts->extension;
+				$request->extension = $urlParts->extension;
 			}
 			
 			if (isset($urlParts->file)) {
-				$callbackArgs->file = $urlParts->file;
+				$request->file = $urlParts->file;
 			}
 
 			if (isset($urlParts->query)) {
-				$callbackArgs->query = $urlParts->query;
+				$request->query = $urlParts->query;
 			}			
 
 			// if not * found, than check to make sure pattern elements count and url elements count match
@@ -398,37 +408,47 @@ class App
 				}
 
 				if ($parametersFound) {
-					$callbackArgs->route = (object)$routeParameters;
+					$request->route = (object)$routeParameters;
 				}
 			}
 
 			// given pattern matches the request url
 
 			if ($this->match) {
-				$requestBody = file_get_contents('php://input');
-				if (!empty($requestBody)) {
-					$xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
-					$json = json_encode($xml);
-					$array = json_decode($json, true);
-					if (!empty($xml)) {
-						$callbackArgs->$requestKey = (object)$array;
-					}
-					else {
-						$callbackArgs->$requestKey = (object)json_decode($requestBody, true);
-					}
+				
+				$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data'];
+				
+				if ($request->method == 'POST' and in_array($request->contentType, $postContentTypes)) {
+					// parsed body must be $_POST
+					$request->post = (object)$_POST; 
 				}
 
-				if ($_SERVER['REQUEST_METHOD'] == 'GET' and count($_GET) > 0) {
-					$callbackArgs->get = (object)$_GET;
+				if ($request->method == 'GET' and in_array($request->contentType, $postContentTypes)) {
+					$request->get = (object)$_GET;
 				}
 
-				$callbackArgs->headers = (object) $this->getallheaders();
+				if (in_array($request->contentType, ['application/json'])) {
+					$requestBody = file_get_contents('php://input');
+					
+					if (!empty($requestBody)) {
+						$xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
+						$json = json_encode($xml);
+						$array = json_decode($json, true);
+						if (!empty($xml)) {
+							$request->$requestKey = (object)$array;
+						}
+						else {
+							$request->$requestKey = (object)json_decode($requestBody, true);
+						}
+					}
+				}
+				
 				if (is_string($callable)) {
-					$this->includeController($callable, $callbackArgs, $customControllerPath);
+					$this->includeController($callable, $request, $customControllerPath);
 				}
 				elseif (is_callable($callable)) {
-					$request[] = $callbackArgs;
-					$response = call_user_func_array($callable, $request);
+					$callbackArgs[] = $request;
+					$response = call_user_func_array($callable, $callbackArgs);
 				}
 			}
 		}
