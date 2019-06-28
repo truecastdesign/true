@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.11
+ * @version 1.4.12
  */
 class App
 {
@@ -325,11 +325,20 @@ class App
 			$request->method = $_SERVER['REQUEST_METHOD'];
 			$request->ip = $_SERVER['REMOTE_ADDR'];
 
-			$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
-			$request->contentType = $contentParts[0];
+			if (isset($_SERVER['CONTENT_TYPE'])) {
+				$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
+				$request->contentType = $contentParts[0];
+			} else {
+				$request->contentType = '';
+			}
 
 			$request->userAgent = $_SERVER['HTTP_USER_AGENT'];
-			$request->referrer = $_SERVER['HTTP_REFERER'];
+			
+			if (isset($_SERVER['HTTP_REFERER'])) {
+				$request->referrer = $_SERVER['HTTP_REFERER'];
+			} else {
+				$request->referrer = '';
+			}			
 
 			$request->headers = (object) $this->getallheaders();
 

@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.7.10
+v1.7.11
 
 These classes form the basic functionality of True framework.
 
