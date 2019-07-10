@@ -241,9 +241,9 @@ class PhpView
 			}
 			
 			# build js files
-			if($type == 'js')
+			if($type == 'js' and is_array($assetList))
 				$this->metaData['_js'] = $this->buildJSFile($assetList);
-			elseif($type == 'css')
+			elseif($type == 'css' and is_array($assetList))
 				$this->metaData['_css'] = $this->buildCSSFile($assetList);
 		}
 		else

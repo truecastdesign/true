@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.0
+ * @version 1.5.0
  */
 class Functions
 {
@@ -287,7 +287,7 @@ class Functions
 		$txt = str_replace('&quot;','"',$txt);
 		$txt = str_replace('&lt;','<',$txt);
 		$txt = str_replace('&gt;','>',$txt);
-		$txt = str_replace('&','&',$txt);
+		#$txt = str_replace('&amp;','&',$txt);
 
 		$eol = "\n";
 
@@ -366,6 +366,17 @@ class Functions
 			$html = str_replace("\r", $eol, $html);
 
 		return $html;
+	}
+
+	/**
+	 * Convert text with two line breaks to text with <p> tags wrapped around each paragraph. Leaves any existing html in the text alone.
+	 *
+	 * @param string $string
+	 * @return string
+	 */
+	public function addPtags(string $string): string
+	{
+		return "<p>" . implode( "</p>\n\n<p>", preg_split( '/(?:\s*\n)+/', $string ) ) . "</p>";
 	}
 
 	public static function stri_replace($find, $replace, $string)
