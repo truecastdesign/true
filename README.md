@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.8.0
+v1.9.0
 
 These classes form the basic functionality of True framework.
 
@@ -94,7 +94,74 @@ $App->any('/*:path', function($request) use ($App) {
 $App->get('/path/:id', 'filename.php'); 
 # It will look in the /app/controllers dir for the file filename.php and include it.
 # The $App object and the $request object will be available inside the filename.php script.
+
+# Specify the exact request method to match
+$App->get(...);
+$App->post(...);
+$App->put(...);
+$App->patch(...);
+$App->delete(...);
+$App->options(...);
+
+# Use map to specify several methods
+
+$App->map(['GET', 'POST', 'PUT'], '/path', 'controller.php');
+
+# The $App object is automatically passed to the controller.php script. The conroller.php file should just be simple code you want that outputs JSON or renders a view, etc. Should not be a class. Should look like the code in the closure.  
 ```
+
+#### Route Groups
+
+Group routing for running certain code for groups of pages or rest end points.
+Allows you to run middleware for certain grouped requests. This allows you to authenicate and authorize requests before control is passed onto the containing routes. 
+
+When passing in a middleware class instance, it should have an __invoke method and return either true or false if the containing routes should run or not.
+
+```php
+$App->group('/api/*', function() use ($App) {
+	# code in here only runs if path matches /api/ and /api/[any further path parts]
+	$App->get('/api/user/*:id', function($request) use ($App) {
+		echo $request->route->id;
+	});
+});
+```
+
+Using groups can speed up your routing because if the group pattern fails to match, all child routes will not be checked.
+
+#### Route Middleware
+
+Route middleware is handy to hide code in a separate file to clean up your routes file if you have lots of routes.
+
+You can pass in an array of class instances that are invokable as the their parameter of the group method. Use [ new \App\AuthMiddleware, new \VendorName\SampleMiddleware ] for multiple layers. The middleware layers are run left to right. If any return false, the others will not run.
+
+```php
+$App->group('/api/*', function() use ($App) {
+	$App->get('/api/user/*:id', function($request) use ($App) {
+		echo $request->route->id;
+	});
+}, [ new \App\AuthMiddleware ]);
+```
+
+#### Route Middleware Example
+
+```php
+<?php
+namespace App;
+
+class AuthMiddleware 
+{
+	public function __invoke($request)
+	{
+		$Auth = new \True\Auth;
+		if ($Auth->authenticate(['type'=>'bearer'])) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+```
+
 ## Using the True\Auth class
 ### Using a Bearer Token
 

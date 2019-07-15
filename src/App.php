@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.12
+ * @version 1.5.0
  */
 class App
 {
@@ -15,8 +15,7 @@ class App
 	/**
 	 * Create new application
 	 *
-	 * @param ContainerInterface|array $container Either a ContainerInterface or an associative array of app settings
-	 * @throws InvalidArgumentException when no container is provided that implements ContainerInterface
+	 * @param string $files example: app/config/site.ini used to load in config files. Comma delimited list of file paths
 	 */
 	public function __construct($files = null)
 	{
@@ -278,6 +277,21 @@ class App
 	}
 
 	/**
+	 * Add route for provided HTTP methods
+	 *
+	 * @param  array $methods  ['GET', 'POST']
+	 * @param  string $pattern  The route URI pattern
+	 * @param  callable|string  $callable The route callback routine or controller if string
+	 * @param  bool $customControllerPath Custom controller path if true
+	 *
+	 * @return null
+	 */
+	public function map($methods, $pattern, $callable, $customControllerPath = false)
+	{
+		$this->router($methods, $pattern, $callable, $customControllerPath);
+	}
+
+	/**
 	 * Router main method
 	 *
 	 * @param string $method post, put, get, delete as the method name
@@ -319,59 +333,8 @@ class App
 			$requestUrl = ltrim(strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL) , '?'), '/');
 			$requestUrl = str_replace(['../'], ['/'], $requestUrl);
 			$urlElements = explode('/', $requestUrl);
-			$request = (object)[];
-			$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
-			$request->uri = $_SERVER['REQUEST_URI'];
-			$request->method = $_SERVER['REQUEST_METHOD'];
-			$request->ip = $_SERVER['REMOTE_ADDR'];
-
-			if (isset($_SERVER['CONTENT_TYPE'])) {
-				$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
-				$request->contentType = $contentParts[0];
-			} else {
-				$request->contentType = '';
-			}
-
-			$request->userAgent = $_SERVER['HTTP_USER_AGENT'];
 			
-			if (isset($_SERVER['HTTP_REFERER'])) {
-				$request->referrer = $_SERVER['HTTP_REFERER'];
-			} else {
-				$request->referrer = '';
-			}			
-
-			$request->headers = (object) $this->getallheaders();
-
-			if (array_key_exists('HTTPS', $_SERVER)) {
-				$request->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
-			}
-			else {
-				$request->https = false;
-			}
-
-			$request->name = $_SERVER['HTTP_HOST'];
-			
-			$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
-			
-			if (isset($urlParts->domain)) {
-				$request->domain = $urlParts->domain;
-			}
-
-			if (isset($urlParts->subdomain)) {
-				$request->subdomain = $urlParts->subdomain;
-			}
-
-			if (isset($urlParts->extension)) {
-				$request->extension = $urlParts->extension;
-			}
-			
-			if (isset($urlParts->file)) {
-				$request->file = $urlParts->file;
-			}
-
-			if (isset($urlParts->query)) {
-				$request->query = $urlParts->query;
-			}			
+			$request = $this->makeRequestObject();
 
 			// if not * found, than check to make sure pattern elements count and url elements count match
 
@@ -461,6 +424,127 @@ class App
 				}
 			}
 		}
+	}
+
+	/**
+	 * Group routing for running certain code for groups of pages or rest end points.
+	 * Allows you to run middleware for certain grouped requests
+	 * 
+	 * $App->group('/api/*', function() use ($App) {
+	 * 	$App->get('/api/one/*:path', function($request) use ($App) {
+	 *			Run code
+	 * 	});
+    *	}, [ new \App\AuthMiddleware ]);
+	 *
+	 * @param [type] $pattern url path to match with path parts and asterisk. Does not support or pass on variables.
+	 * @param function $callable a closure or callable function
+	 * @param array of invokable class objects $middlewares You can pass it in as [ new \App\AuthMiddleware ] or pass a closure if you want the code to run in your routes file.
+	 * @return void
+	 */
+	public function group($pattern, $callable, $middlewares = null)
+	{
+		$match = false;
+		$middlewareFail = false;
+		$patternElements = explode('/', ltrim($pattern, '/'));
+		$requestUrl = ltrim(strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL) , '?'), '/');
+		$requestUrl = str_replace(['../'], ['/'], $requestUrl);
+		$urlElements = explode('/', $requestUrl);
+		
+		foreach($patternElements as $patternElement) {
+			$urlElement = array_shift($urlElements);
+			
+			if (strstr($patternElement, '*') !== false) {
+				$match = true;
+				break;
+			}
+			elseif ($urlElement != $patternElement) {
+				$match = false;
+				break;
+			}
+		}
+
+		if ($match) {
+			if (isset($middlewares) and is_object($middlewares[0])) {
+				$request = $this->makeRequestObject();
+				foreach ($middlewares as $middleware) {
+					if (is_callable($middleware)) {
+						$response = call_user_func_array($middleware, [$request]);
+						if ($response === false) {
+							$middlewareFail = true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (is_callable($callable) and !$middlewareFail) {
+				call_user_func($callable);
+			}
+		}
+	}
+
+	/**
+	 * Make and return a True request object
+	 *
+	 * @return object
+	 */
+	public function makeRequestObject()
+	{
+		$request = (object)[];
+		$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
+		$request->path = $_SERVER['REQUEST_URI'];
+		$request->method = $_SERVER['REQUEST_METHOD'];
+		$request->ip = $_SERVER['REMOTE_ADDR'];
+
+		if (isset($_SERVER['CONTENT_TYPE'])) {
+			$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
+			$request->contentType = $contentParts[0];
+		} else {
+			$request->contentType = '';
+		}
+
+		$request->userAgent = $_SERVER['HTTP_USER_AGENT'];
+		
+		if (isset($_SERVER['HTTP_REFERER'])) {
+			$request->referrer = $_SERVER['HTTP_REFERER'];
+		} else {
+			$request->referrer = '';
+		}			
+
+		$request->headers = (object) $this->getallheaders();
+
+		if (array_key_exists('HTTPS', $_SERVER)) {
+			$request->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
+		}
+		else {
+			$request->https = false;
+		}
+
+		$request->name = $_SERVER['HTTP_HOST'];
+		
+		$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
+		
+		if (isset($urlParts->domain)) {
+			$request->domain = $urlParts->domain;
+		}
+
+		if (isset($urlParts->subdomain)) {
+			$request->subdomain = $urlParts->subdomain;
+		}
+
+		if (isset($urlParts->extension)) {
+			$request->extension = $urlParts->extension;
+		}
+		
+		if (isset($urlParts->file)) {
+			$request->file = $urlParts->file;
+		}
+
+		if (isset($urlParts->query)) {
+			$request->query = $urlParts->query;
+		}
+
+		return $request;		
 	}
 
 	/**
