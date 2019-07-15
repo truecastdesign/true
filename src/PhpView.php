@@ -737,11 +737,11 @@ class PhpView
 		if(!strstr($img,'/')) $img = 'views/images/'.$img;
 		if($permission)
 		{
-			if($this->getPermission($permission)) {
-				echo '<a href="'.$url.'"'.$this->sideSelect($subPage).'><img src="'.$img.'" width="16" height="16"/> '.$title.'</a>';
-			}
+			
+			echo '<a href="'.$url.'"><img src="'.$img.'" width="16" height="16"/> '.$title.'</a>';
+			
 		}
-		else echo '<a href="'.$url.'"'.$this->sideSelect($subPage).'><img src="'.$img.'" width="16" height="16"/> '.$title.'</a>';
+		else echo '<a href="'.$url.'"><img src="'.$img.'" width="16" height="16"/> '.$title.'</a>';
 	}
 
 	/**

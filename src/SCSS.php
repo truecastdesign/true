@@ -1,5 +1,5 @@
 <?php
-namespace Truecast
+namespace Truecast;
 /**
  * SCSS compiler written in PHP
  *
