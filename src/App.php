@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.5.0
+ * @version 1.5.1
  */
 class App
 {
@@ -401,7 +401,7 @@ class App
 
 				if (in_array($request->contentType, ['application/json'])) {
 					$requestBody = file_get_contents('php://input');
-					
+					$requestKey = strtolower($request->method);
 					if (!empty($requestBody)) {
 						$xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
 						$json = json_encode($xml);

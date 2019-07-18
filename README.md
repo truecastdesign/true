@@ -168,7 +168,7 @@ class AuthMiddleware
 To use the Bearer token to authenicate api requests, start by generating a new token using:
 
 ```php
-$App->auth->requestToken();
+echo $App->auth->requestToken();
 ```
 
 This will generate a new token and save it to /app/data/auth-tokens. You can change that location when you instantiate the class.

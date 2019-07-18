@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.16
+ * @version 5.2.17
  */
 class PhpView
 {
-	public static $version = "5.2.16";
+	public static $version = "5.2.17";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -368,7 +368,7 @@ class PhpView
 					else
 					{
 						if(file_exists($file))
-							$cachedJSStr .= file_get_contents($file);
+							$cachedJSStr .= file_get_contents($file)."\n";
 					}
 				}
 			}
