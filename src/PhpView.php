@@ -7,11 +7,11 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.17
+ * @version 5.2.18
  */
 class PhpView
 {
-	public static $version = "5.2.17";
+	public static $version = "5.2.18";
 
 	
 	# used keys: js, css, head, body, footer_controls, admin
@@ -92,18 +92,28 @@ class PhpView
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
 
-		ob_start(); 
-			extract($variables);
-			include $taView;
-		$fileContents = ob_get_clean();
+		$fileContentsRaw = file_get_contents($taView);
+
+		# find the break point for the meta data
+		$fileParts = explode("{endmeta}", $fileContentsRaw, 2);
+		
+		# override for file based meta data with $App->view->meta_name
+		$this->processMetaData($this->vars);
+		
+		if(isset($fileParts[0]) and isset($fileParts[1])) {
+			$this->processMetaData( parse_ini_string($fileParts[0]) );
+		}
 
 		# insert template into page if needed
-		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
+		preg_match_all("/\{partial:(.*)}/", $fileContentsRaw, $outputArray);
 		
 		if (is_array($outputArray[1])) {
 			foreach ($outputArray[1] as $partial)
 			{
 				ob_start();
+					extract($variables);
+					extract($this->metaData);
+					global $App;
 					include BP.'/app/views/_partials/'.$partial;
 				$replaceTags[] = ob_get_clean();
 				$searchTags[] = "{partial:".$partial."}";
@@ -116,10 +126,25 @@ class PhpView
 				$searchTags[] = $tag;
 			}
 		}		
-
-		# find the break point for the meta data
-		$fileParts = explode("{endmeta}", $fileContents, 2);
 		
+		if (!$this->metaData['_metaNoCache']) {
+			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
+			header_remove("Pragma");
+			header("Pragma: no-cache");
+			header_remove("Cache-Control");
+			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+			header("Cache-Control: post-check=0, pre-check=0", false);
+		}		
+
+		ob_start(); 
+			extract($variables);
+			extract($this->metaData);
+			global $App;
+			include $taView;			
+		$fileContents = ob_get_clean();
+
+		$fileParts = explode("{endmeta}", $fileContents, 2);
+
 		# if no {endmeta}, just use the file contents
 		if (count($fileParts) == 1) {
 			$fileParts[1] = $fileContents;
@@ -131,22 +156,6 @@ class PhpView
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
 		}
 
-		# override for file based meta data with $App->view->meta_name
-		$this->processMetaData($this->vars);
-
-		if(isset($fileParts[0]) and isset($fileParts[1])) {
-			$this->processMetaData( parse_ini_string($fileParts[0]) );
-		}
-
-		if (!$this->metaData['_metaNoCache']) {
-			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
-			header_remove("Pragma");
-			header("Pragma: no-cache");
-			header_remove("Cache-Control");
-			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-			header("Cache-Control: post-check=0, pre-check=0", false);
-		}		
-
 		if (isset($fileParts[1])) {
 			$this->metaData['_html'] = $fileParts[1];
 		}
@@ -156,6 +165,8 @@ class PhpView
 		else {
 			$this->metaData['_html'] = '';
 		}
+
+		
 		
 		if (isset($this->vars['layout'])) {
 			extract($this->metaData);
@@ -183,8 +194,8 @@ class PhpView
 			$this->metaData['_metaDescription'] = trim($metaData['description']);
 		}
 		
-		if(isset($metaData['linkText'])) {
-			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
+		if(isset($metaData['link_text'])) {
+			$this->metaData['_metaLinkText'] = trim($metaData['link_text']);
 		}
 
 		if(isset($metaData['head_html'])) {
