@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.5.1
+ * @version 1.6.0
  */
 class App
 {
@@ -317,7 +317,7 @@ class App
 	 *
 	 */
 	public function router(array $method, $pattern, $callable, $customControllerPath = false)
-	{
+	{ 
 		if ($this->match) {
 			return false;
 		}
@@ -415,7 +415,7 @@ class App
 					}
 				}
 				
-				if (is_string($callable)) {
+				if (is_string($callable)) { 
 					$this->includeController($callable, $request, $customControllerPath);
 				}
 				elseif (is_callable($callable)) {
@@ -520,32 +520,154 @@ class App
 			$request->https = false;
 		}
 
-		$request->name = $_SERVER['HTTP_HOST'];
+		$request->url = (object)[];
 		
-		$urlParts = Functions::parseUrl($_SERVER['HTTP_HOST']);
+		$request->url->host = $_SERVER['HTTP_HOST'];
+		$request->url->full = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		
+		$urlParts = Functions::parseUrl($request->url->full);
 		
 		if (isset($urlParts->domain)) {
-			$request->domain = $urlParts->domain;
+			$request->url->domain = $urlParts->domain;
 		}
 
 		if (isset($urlParts->subdomain)) {
-			$request->subdomain = $urlParts->subdomain;
+			$request->url->subdomain = $urlParts->subdomain;
 		}
 
 		if (isset($urlParts->extension)) {
-			$request->extension = $urlParts->extension;
+			$request->url->extension = $urlParts->extension;
 		}
 		
 		if (isset($urlParts->file)) {
-			$request->file = $urlParts->file;
+			$request->url->file = $urlParts->file;
 		}
 
 		if (isset($urlParts->query)) {
-			$request->query = $urlParts->query;
+			$request->url->query = $urlParts->query;
+		}
+
+		if (isset($_FILES)) {
+			$request->files = static::parseUploadedFiles($_FILES);
 		}
 
 		return $request;		
 	}
+
+	/**
+	 * Create and output response
+	 * 
+	 * $App->response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"])
+	 */
+	public function response($body, $type = 'html', $code = 200, $headers = [])
+	{
+		switch ($type) {
+			case 'html':
+				header("Content-Type: text/html; charset=UTF-8");
+			break;
+			case 'json':
+				header("Content-Type: application/json; charset=UTF-8");
+			break;
+			case 'xml':
+				header("Content-Type: application/xml; charset=UTF-8");
+			break;
+			case 'text':
+				header("Content-Type: text/plain; charset=UTF-8");
+			break;
+			default:
+				header("Content-Type: text/html; charset=UTF-8");
+		}
+
+		if (!is_null($code) and is_numeric($code)) {
+			http_response_code($code);
+		}
+
+		# load preferences headers
+		/** 
+		 * place this in your site.ini file and load it into $App
+		 * 
+		 * [preferences]
+		 * cache_json_responses=false
+		 * cache_html_responses=true
+		 */	
+		$prefs = $this->container['config']->preferences;
+
+		if (isset($prefs)) {
+			if (isset($prefs->cache_json_responses) and $type == 'json') {
+				header_remove("Pragma");
+				if ($prefs->cache_json_responses) {
+					header('Cache-Control: max-age=21600, public');
+					header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+6 hours")).' GMT');
+				} else {
+					header('Cache-Control: no-store, no-cache, must-revalidate');					
+				}
+			} 
+
+			if (isset($prefs->cache_html_responses) and $type == 'html') {
+				header_remove("Pragma");
+				if ($prefs->cache_html_responses) {
+					header('Cache-Control: max-age=604800, public');
+					header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+7 days")).' GMT');
+				} else {
+					header('Cache-Control: no-store, no-cache, must-revalidate');					
+				}
+			} 
+		}
+
+		if (!is_null($headers)) {
+			foreach ($headers as $header) {
+				header($header);
+			}
+		}
+
+		echo $body;
+	}
+
+	/**
+     * Parse a non-normalized, i.e. $_FILES superglobal, tree of uploaded file data.
+     *
+     * @param array $uploadedFiles The non-normalized tree of uploaded file data.
+     *
+     * @return array A normalized tree of UploadedFile instances.
+     */
+    private static function parseUploadedFiles(array $uploadedFiles)
+    {
+        $parsed = [];
+        foreach ($uploadedFiles as $field => $uploadedFile) {
+            if (!isset($uploadedFile['error'])) {
+                if (is_array($uploadedFile)) {
+                    $parsed[$field] = static::parseUploadedFiles($uploadedFile);
+                }
+                continue;
+            }
+
+            $parsed[$field] = [];
+            if (!is_array($uploadedFile['error'])) {
+                $parsed[$field] = new static(
+                    $uploadedFile['tmp_name'],
+                    isset($uploadedFile['name']) ? $uploadedFile['name'] : null,
+                    isset($uploadedFile['type']) ? $uploadedFile['type'] : null,
+                    isset($uploadedFile['size']) ? $uploadedFile['size'] : null,
+                    $uploadedFile['error'],
+                    true
+                );
+            } else {
+                $subArray = [];
+                foreach ($uploadedFile['error'] as $fileIdx => $error) {
+                    // normalise subarray and re-parse to move the input's keyname up a level
+                    $subArray[$fileIdx]['name'] = $uploadedFile['name'][$fileIdx];
+                    $subArray[$fileIdx]['type'] = $uploadedFile['type'][$fileIdx];
+                    $subArray[$fileIdx]['tmp_name'] = $uploadedFile['tmp_name'][$fileIdx];
+                    $subArray[$fileIdx]['error'] = $uploadedFile['error'][$fileIdx];
+                    $subArray[$fileIdx]['size'] = $uploadedFile['size'][$fileIdx];
+
+                    $parsed[$field] = static::parseUploadedFiles($subArray);
+                }
+            }
+        }
+
+        return $parsed;
+    }
 
 	/**
 	 * [includeController description]
