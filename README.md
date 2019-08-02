@@ -216,6 +216,7 @@ $App->response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"])
 
 $App->response('The body of the response', 'the type: json, html, xml', response code, array of raw headers);
 
+You can still echo and print_r anything you need to and this will not overwrite it. Makes it nice for debugging.
 
 Using PHPView
 -------------
