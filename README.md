@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.9.3
+v1.10.0
 
 These classes form the basic functionality of True framework.
 
@@ -204,6 +204,18 @@ if (is_numeric($userId)) {
 	echo json_encode(['result'=>'not logged in']);
 }
 ```
+
+Creating a Response for REST or Similar Responses
+---
+
+### Example
+```php
+$App->response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"]);
+```
+### Explained
+
+$App->response('The body of the response', 'the type: json, html, xml', response code, array of raw headers);
+
 
 Using PHPView
 -------------
