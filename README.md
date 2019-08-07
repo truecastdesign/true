@@ -218,6 +218,17 @@ $App->response('The body of the response', 'the type: json, html, xml', response
 
 You can still echo and print_r anything you need to and this will not overwrite it. Makes it nice for debugging.
 
+There is a die() called at the end of the response method so it needs to be the last that you want to run. This allow for error responses followed by success response in your controller.
+
+```php
+try {
+	// run method
+} catch (Exception $e) {
+	$App->response('{"result":"error", "error":"'.$e->getMessage().'"}', 'json', 401);
+}
+$App->response('{"result":"success"}', 'json'); // this will run if the above response does not but will not run if there was already a response run above.
+```
+
 Using PHPView
 -------------
 
