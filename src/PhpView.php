@@ -7,13 +7,10 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.19
+ * @version 5.2.21
  */
 class PhpView
 {
-	public static $version = "5.2.19";
-
-	
 	# used keys: js, css, head, body, footer_controls, admin
 	private $vars = [];
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_metaNoCache'=>'', '_js'=>'', '_css'=>''];
@@ -65,7 +62,7 @@ class PhpView
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
-	 * @param Bool $fullPath - true if path to file name is from server root
+	 * @param Bool $fullPath - DEPRACATED (auto detected now) true if path to file name is from server root
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
@@ -79,6 +76,8 @@ class PhpView
 		if (empty($taView) or $taView == '.phtml') {
 			$taView = 'index.phtml';
 		}
+
+		$fullPath = ($taView[0] == '/')? true:false;
 
 		header('X-Powered-By: True 6');
 				
@@ -165,10 +164,12 @@ class PhpView
 			extract($variables);
 			global $App;
 			require_once $this->vars['layout'];
+			die();
 		}	
 		else {
 			extract($variables);
 			echo $this->metaData['_html'];
+			die();
 		}
 	}
 

@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.10.2
+v1.10.3
 
 These classes form the basic functionality of True framework.
 
@@ -241,7 +241,17 @@ Urls with /name/othername match the file /app/views/name/othername.phtml
 
 There should be a base view that has all the site html tags that surround the main content of the page that comes from the page view files. It will insert the contents of, for example name.phtml, and insert it whereever <?=$_html?> is in the base view.
 
+```php
+$App->view->render('page.phtml', ['var1'=>6]);
+```
 
+The second parameter is an array of variable that will be available to the page. In the above example, `r $var1` will be equel to 6. You can pass class objects this way as well.
+
+## Render file that is not in the /app/views directory
+
+```php
+$App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.phtml');
+```
 
 Usage
 -----
