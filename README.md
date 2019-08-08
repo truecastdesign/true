@@ -247,7 +247,7 @@ $App->view->render('page.phtml', ['var1'=>6]);
 
 The second parameter is an array of variable that will be available to the page. In the above example, `r $var1` will be equel to 6. You can pass class objects this way as well.
 
-## Render file that is not in the /app/views directory
+### Render file that is not in the /app/views directory
 
 ```php
 $App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.phtml');
