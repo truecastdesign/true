@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.10.3
+v1.10.4
 
 These classes form the basic functionality of True framework.
 
@@ -226,7 +226,8 @@ try {
 } catch (Exception $e) {
 	$App->response('{"result":"error", "error":"'.$e->getMessage().'"}', 'json', 401);
 }
-$App->response('{"result":"success"}', 'json'); // this will run if the above response does not but will not run if there was already a response run above.
+$App->response('{"result":"success"}', 'json'); // this will run if the above 
+// response does not but will not run if there was already a response run above.
 ```
 
 Using PHPView

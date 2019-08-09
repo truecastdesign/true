@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.21
+ * @version 5.2.22
  */
 class PhpView
 {
@@ -79,7 +79,14 @@ class PhpView
 
 		$fullPath = ($taView[0] == '/')? true:false;
 
-		header('X-Powered-By: True 6');
+		header('X-Frame-Options: SAMEORIGIN');
+		if ($_SERVER['HTTPS'] == 'on') {
+			header('Strict-Transport-Security: max-age=31536000');
+		}
+		header('X-Content-Type-Options: nosniff');
+		header('Referrer-Policy: same-origin');
+		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
+		header("X-Powered-By: none");
 				
 		if (isset($this->vars['base_path']) and !$fullPath) {
 			$taView = $this->vars['base_path'].$taView;

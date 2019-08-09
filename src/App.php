@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.1
+ * @version 1.6.2
  */
 class App
 {
@@ -561,6 +561,14 @@ class App
 	 */
 	public function response($body, $type = 'html', $code = 200, $headers = [])
 	{
+		header('X-Frame-Options: SAMEORIGIN');
+		if ($_SERVER['HTTPS'] == 'on') {
+			header('Strict-Transport-Security: max-age=31536000');
+		}
+		header('X-Content-Type-Options: nosniff');
+		header('Referrer-Policy: same-origin');
+		header_remove("X-Powered-By");
+		
 		switch ($type) {
 			case 'html':
 				header("Content-Type: text/html; charset=UTF-8");
