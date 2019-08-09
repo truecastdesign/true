@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.10.4
+v1.10.5
 
 These classes form the basic functionality of True framework.
 
@@ -233,6 +233,42 @@ $App->response('{"result":"success"}', 'json'); // this will run if the above
 Using PHPView
 -------------
 
+In your init.php file or whereever you want to put it, make a new instance of the class.
+
+If you are using it with True framework, it is best to set it to $App->view so you already have access to it and it is in a perdictable place. It can be used without if you like.
+
+```php
+$App->view = new True\PhpView;
+```
+
+### Set PHPView variables
+
+#### Set global CSS files. Use a comma delimited list of paths and filenames from public root.
+
+PHPView will combine all the CSS files together and minify the code for output in the `$_css` variable in our template.
+
+```php
+$App->view->css = '/assets/css/site.css';
+```
+
+#### Set global JS files. Use a comma delimited list of paths and filenames from public root.
+
+PHPView will combine all the JS files together and minify the code for output in the `$_js` variable in our template. If the JS file path has http in it, like from a CDN or other source, it will not combine that resource into the combined and minified file. It will add it in as a separate resource.
+
+```php
+$App->view->js = '/assets/js/testing.js, /assets/js/testing2.js';
+```
+
+#### Page browser caching
+
+Set to true or false. Caching is on by default and set to expire in 1 week. Individual page caching can be controlled by the top of view meta data. Use the `cache=false` in the view meta data to turn off caching for just that page.
+
+```php
+$App->view->cache = true; 
+```
+
+### Creating and Using View Files
+
 View files need to be named {name}.phtml
 
 They go in the /app/views directory
@@ -253,6 +289,9 @@ The second parameter is an array of variable that will be available to the page.
 ```php
 $App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.phtml');
 ```
+
+
+
 
 Usage
 -----

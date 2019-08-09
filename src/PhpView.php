@@ -7,13 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.22
+ * @version 5.2.23
  */
 class PhpView
 {
-	# used keys: js, css, head, body, footer_controls, admin
+	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_metaNoCache'=>'', '_js'=>'', '_css'=>''];
+	
+	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
 	# in the route or controller, set meta data using $App->view->meta_name. 
 	# meta_names are: title, description, css, js, no_cache, sort, not_live, label, not_in_nav
@@ -22,13 +23,29 @@ class PhpView
 
 	public function __construct($args = null)
 	{
-		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/'); # from root; end with /; ex: BP.'/app/views/'
-		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/'); # from root; end with /; ex: '/assets/'
-		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/public_html/assets/'); # from root; end with /; ex: BP.'/public_html/assets/'
-		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); # from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
-		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); # put in base_path dir; ex: 404-error.phtml
-		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); # put in base_path dir; ex: 401-error.phtml
-		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); # put in base_path dir; ex: 403-error.phtml
+		# from root; end with /; ex: BP.'/app/views/'
+		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/');
+		
+		# from root; end with /; ex: '/assets/'
+		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/');
+		
+		# from root; end with /; ex: BP.'/public_html/assets/'
+		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/public_html/assets/'); 
+		
+		# from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
+		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); 
+		
+		# put in base_path dir; ex: 404-error.phtml
+		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); 
+		
+		# put in base_path dir; ex: 401-error.phtml
+		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); 
+		
+		# put in base_path dir; ex: 403-error.phtml
+		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); 
+
+		# turn on or off page caching
+		$this->vars['cache'] = (isset($args['cache'])? $args['cache']:true);
 	}
 
 	/**
@@ -86,7 +103,7 @@ class PhpView
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
-		header("X-Powered-By: none");
+		header_remove("X-Powered-By");
 				
 		if (isset($this->vars['base_path']) and !$fullPath) {
 			$taView = $this->vars['base_path'].$taView;
@@ -143,18 +160,18 @@ class PhpView
 		if(isset($fileParts[0]) and isset($fileParts[1])) {
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
 		}
-
-		if ($this->metaData['_metaNoCache']) {
+		
+		if (!$this->vars['cache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
 			header_remove("Pragma");
 			header("Pragma: no-cache");
 			header_remove("Cache-Control");
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-		} else {
+		} else { 
 			header_remove("Pragma");
 			header('Cache-Control: max-age=604800, public'); # 7 days
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+7 days")).' GMT');
-		}	
+		}
 
 		if (isset($fileParts[1])) {
 			$this->metaData['_html'] = $fileParts[1];
@@ -205,7 +222,13 @@ class PhpView
 			$this->metaData['_headHTML'] = '';
 		}
 
-		$this->metaData['_metaNoCache'] = (array_key_exists('no_cache', $metaData)? true:false);
+		if (isset($metaData['cache'])) {
+			if ($metaData['cache'] == 1) {
+				$this->vars['cache'] = true;
+			} else {
+				$this->vars['cache'] = false;
+			}
+		}
 
 		$this->addInGlobalAssets($metaData, 'css');
 		$this->addInGlobalAssets($metaData, 'js');	 
