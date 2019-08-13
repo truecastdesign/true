@@ -61,7 +61,7 @@ class Functions
 		**/
 	public static function genToken($length = 64)
 	{
-		return substr(bin2hex(openssl_random_pseudo_bytes($length)), 0, $length);
+		return substr(bin2hex(openssl_random_pseudo_bytes($length)), 0, $length-1);
 	}
 
 	/**
