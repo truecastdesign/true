@@ -141,8 +141,9 @@ class Auth
 		
 		if (isset($type)) {
 			switch ($type) {
-					case 'bearer':
-						$headers = getallheaders();
+					case 'bearer': 
+						$headers = $this->requestHeaders();
+						
 						if (isset($headers['Authorization'])) {
 							$token = str_replace('Bearer ','',$headers['Authorization']);
 
@@ -378,5 +379,25 @@ class Auth
 	public function hashPassword($value, $cost = 15)
 	{
 		return password_hash($value, PASSWORD_BCRYPT, ["cost"=>$cost]);
+	}
+
+	/**
+	 * A replacement for apache_request_headers()
+	 * You need to add header redirects like the following for this method to work.
+	 * RewriteRule .? - [E=HEADER>Authorization:%{HTTP:Authorization}]
+	 * @return array
+	 */
+	public function requestHeaders()
+	{
+		$arh = [];
+		$rx_http = '/\AHEADER>/';
+		foreach($_SERVER as $key => $val) {
+			if( preg_match($rx_http, $key) ) {
+				$arh_key = preg_replace($rx_http, '', $key);
+				
+				$arh[$arh_key] = $val;
+			}
+		}
+		return( $arh );
 	}
 }
