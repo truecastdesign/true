@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.10.6
+v1.10.7
 
 These classes form the basic functionality of True framework.
 
@@ -23,13 +23,49 @@ $ composer require truecastdesign/true
 AddHandler application/x-httpd-php .html .phtml .php
 
 <IfModule mod_rewrite.c>
-  RewriteEngine On
+	RewriteEngine On
 
-  RewriteBase /
+	RewriteBase /
 
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ index.php [QSA,L]
+	RewriteRule .? - [E=HEADER>Authorization:%{HTTP:Authorization}]
+	RewriteRule .? - [E=HEADER>Accept:%{HTTP:Accept}]
+	RewriteRule .? - [E=HEADER>Accept-Charset:%{HTTP:Accept-Charset}]
+	RewriteRule .? - [E=HEADER>Access-Control-Request-Method:%{HTTP:Access-Control-Request-Method}]
+	RewriteRule .? - [E=HEADER>Cache-Control:%{HTTP:Cache-Control}]
+	RewriteRule .? - [E=HEADER>Connection:%{HTTP:Connection}]
+	RewriteRule .? - [E=HEADER>Content-Length:%{HTTP:Content-Length}]
+	RewriteRule .? - [E=HEADER>Content-Type:%{HTTP:Content-Type}]
+	RewriteRule .? - [E=HEADER>Date:%{HTTP:Date}]
+	RewriteRule .? - [E=HEADER>Expect:%{HTTP:Expect}]
+	RewriteRule .? - [E=HEADER>Forwarded:%{HTTP:Forwarded}]
+	RewriteRule .? - [E=HEADER>Host:%{HTTP:Host}]
+	RewriteRule .? - [E=HEADER>HTTP2-Settings:%{HTTP:HTTP2-Settings}]
+	RewriteRule .? - [E=HEADER>If-Match:%{HTTP:If-Match}]
+	RewriteRule .? - [E=HEADER>If-Modified-Since:%{HTTP:If-Modified-Since}]
+	RewriteRule .? - [E=HEADER>If-None-Match:%{HTTP:If-None-Match}]
+	RewriteRule .? - [E=HEADER>If-Range:%{HTTP:If-Range}]
+	RewriteRule .? - [E=HEADER>If-Unmodified-Since:%{HTTP:If-Unmodified-Since}]
+	RewriteRule .? - [E=HEADER>Origin:%{HTTP:Origin}]
+	RewriteRule .? - [E=HEADER>Pragma:%{HTTP:Pragma}]
+	RewriteRule .? - [E=HEADER>Proxy-Authorization:%{HTTP:Proxy-Authorization}]
+	RewriteRule .? - [E=HEADER>Range:%{HTTP:Range}]
+	RewriteRule .? - [E=HEADER>Referer:%{HTTP:Referer}]
+	RewriteRule .? - [E=HEADER>TE:%{HTTP:TE}]
+	RewriteRule .? - [E=HEADER>User-Agent:%{HTTP:User-Agent}]
+	RewriteRule .? - [E=HEADER>Upgrade:%{HTTP:Upgrade}]
+	RewriteRule .? - [E=HEADER>Upgrade-Insecure-Requests:%{HTTP:Upgrade-Insecure-Requests}]
+	RewriteRule .? - [E=HEADER>Via:%{HTTP:Via}]
+	RewriteRule .? - [E=HEADER>X-Requested-With:%{HTTP:X-Requested-With}]
+	RewriteRule .? - [E=HEADER>DNT:%{HTTP:DNT}]
+	RewriteRule .? - [E=HEADER>X-Forwarded-For:%{HTTP:X-Forwarded-For}]
+	RewriteRule .? - [E=HEADER>X-Forwarded-Host:%{HTTP:X-Forwarded-Host}]
+	RewriteRule .? - [E=HEADER>X-Forwarded-Proto:%{HTTP:X-Forwarded-Proto}]
+	RewriteRule .? - [E=HEADER>X-HTTP-Method-Override:%{HTTP:X-HTTP-Method-Override}]
+	RewriteRule .? - [E=HEADER>Proxy-Connection:%{HTTP:Proxy-Connection}]
+
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^ index.php [QSA,L]
 </IfModule>
 ```
 
