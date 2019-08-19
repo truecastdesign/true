@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.1
+ * @version 1.1.2
  */
 class DataCleaner
 {
@@ -14,13 +14,24 @@ class DataCleaner
 		return preg_replace("/[^A-Za-z0-9\.\-\,\#\ \;\:\'\°\/]/", '', $str);
 	}
 	
+	# Deprecated
 	public function intOnly($str)
 	{
-		#return filter_var($str,FILTER_VALIDATE_INT);
+		return preg_replace("/[^0-9]/", '', $str);
+	}
+
+	public function int($str)
+	{
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 	
+	# Deprecated
 	public function alphaOnly($str)
+	{
+		return preg_replace("/[^a-zA-Z]/", '', $str);
+	}
+
+	public function alpha($str)
 	{
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
