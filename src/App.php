@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.2
+ * @version 1.6.3
  */
 class App
 {
@@ -388,30 +388,25 @@ class App
 
 			if ($this->match) {
 				
-				$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data'];
+				$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+
+				$cleanedContentTypeParts = explode(';', $request->contentType);
+				$cleanedContentType = trim($cleanedContentTypeParts[0]);
 				
-				if ($request->method == 'POST' and in_array($request->contentType, $postContentTypes)) {
+				if ($request->method == 'POST' and in_array($cleanedContentType, $postContentTypes)) {
 					// parsed body must be $_POST
 					$request->post = (object)$_POST; 
 				}
 
-				if ($request->method == 'GET' and in_array($request->contentType, $postContentTypes)) {
+				if ($request->method == 'GET' and in_array($cleanedContentType, $postContentTypes)) {
 					$request->get = (object)$_GET;
 				}
 
-				if (in_array($request->contentType, ['application/json'])) {
+				if (in_array($cleanedContentType, ['application/json'])) {
 					$requestBody = file_get_contents('php://input');
 					$requestKey = strtolower($request->method);
 					if (!empty($requestBody)) {
-						$xml = simplexml_load_string($requestBody, "SimpleXMLElement", LIBXML_NOCDATA);
-						$json = json_encode($xml);
-						$array = json_decode($json, true);
-						if (!empty($xml)) {
-							$request->$requestKey = (object)$array;
-						}
-						else {
-							$request->$requestKey = (object)json_decode($requestBody, true);
-						}
+						$request->$requestKey = (object)json_decode($requestBody, true);
 					}
 				}
 				
@@ -571,19 +566,19 @@ class App
 		
 		switch ($type) {
 			case 'html':
-				header("Content-Type: text/html; charset=UTF-8");
+				header("Content-Type: text/html");
 			break;
 			case 'json':
-				header("Content-Type: application/json; charset=UTF-8");
+				header("Content-Type: application/json");
 			break;
 			case 'xml':
-				header("Content-Type: application/xml; charset=UTF-8");
+				header("Content-Type: application/xml");
 			break;
 			case 'text':
-				header("Content-Type: text/plain; charset=UTF-8");
+				header("Content-Type: text/plain");
 			break;
 			default:
-				header("Content-Type: text/html; charset=UTF-8");
+				header("Content-Type: text/html");
 		}
 
 		if (!is_null($code) and is_numeric($code)) {
