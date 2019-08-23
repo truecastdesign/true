@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.10.10
+v1.11.0
 
 These classes form the basic functionality of True framework.
 
@@ -82,15 +82,28 @@ require '../init.php';
 <?php
 session_start();
 
-error_reporting(E_ALL & ~E_NOTICE);
+define('BP', __DIR__);
 
 require 'vendor/autoload.php';
 
-define('BP', __DIR__);
-
 $App = new \True\App;
 
-$App->load(BP.'/app/config/site.ini');
+$App->load('../app/config/site.ini');
+
+$GLOBALS['debug'] = $App->config->site->debug;
+$GLOBALS['dev'] = $App->config->site->dev;
+
+if ($GLOBALS['debug']) {
+	error_reporting(E_ALL);
+} else {
+	error_reporting(E_ALL & E_WARNING & ~E_NOTICE);
+}
+
+$App->view = new \True\PhpView;
+
+# global css and js files
+$App->view->css = '/vendor/truecastdesign/true/assets/default.css, /assets/css/site.css'; # global css files
+$App->view->js = '/assets/js/file1.js, /assets/js/file2.js'; # global js files
 
 # check routes
 require 'app/routes.php';
