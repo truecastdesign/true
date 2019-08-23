@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.2.23
+ * @version 5.3.0
  */
 class PhpView
 {
@@ -61,6 +61,26 @@ class PhpView
 	}
 
 	/**
+	 * Use to access values in the $vars array
+	 *
+	 * Example: echo $App->view->passedKey
+	 * 
+	 *
+	 * @param string $key the key you want to return the value for.
+	 * @return string
+	 * @author Daniel Baldwin
+	 *
+	 */
+	public function __get($key)
+	{
+		if (array_key_exists($key, $this->vars)) {
+			return $this->vars[$key];
+		} else {
+			return '';
+		}
+	}
+
+	/**
 	 * Render views. Use .phtml file
 	 * Format files with meta data at the top with {endmeta} before the html starts
 	 * Meta data example (use ini format): 
@@ -97,7 +117,7 @@ class PhpView
 		$fullPath = ($taView[0] == '/')? true:false;
 
 		header('X-Frame-Options: SAMEORIGIN');
-		if ($_SERVER['HTTPS'] == 'on') {
+		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') {
 			header('Strict-Transport-Security: max-age=31536000');
 		}
 		header('X-Content-Type-Options: nosniff');

@@ -84,7 +84,7 @@ class Functions
 	**/
 	public static function parseUrl($url, $extra=false)
 	{
-		$output = (object)[];
+		$output = (object)['file'=>'', 'scheme'=>'', 'host'=>'', 'full_path'=>'', 'path'=>'', 'extension'=>'', 'filename'=>'', 'user'=>'', 'password'=>'', 'query'=>'', 'hash'=>''];
 
 		$file = basename($url); 
 		if (strstr($file, '.')) {
@@ -101,19 +101,28 @@ class Functions
 		}
 		
 		$parts = parse_url($url);
-		if (array_key_exists('scheme', $parts))
+		if (array_key_exists('scheme', $parts)) {
 			$output->scheme = $parts['scheme'];
-		if (array_key_exists('host', $parts))
+		}
+		if (array_key_exists('host', $parts)) {
 			$output->host = $parts['host'];
-		if (array_key_exists('path', $parts))
+		}
+		if (array_key_exists('path', $parts)) {
 			$output->full_path = $parts['path'];
+		}
 		
 		if (!empty($output->full_path)) {
 			$pathParts = pathinfo($output->full_path);
 			if (is_array($pathParts)) {
-				$output->path = $pathParts['dirname'];
-				$output->extension = $pathParts['extension'];
-				$output->filename = $pathParts['filename'];
+				if (array_key_exists('dirname', $pathParts)) {
+					$output->path = $pathParts['dirname'];
+				}
+				if (array_key_exists('extension', $pathParts)) {
+					$output->extension = $pathParts['extension'];
+				}
+				if (array_key_exists('filename', $pathParts)) {			
+					$output->filename = $pathParts['filename'];
+				}
 			}
 		}
 		

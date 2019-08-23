@@ -409,6 +409,9 @@ class App
 						$request->$requestKey = (object)json_decode($requestBody, true);
 					}
 				}
+
+				# make $request object available whereever $App is available like in the view. Should not be used by controllers. Use the passed $request object where available.
+				$this->container['request'] = $request;
 				
 				if (is_string($callable)) { 
 					$this->includeController($callable, $request, $customControllerPath);
