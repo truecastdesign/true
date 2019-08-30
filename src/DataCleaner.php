@@ -5,73 +5,73 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.1.2
+ * @version 1.1.3
  */
 class DataCleaner
 {
-	public function streetAddress($str)
+	public static function streetAddress($str)
 	{
 		return preg_replace("/[^A-Za-z0-9\.\-\,\#\ \;\:\'\°\/]/", '', $str);
 	}
 	
 	# Deprecated
-	public function intOnly($str)
+	public static function intOnly($str)
 	{
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 
-	public function int($str)
+	public static function int($str)
 	{
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 	
 	# Deprecated
-	public function alphaOnly($str)
+	public static function alphaOnly($str)
 	{
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
 
-	public function alpha($str)
+	public static function alpha($str)
 	{
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
 	
-	public function alphaInt($str)
+	public static function alphaInt($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9]/", '', $str);
 	}
 	
-	public function name($str)
+	public static function name($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\ \.\-\&\/\(\)\,\']/", '', $str); 
 	}
 	
-	public function decimal($str)
+	public static function decimal($str)
 	{
 		return preg_replace("/[^0-9\.\-]/", '', $str);
 	}
 	
-	public function filePath($str)
+	public static function filePath($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-]/", '', $str);
 	}
 	
-	public function dbField($str)
+	public static function dbField($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-\_\ ]/", '', $str);
 	}
 	
-	public function creditCard($str)
+	public static function creditCard($str)
 	{
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 
-	public function postalCode($str)
+	public static function postalCode($str)
 	{
 		return preg_replace("/[^a-zA-Z0-9\-\ ]/", '', $str);
 	}
 	
-	public function addDashes($CC_Num, $CC_Type)
+	public static function addDashes($CC_Num, $CC_Type)
 	{ 
 		switch($CC_Type)
 		{
@@ -89,22 +89,22 @@ class DataCleaner
 		return $NewCC; 
 	}
 	
-	public function email($str)
+	public static function email($str)
 	{
 		return filter_var($str,FILTER_SANITIZE_EMAIL);
 	}
 	
-	public function url($str)
+	public static function url($str)
 	{
 		return filter_var($str,FILTER_SANITIZE_URL);
 	}
 	
-	public function ip($str)
+	public static function ip($str)
 	{
 		return filter_var($str,FILTER_VALIDATE_IP);
 	}
 
-	public function float($str)
+	public static function float($str)
 	{
 		return filter_var($str, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 	}
@@ -117,7 +117,7 @@ class DataCleaner
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function phoneFormat($ph, $type=1, $noCountryCode=false) 
+	public static function phoneFormat($ph, $type=1, $noCountryCode=false) 
 	{
 		if (strstr($ph, 'x')) {
 			return $ph;
@@ -181,7 +181,7 @@ class DataCleaner
 		
 	}
 
-	public function titleCase($string) 
+	public static function titleCase($string) 
 	{
 		$word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc', 'Mac');
 		$lowercase_exceptions = array('the', 'van', 'den', 'von', 'und', 'der', 'de', 'da', 'of', 'and', "l'", "d'");
@@ -211,7 +211,7 @@ class DataCleaner
 		return $string; 
 	}
 
-	public function postalCodeFormat($string, $country='US')
+	public static function postalCodeFormat($string, $country='US')
 	{
 		switch ($country) {
 			case 'US':
@@ -240,7 +240,7 @@ class DataCleaner
 		}
 	}
 
-	public function splitName($name)
+	public static function splitName($name)
 	{
 	    $name = trim($name);
 	    $last_name = (strpos($name, ' ') === false) ? '' : preg_replace('#.*\s([\w-]*)$#', '$1', $name);
@@ -248,7 +248,7 @@ class DataCleaner
 	    return array($first_name, $last_name);
 	}
 	
-	public function convertNum($num) 
+	public static function convertNum($num) 
 	{
 		// returns the number as an anglicized string
 		$num = (int) $num;    // make sure it's an integer
@@ -328,7 +328,7 @@ class DataCleaner
 		return preg_replace(array('/\s{2,}/', '/[\t\n\r]/'), ' ', $str);
 	}
 	
-	public function encodeQuotes($str)
+	public static function encodeQuotes($str)
 	{
 		$searchChars[] = "'";
 		$searchChars[] = '"';
@@ -337,19 +337,19 @@ class DataCleaner
 		return str_replace($searchChars,$replaceChars,$str);
 	}
 	
-	function forHtmlEditors($str)
+	public static function forHtmlEditors($str)
 	{
 		return str_replace("&",'&amp;',$str);
 	}
 	
-	function htmlOutput($str)
+	public static function htmlOutput($str)
 	{
 		$find = array(" & ");
 		$replace = array(' &amp; ');
 		return str_replace($find,$replace,$str);
 	}
 	
-	function sanitize($str, $santype = 1)
+	public static function sanitize($str, $santype = 1)
 	{
 		if ($santype == 1) return strip_tags($str);
 		if ($santype == 2) return htmlentities(strip_tags($str),ENT_QUOTES,'UTF-8');
@@ -360,12 +360,12 @@ class DataCleaner
 		}
 	}
 	
-	function escape($str)
+	public static function escape($str)
 	{
 		return mysql_real_escape_string($str);
 	}
 	
-	function xss($str)
+	public static function xss($str)
 	{
 		if (is_array($str))
 		{
@@ -611,7 +611,7 @@ class DataCleaner
 		return $str;
 	}
 	
-	function xss_hash()
+	public static function xss_hash()
 	{
 		if (phpversion() >= 4.2)
 			mt_srand();
