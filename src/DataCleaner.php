@@ -527,7 +527,7 @@ class DataCleaner
 
 			// We only want to do this when it is followed by a non-word character
 			// That way valid stuff like "dealer to" does not become "dealerto"
-			$str = preg_replace_callback('#('.substr($temp, 0, -3).')(\W)#is', array($this, '_compact_exploded_words'), $str);
+			$str = preg_replace_callback('#('.substr($temp, 0, -3).')(\W)#is', array(self, '_compact_exploded_words'), $str);
 		}
 
 		/*
@@ -541,12 +541,12 @@ class DataCleaner
 
 			if (preg_match("/<a/i", $str))
 			{
-				$str = preg_replace_callback("#<a\s+([^>]*?)(>|$)#si", array($this, '_js_link_removal'), $str);
+				$str = preg_replace_callback("#<a\s+([^>]*?)(>|$)#si", array(self, '_js_link_removal'), $str);
 			}
 
 			if (preg_match("/<img/i", $str))
 			{
-				$str = preg_replace_callback("#<img\s+([^>]*?)(\s?/?>|$)#si", array($this, '_js_img_removal'), $str);
+				$str = preg_replace_callback("#<img\s+([^>]*?)(\s?/?>|$)#si", array(self, '_js_img_removal'), $str);
 			}
 
 			if (preg_match("/script/i", $str) OR preg_match("/xss/i", $str))
@@ -590,7 +590,7 @@ class DataCleaner
 		*
 		*/
 		$naughty = 'alert|applet|audio|basefont|base|behavior|bgsound|blink|body|embed|expression|form|frameset|frame|head|html|ilayer|iframe|input|isindex|layer|link|meta|object|plaintext|style|script|textarea|title|video|xml|xss';
-		$str = preg_replace_callback('#<(/*\s*)('.$naughty.')([^><]*)([><]*)#is', array($this, '_sanitize_naughty_html'), $str);
+		$str = preg_replace_callback('#<(/*\s*)('.$naughty.')([^><]*)([><]*)#is', array(self, '_sanitize_naughty_html'), $str);
 
 		/*
 		* Sanitize naughty scripting elements
