@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.0
+ * @version 5.3.1
  */
 class PhpView
 {
@@ -140,6 +140,22 @@ class PhpView
 			include $taView;
 		$fileContents = ob_get_clean();
 
+		# find the break point for the meta data
+		$fileParts = explode("{endmeta}", $fileContents, 2);
+		
+		# if no {endmeta}, just use the file contents
+		if (count($fileParts) == 1) {
+			$fileParts[1] = $fileContents;
+			unset($fileParts[0]);
+		}
+
+		# override for file based meta data with $App->view->meta_name
+		$this->processMetaData($this->vars);
+
+		if(isset($fileParts[0]) and isset($fileParts[1])) {
+			$this->processMetaData( parse_ini_string($fileParts[0]) );
+		}
+
 		# insert template into page if needed
 		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
 		
@@ -147,6 +163,8 @@ class PhpView
 			foreach ($outputArray[1] as $partial)
 			{
 				ob_start();
+					extract($variables);
+					extract($this->metaData);
 					include BP.'/app/views/_partials/'.$partial;
 				$replaceTags[] = ob_get_clean();
 				$searchTags[] = "{partial:".$partial."}";
@@ -158,28 +176,12 @@ class PhpView
 				$replaceTags[] = '';
 				$searchTags[] = $tag;
 			}
-		}		
-
-		# find the break point for the meta data
-		$fileParts = explode("{endmeta}", $fileContents, 2);
-		
-		# if no {endmeta}, just use the file contents
-		if (count($fileParts) == 1) {
-			$fileParts[1] = $fileContents;
-			unset($fileParts[0]);
 		}
 
 		# find and replace special tags
 		if (isset($fileParts[1])) {
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
-		}
-
-		# override for file based meta data with $App->view->meta_name
-		$this->processMetaData($this->vars);
-
-		if(isset($fileParts[0]) and isset($fileParts[1])) {
-			$this->processMetaData( parse_ini_string($fileParts[0]) );
-		}
+		}		
 		
 		if (!$this->vars['cache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');

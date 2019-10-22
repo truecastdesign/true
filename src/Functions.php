@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.1
+ * @version 1.6.2
  */
 class Functions
 {
@@ -383,11 +383,12 @@ class Functions
 	 * @param string $string
 	 * @return string
 	 */
-	public function addPtags(string $string): string
+	public static function addPtags(string $string): string
 	{
 		#return "<p>" . implode( "</p>\n\n<p>", preg_split( '/(?:\s*\n)+/', $string ) ) . "</p>";
 
 		$pre_tags = array();
+		$br = false;
 
 		$pee = $string;
 
@@ -555,7 +556,7 @@ class Functions
 	 * @param array $replace_pairs In the form array('from' => 'to', ...).
 	 * @return string The formatted text.
 	 */
-	public function replaceInHtmlTags( $haystack, $replace_pairs ) {
+	public static function replaceInHtmlTags( $haystack, $replace_pairs ) {
 		// Find all elements.
 		$textarr = self::htmlSplit( $haystack );
 		$changed = false;
@@ -605,7 +606,7 @@ class Functions
 	 * @param string $input The text which has to be formatted.
 	 * @return array The formatted text.
 	 */
-	function htmlSplit( $input ) {
+	public static function htmlSplit( $input ) {
 		$comments =
 			'!'             // Start of comment, after the <.
 			. '(?:'         // Unroll the loop: Consume everything until --> is found.
@@ -694,7 +695,7 @@ class Functions
 	 * @param  array $array ['key1'=>1, 'key3'=>3]
 	 * @return bool true if all the given keys exist in the given array, false if any are missing.
 	 */
-	public function keys_exist($keys, $array)
+	public static function keys_exist($keys, $array)
 	{
 		if (0 === count(array_diff($keys, array_keys($array)))) {
 			return true;
