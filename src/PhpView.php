@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.1
+ * @version 5.3.2
  */
 class PhpView
 {
@@ -266,15 +266,15 @@ class PhpView
 	 **/
 	private function addInGlobalAssets($metaData = [], $type = '')
 	{
-		if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
+		/*if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
 		{
 			$metaData[$type] = trim($this->vars[$type]). ','. $metaData[$type];
 		}	
 		elseif(array_key_exists($type,$this->vars))
 		{
 			$metaData[$type] = trim($this->vars[$type]);
-		}
-
+		}*/
+		
 		if(array_key_exists($type,$metaData))
 		{
 			$assetListTmp = explode(',',$metaData[$type]);
