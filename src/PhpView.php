@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.2
+ * @version 5.3.3
  */
 class PhpView
 {
@@ -149,11 +149,10 @@ class PhpView
 			unset($fileParts[0]);
 		}
 
-		# override for file based meta data with $App->view->meta_name
-		$this->processMetaData($this->vars);
-
 		if(isset($fileParts[0]) and isset($fileParts[1])) {
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
+		} else {
+			$this->processMetaData($this->vars);
 		}
 
 		# insert template into page if needed
@@ -266,14 +265,14 @@ class PhpView
 	 **/
 	private function addInGlobalAssets($metaData = [], $type = '')
 	{
-		/*if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
+		if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
 		{
 			$metaData[$type] = trim($this->vars[$type]). ','. $metaData[$type];
 		}	
 		elseif(array_key_exists($type,$this->vars))
 		{
 			$metaData[$type] = trim($this->vars[$type]);
-		}*/
+		}
 		
 		if(array_key_exists($type,$metaData))
 		{
@@ -284,7 +283,7 @@ class PhpView
 
 				if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 				{
-					$assetList[] = BP.'/'.rtrim($value, '/');
+					$assetList[] = BP.rtrim($value, '/');
 				}
 				elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
 				{
@@ -297,10 +296,12 @@ class PhpView
 			}
 			
 			# build js files
-			if($type == 'js' and is_array($assetList))
+			if($type == 'js' and is_array($assetList)) {
 				$this->metaData['_js'] = $this->buildJSFile($assetList);
-			elseif($type == 'css' and is_array($assetList))
+			}
+			elseif($type == 'css' and is_array($assetList)) {
 				$this->metaData['_css'] = $this->buildCSSFile($assetList);
+			}
 		}
 		else
 		{
@@ -335,8 +336,9 @@ class PhpView
 			else
 			{
 				# make one instance of SCSS parser
-				if(in_array('.scss', $cssList) !== false)
+				if(in_array('.scss', $cssList) !== false) {
 					$TAscss = new \True\SCSS;
+				}
 			
 				$cachedStr = '';
 			
