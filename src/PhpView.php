@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.3
+ * @version 5.3.4
  */
 class PhpView
 {
@@ -149,10 +149,11 @@ class PhpView
 			unset($fileParts[0]);
 		}
 
-		if(isset($fileParts[0]) and isset($fileParts[1])) {
+		
+		if(isset($fileParts[0]) and isset($fileParts[1])) { # does the template have meta data
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
 		} else {
-			$this->processMetaData($this->vars);
+			$this->processMetaData(); # just process global meta data
 		}
 
 		# insert template into page if needed
@@ -220,27 +221,67 @@ class PhpView
 
 	private function processMetaData($metaData = null)
 	{	
-		# add title and description to globals array
-		if($metaData == null)
+		if($metaData == null) {
 			$metaData = [];
-		
-		if(isset($metaData['title'])) {
-			$this->metaData['_metaTitle'] = trim($metaData['title']);
-		}			
-		
-		if(isset($metaData['description'])) {
-			$this->metaData['_metaDescription'] = trim($metaData['description']);
-		}
-		
-		if(isset($metaData['linkText'])) {
-			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
 		}
 
-		if(isset($metaData['head_html'])) {
-			$this->metaData['_headHTML'] = trim($metaData['head_html']);
+		$css = [];
+		$js = [];
+
+		# add in global vars
+		if (isset($this->vars['title'])) {
+			$this->metaData['_metaTitle'] = trim($this->vars['title']);
+		}			
+		
+		if (isset($this->vars['description'])) {
+			$this->metaData['_metaDescription'] = trim($this->vars['description']);
+		}
+		
+		if (isset($this->vars['linkText'])) {
+			$this->metaData['_metaLinkText'] = trim($this->vars['linkText']);
+		}
+
+		if (isset($this->vars['headHtml'])) {
+			$this->metaData['_headHTML'] = trim($this->vars['headHtml']);
 		}
 		else {
 			$this->metaData['_headHTML'] = '';
+		}
+
+		if (isset($this->vars['css'])) {
+			$css = explode(',',trim($this->vars['css']));
+		}
+		
+		if (isset($this->vars['js'])) {
+			$js = explode(',',trim($this->vars['js']));
+		}
+
+		# template meta
+		if (isset($metaData['title'])) {
+			$this->metaData['_metaTitle'] = trim($metaData['title']);
+		}			
+		
+		if (isset($metaData['description'])) {
+			$this->metaData['_metaDescription'] = trim($metaData['description']);
+		}
+		
+		if (isset($metaData['linkText'])) {
+			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
+		}
+
+		if (isset($metaData['headHtml'])) {
+			$this->metaData['_headHTML'] = trim($metaData['headHtml']);
+		}
+		else {
+			$this->metaData['_headHTML'] = '';
+		}
+
+		if (isset($metaData['css'])) {
+			$css = array_merge($css, explode(',',trim($metaData['css'])));
+		}
+
+		if (isset($metaData['js'])) {
+			$js = array_merge($js, explode(',',trim($metaData['js'])));
 		}
 
 		if (isset($metaData['cache'])) {
@@ -251,64 +292,34 @@ class PhpView
 			}
 		}
 
-		$this->addInGlobalAssets($metaData, 'css');
-		$this->addInGlobalAssets($metaData, 'js');	 
+		$css = $this->processAssetsPaths($css);
+		$js = $this->processAssetsPaths($js);
+		
+		$this->metaData['_js'] = $this->buildJSFile($js);		
+		$this->metaData['_css'] = $this->buildCSSFile($css);
 	}
 
-	/**
-	 * add in global assets like js and css files
-	 *
-	 * @param array $metaData
-	 * @param string $type css, js, etc
-	 * @return array of type $metaData
-	 * @author Daniel Baldwin - danb@truecastdesign.com
-	 **/
-	private function addInGlobalAssets($metaData = [], $type = '')
+	private function processAssetsPaths($list)
 	{
-		if(array_key_exists($type,$this->vars) and array_key_exists($type,$metaData))
+		foreach($list as $value)
 		{
-			$metaData[$type] = trim($this->vars[$type]). ','. $metaData[$type];
-		}	
-		elseif(array_key_exists($type,$this->vars))
-		{
-			$metaData[$type] = trim($this->vars[$type]);
-		}
-		
-		if(array_key_exists($type,$metaData))
-		{
-			$assetListTmp = explode(',',$metaData[$type]);
-			foreach($assetListTmp as $value)
+			$value = trim($value);
+
+			if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 			{
-				$value = trim($value);
-
-				if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
-				{
-					$assetList[] = BP.rtrim($value, '/');
-				}
-				elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
-				{
-					$assetList[] = $_SERVER['DOCUMENT_ROOT'].$value;
-				}
-				elseif(!empty($value))
-				{
-					$assetList[] = $value;
-				}
+				$assetList[] = BP.rtrim($value, '/');
 			}
-			
-			# build js files
-			if($type == 'js' and is_array($assetList)) {
-				$this->metaData['_js'] = $this->buildJSFile($assetList);
+			elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
+			{
+				$assetList[] = $_SERVER['DOCUMENT_ROOT'].$value;
 			}
-			elseif($type == 'css' and is_array($assetList)) {
-				$this->metaData['_css'] = $this->buildCSSFile($assetList);
+			elseif(!empty($value))
+			{
+				$assetList[] = $value;
 			}
 		}
-		else
-		{
-			$this->metaData['_'.$type] = '';
-		}	
 
-		return $metaData;
+		return $assetList;
 	}
 
 	/**
@@ -378,11 +389,8 @@ class PhpView
 	 * @return string html for including js files
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	private function buildJSFile($jsFiles)
+	private function buildJSFile(array $jsFiles)
 	{
-		if(!is_array($jsFiles)) 
-			return false;
-
 		$cacheFilename = $this->generateFileHash($jsFiles);
 
 		$jsCachePath = $this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
