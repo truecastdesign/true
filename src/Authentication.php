@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 3.2.1
+ * @version 3.2.2
  * 
  * Fixed password and username cleaning to allow for capitals.
  * Change the realName() function to fullName() to match the users method called.
@@ -317,8 +317,13 @@ class Authentication
 	 */
 	private function getCookies()
 	{
-		$this->curUser = $_COOKIE[$this->cookieUser];
-		$this->id_hash = $_COOKIE[$this->cookieHash];
+		if (isset($_COOKIE[$this->cookieUser])) {
+			$this->curUser = $_COOKIE[$this->cookieUser];
+		}
+
+		if (isset($_COOKIE[$this->cookieHash])) {
+			$this->id_hash = $_COOKIE[$this->cookieHash];
+		}
 	}
 	
 	/**
