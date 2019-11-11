@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.5
+ * @version 5.3.6
  */
 class PhpView
 {
@@ -110,6 +110,10 @@ class PhpView
 		$replaceTags = [];
 		$searchTags = [];
 
+		if (!is_array($variables)) {
+			\trigger_error("variables passed needs to be inside an array. ['varname'=>'value'].", 256);
+		}
+
 		if (empty($taView) or $taView == '.phtml') {
 			$taView = 'index.phtml';
 		}
@@ -135,8 +139,11 @@ class PhpView
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
 
+		global $App;
+
 		ob_start(); 
 			extract($variables);
+			extract($this->metaData);
 			include $taView;
 		$fileContents = ob_get_clean();
 
@@ -204,16 +211,16 @@ class PhpView
 		else {
 			$this->metaData['_html'] = '';
 		}
+
+		extract($this->metaData);
+		extract($variables);
+		
 		
 		if (isset($this->vars['layout'])) {
-			extract($this->metaData);
-			extract($variables);
-			global $App;
 			require_once $this->vars['layout'];
 			die();
 		}	
 		else {
-			extract($variables);
 			echo $this->metaData['_html'];
 			die();
 		}
