@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.4
+ * @version 5.3.5
  */
 class PhpView
 {
@@ -295,12 +295,19 @@ class PhpView
 		$css = $this->processAssetsPaths($css);
 		$js = $this->processAssetsPaths($js);
 		
-		$this->metaData['_js'] = $this->buildJSFile($js);		
-		$this->metaData['_css'] = $this->buildCSSFile($css);
+		if (is_array($js)) {	
+			$this->metaData['_js'] = $this->buildJSFile($js);		
+		}
+
+		if (is_array($css)) {
+			$this->metaData['_css'] = $this->buildCSSFile($css);
+		}
 	}
 
 	private function processAssetsPaths($list)
 	{
+		$assetList = [];
+		
 		foreach($list as $value)
 		{
 			$value = trim($value);
