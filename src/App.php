@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.4
+ * @version 1.6.5
  */
 class App
 {
@@ -573,6 +573,9 @@ class App
 			break;
 			case 'json':
 				header("Content-Type: application/json");
+				if (is_array($body)) {
+					$body = json_encode($body);
+				}
 			break;
 			case 'xml':
 				header("Content-Type: application/xml");
