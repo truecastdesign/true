@@ -7,7 +7,7 @@ namespace True;
 *
 * @package True Framework
 * @author Daniel Baldwin
-* @version 1.2.0
+* @version 1.3.0
 */
 class Auth
 {
@@ -102,6 +102,19 @@ class Auth
 			return true;
 		else
 			return false;
+	}
+
+	/** 
+	 * Get one of the valid tokens for use
+	 */
+	public function getToken()
+	{
+		$tokens = file_get_contents($this->bearerTokensFile);
+
+		if (!empty($tokens)) {
+			return strtok($tokens, "\n");
+		}
+		return false;
 	}
 
 	public function setSessionToken()
