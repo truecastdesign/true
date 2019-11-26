@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.5
+ * @version 1.6.6
  */
 class App
 {
@@ -179,17 +179,39 @@ class App
 	}
 
 	/**
+	 * For http requests, use this for properties on all the request methods as the third paramiter. 
+	 * 	['header'=>["Cache-Control: no-cache, no-store, must-revalidate", "Authorization: Bearer "+token]] or
+	 * 	['header'=>"Authorization: Bearer "+token]
+	 * 	['query'=>['var'=>1, 'var2'=>2]]
+	 * 	['body'=>['var'=>1, 'var2'=>2]]
+	 * 	['timeout'=>20]
+	 * 	['type']
+	 * 
+	 * 	$App->post('http://www.batterystuff.test/api/search/index/categories/8111', ['var'], function($response) {
+
+	 * 	}, ['type'=>'json', 'header'=>"Authorization: Bearer "+token]);
+	 * 
+	 * 	$App->get('http://www.batterystuff.test/api/search/index/categories/8111', function($response) {
+
+	 * 	}, ['type'=>'json', 'header'=>"Authorization: Bearer "+token]);
+	 */
+
+	/**
 	 * Add GET route (Retrieve a representation of a resource.)
 	 *
 	 * @param  string $pattern  The route URI pattern
 	 * @param  callable|string  $callable The route callback routine or controller if string
-	 * @param  bool $customControllerPath Custom controller path if true
+	 * @param  bool $customControllerPath Custom controller path if true. 
 	 *
 	 * @return null
 	 */
 	public function get($pattern, $callable, $customControllerPath = false)
 	{
-		$this->router(['GET'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('GET', $pattern, [], $callable, $customControllerPath);
+		} else {
+			$this->router(['GET'], $pattern, $callable, $customControllerPath);
+		}		
 	}
 
 	/**
@@ -201,9 +223,13 @@ class App
 	 *
 	 * @return null
 	 */
-	public function post($pattern, $callable, $customControllerPath = false)
+	public function post($pattern, $callable, $customControllerPath = false, $extra = null)
 	{
-		$this->router(['POST'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('POST', $pattern, $callable, $customControllerPath, $extra);
+		} else {
+			$this->router(['POST'], $pattern, $callable, $customControllerPath);
+		}
 	}
 
 	/**
@@ -215,9 +241,13 @@ class App
 	 *
 	 * @return null
 	 */
-	public function put($pattern, $callable, $customControllerPath = false)
+	public function put($pattern, $callable, $customControllerPath = false, $extra = null)
 	{
-		$this->router(['PUT'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('PUT', $pattern, $callable, $customControllerPath, $extra);
+		} else {
+			$this->router(['PUT'], $pattern, $callable, $customControllerPath);
+		}
 	}
 
 	/**
@@ -229,9 +259,13 @@ class App
 	 *
 	 * @return null
 	 */
-	public function patch($pattern, $callable, $customControllerPath = false)
+	public function patch($pattern, $callable, $customControllerPath = false, $extra = null)
 	{
-		$this->router(['PATCH'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('PATCH', $pattern, $callable, $customControllerPath, $extra);
+		} else {
+			$this->router(['PATCH'], $pattern, $callable, $customControllerPath);
+		}
 	}
 
 	/**
@@ -243,9 +277,13 @@ class App
 	 *
 	 * @return null
 	 */
-	public function delete($pattern, $callable, $customControllerPath = false)
+	public function delete($pattern, $callable, $customControllerPath = false, $extra = null)
 	{
-		$this->router(['DELETE'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('DELETE', $pattern, $callable, $customControllerPath, $extra);
+		} else {
+			$this->router(['DELETE'], $pattern, $callable, $customControllerPath);
+		}
 	}
 
 	/**
@@ -257,9 +295,13 @@ class App
 	 *
 	 * @return null
 	 */
-	public function options($pattern, $callable, $customControllerPath = false)
+	public function options($pattern, $callable, $customControllerPath = false, $extra = null)
 	{
-		$this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
+		if (substr($pattern, 0, 4 ) == "http") {
+			$this->request('OPTIONS', $pattern, $callable, $customControllerPath, $extra);
+		} else {
+			$this->router(['OPTIONS'], $pattern, $callable, $customControllerPath);
+		}
 	}
 
 	/**
@@ -493,6 +535,7 @@ class App
 		$request->path = $_SERVER['REQUEST_URI'];
 		$request->method = $_SERVER['REQUEST_METHOD'];
 		$request->ip = $_SERVER['REMOTE_ADDR'];
+		$request->status = http_response_code();
 
 		if (isset($_SERVER['CONTENT_TYPE'])) {
 			$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
@@ -631,6 +674,107 @@ class App
 
 		echo $body;
 		die();
+	}
+
+	/**
+	 * Creates a request to a server. Use the get, post, etc. methods to access it.
+	 *
+	 * @param string $method GET, POST, etc
+	 * @param string $url 'http://www.server.com'
+	 * @param callable function $callable function($response) {}
+	 * @param array $options see comment above get method
+	 * @return void
+	 */
+	public function request($method, $url, $body, $callable, $options)
+	{
+		$protocol = 'http';
+		$stream['method'] = $method;
+		$stream['header'] = [];
+
+		if (array_key_exists('header', $options)) {
+			if (is_array($options['header'])) {
+				$stream['header'] = $options['header'];
+			} else {
+				$stream['header'][] = $options['header'];
+			}			
+		}
+		
+		if (array_key_exists('type', $options)) {
+			if ($options['type'] == 'json') {
+				$stream['header'][] = 'Content-Type: application/json';
+			} elseif ($options['type'] == 'xml') {
+				$stream['header'][] = 'Content-Type: application/xml';
+			} elseif ($options['type'] == 'form') {
+				$stream['header'][] = 'Content-Type: application/x-www-form-urlencoded';
+			}
+		} else {
+			$options['type'] = 'text';
+		}
+
+		if (array_key_exists('timeout', $options)) {
+			$stream['timeout'] = $options['timeout'];
+		}
+
+		if (array_key_exists('proxy', $options)) {
+			$stream['proxy'] = $options['proxy'];
+		}
+
+		if (substr($url, 0, 5 ) == "https") {
+			$stream['ssl'] = ['SNI_enabled' => false];
+			$protocol = 'https';
+		}
+
+		if (array_key_exists('query', $options)) {
+			$url = $url.'?'.http_build_query($context['query']);
+		}
+
+		if (is_array($body) and count($body) > 0) {
+			if ($options['type'] == 'json') {
+				$stream['content'] = json_encode($body);
+			} elseif ($options['type'] == 'xml') {
+				$xml = new SimpleXMLElement('<root/>');
+				array_walk_recursive($body, array($xml, 'addChild'));
+				$stream['content'] = $xml->asXML();
+			} elseif ($options['type'] == 'form') {
+				$stream['content'] = http_build_query($body);
+			}
+		} elseif (!empty($body)) {
+			$stream['content'] = $body;
+		}
+
+		$stream['ignore_errors'] = true;
+		
+		$context = stream_context_create([$protocol=>$stream]);
+		#$context['ignore_errors'] = true;
+
+		$responseBody = file_get_contents($url, false, $context);
+		
+		$response = (object)[];
+
+		$response->body = $responseBody;
+		$response->headers = [];
+
+		foreach ($http_response_header as $header) {
+			if (! preg_match('/^([^:]+):(.*)$/', $header, $output)) continue;	
+			
+			if ($output[1] == 'Set-Cookie') {
+				$cookies[] = $output[2];
+			} else {
+				$response->headers[$output[1]] = $output[2];
+			}			
+		} 
+
+		if (isset($cookies)) {
+			$response->headers['Cookies'] = $cookies;
+		}
+		#preg_match('/^(\w+)\/(\d+\.\d+) (\d+) (.+?)$/', $status_line, $matches)
+		preg_match('|HTTP/\d\.\d\s+(\d+)\s+.*|',$http_response_header[0],$match);
+		$response->status = $match[1];
+
+		if (is_callable($callable)) {
+			$callbackArgs[] = $response;
+			call_user_func_array($callable, $callbackArgs);
+		}
 	}
 
 	/**
@@ -971,6 +1115,10 @@ class App
 	/**
 	* Get all HTTP header key/values as an associative array for the current request.
 	* Written by ralouphie - https://github.com/ralouphie
+	*
+	* A replacement for apache_request_headers()
+	* You need to add header redirects like the following for this method to work.
+	* RewriteRule .? - [E=HTTP_>Authorization:%{HTTP:Authorization}]
 	*
 	* @return string[string] The HTTP header key/value pairs.
 	*/
