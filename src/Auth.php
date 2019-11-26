@@ -3,11 +3,15 @@ namespace True;
 
 /**
  * Auth class for authenticating api calls
+ * 
+ * Add the below code to your .htaccess file in the <IfModule mod_rewrite.c> section.
+ * # Pass Authorization headers to an environment variable
+ * RewriteRule .? - [E=HTTP_Authorization:%{HTTP:Authorization}]
 
 *
 * @package True Framework
 * @author Daniel Baldwin
-* @version 1.3.0
+* @version 1.3.1
 */
 class Auth
 {
@@ -155,7 +159,7 @@ class Auth
 		if (isset($type)) {
 			switch ($type) {
 					case 'bearer': 
-						$headers = $this->requestHeaders();
+						$headers = $this->getallheaders();
 						
 						if (isset($headers['Authorization'])) {
 							$token = str_replace('Bearer ','',$headers['Authorization']);
@@ -412,5 +416,40 @@ class Auth
 			}
 		}
 		return( $arh );
+	}
+
+	/**
+	* Get all HTTP header key/values as an associative array for the current request.
+	* Written by ralouphie - https://github.com/ralouphie
+	*
+	* A replacement for apache_request_headers()
+	* You need to add header redirects like the following for this method to work.
+	* RewriteRule .? - [E=HTTP_>Authorization:%{HTTP:Authorization}]
+	*
+	* @return string[string] The HTTP header key/value pairs.
+	*/
+	protected function getallheaders()
+	{
+		$headers = array();
+		$copy_server = array(
+			'CONTENT_TYPE'   => 'Content-Type',
+			'CONTENT_LENGTH' => 'Content-Length',
+			'CONTENT_MD5'    => 'Content-Md5',
+		);
+		foreach ($_SERVER as $key => $value) {
+			if (substr($key, 0, 5) === 'HTTP_') {
+				 $key = substr($key, 5);
+				 if (!isset($copy_server[$key]) || !isset($_SERVER[$key])) {
+					  $key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
+					  $headers[$key] = $value;
+				 }
+			} elseif (isset($copy_server[$key])) {
+				 $headers[$copy_server[$key]] = $value;
+			}
+		}
+		if (!isset($headers['Authorization']) and isset($_SERVER['Authorization'])) {
+			$headers['Authorization'] = $_SERVER['Authorization'];
+		}
+		return $headers;
 	}
 }
