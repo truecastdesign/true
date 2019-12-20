@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.13.1
+v1.14.0
 
 These classes form the basic functionality of True framework.
 
@@ -103,7 +103,18 @@ $App->view = new \True\PhpView;
 
 # global css and js files
 $App->view->css = '/vendor/truecastdesign/true/assets/default.css, /assets/css/site.css'; # global css files
+# You can also add them on separate lines or different places in your code
+$App->view->css = '/assets/example1.css';
+$App->view->css = '/assets/example2.css';
+# both will be combined and minified. This works for JS files as well.
+
 $App->view->js = '/assets/js/file1.js, /assets/js/file2.js'; # global js files
+
+# If you need to pass variables to the layout template or page template globally, you can use the variables key on the PhpView object as an key value array item.
+$App->view->variables = ['key'=>'value'];
+$App->view->variables = ['key2'=>'value2'];
+$App->view->variables = ['key'=>'value', 'key3'=>'value3'];
+# all the arrays will get merged together so you can keep added them and they will all be available. In the view: <?=$key?> <?=$key2?> <?=$key3?>
 
 # check routes
 require 'app/routes.php';

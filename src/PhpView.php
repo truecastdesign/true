@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.6
+ * @version 5.3.8
  */
 class PhpView
 {
@@ -46,18 +46,37 @@ class PhpView
 
 		# turn on or off page caching
 		$this->vars['cache'] = (isset($args['cache'])? $args['cache']:true);
+
+		# global variables for layout template
+		$this->vars['variables'] = (isset($args['variables'])? $args['variables']:[]);
 	}
 
 	/**
 	 * Used to add global css and js files
 	 * ex: $App->view->css = 'assets/css/global.css';
+	 * $App->view->modified // set to date time modified for page
+	 * $App->view->timezone // use to set the timezone of the modified date so it will be converted to GMT
 	 *
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
 	public function __set($key, $value)
 	{
-		$this->vars[$key] = $value;
+		switch ($key) {
+			case 'variables':
+				$this->vars['variables'] = array_merge($this->vars['variables'], $value);
+			break;
+			case 'css':
+			case 'js':
+				if (!empty($this->vars[$key])) {
+					$this->vars[$key] .= ', '.$value;
+				} else {
+					$this->vars[$key] = $value;
+				}		 
+			break;
+			default:
+				$this->vars[$key] = $value;
+		}	
 	}
 
 	/**
@@ -88,14 +107,8 @@ class PhpView
 	 * description="The text that goes in the meta description tag" -> access using $_metaDescription
 	 * css="/assets/css/site.css, /vendor/company/project/assets/css/style.css, /app/assets/css/style2.css" -> access using $_css
 	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"  -> access using $_js
-	 * no_cache # use no_cache for pages you don't want the browser to cache
-	 * sort=1 # sort the pages so they display in a navigation in a certain order
-	 * not_live # not live to the public
-	 * label="A short label to identify the page"
-	 * not_in_nav # remove it from nav but not from public view
-	 * limit_access # restrict access to only users who are part of the provided group or groups
-	 * groups[] = members # groups that are allowed to access this page
-	 * head_html="<script type="module" src="path/to/file.js"></script>" -> access using $_headHTML
+	 * cache=false # use for pages you don't want the browser to cache
+	 * headHtml="<script type="module" src="path/to/file.js"></script>" -> access using $_headHTML
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
@@ -128,6 +141,17 @@ class PhpView
 		header('Referrer-Policy: same-origin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
 		header_remove("X-Powered-By");
+		
+		if (isset($this->vars['modified'])) {
+			if (isset($this->vars['timezone'])) {
+				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
+				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$modifiedDate = new \DateTime($this->vars['modified']);
+			}		
+
+			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s") . " GMT");
+		}
 				
 		if (isset($this->vars['base_path']) and !$fullPath) {
 			$taView = $this->vars['base_path'].$taView;
@@ -142,6 +166,7 @@ class PhpView
 		global $App;
 
 		ob_start(); 
+			extract($this->vars['variables']);
 			extract($variables);
 			extract($this->metaData);
 			include $taView;
@@ -170,6 +195,7 @@ class PhpView
 			foreach ($outputArray[1] as $partial)
 			{
 				ob_start();
+					extract($this->vars['variables']);
 					extract($variables);
 					extract($this->metaData);
 					include BP.'/app/views/_partials/'.$partial;
@@ -213,8 +239,8 @@ class PhpView
 		}
 
 		extract($this->metaData);
-		extract($variables);
-		
+		extract($this->vars['variables']);
+		extract($variables);		
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];

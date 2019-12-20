@@ -775,24 +775,28 @@ class Functions
 	 **/
 	public static function findRecords($records, $field, $value, $type)
 	{
+		$result = [];
+		
 		# check to see if $records is an array of objects or arrays
-		if(is_object(current($records))) {
-			foreach($records as $item) {
-				if(stripos($item->$field, $value) !== false) {
+		if (is_object(current($records))) {
+			foreach ($records as $item) {
+				if (stripos($item->$field, strval($value)) !== false) {
 					$result[] = $item;
 				}
 			}
 		} else {
-			foreach($records as $key => $item) {
-				if(stripos($item[$field], $value) !== false) {
+			foreach ($records as $key => $item) {
+				if (stripos($item[$field], strval($value)) !== false) {
 					$result[] = (object) $item;
 				}
 			}
 		}
 		
-		if($type == 'array') {
-			return (object) $result[0];
-		} elseif($type == '2dim') {
+		if ($type == 'array') {
+			if (isset($result[0])) {
+				return (object) $result[0];
+			}			
+		} elseif ($type == '2dim') {
 			return $result;
 		}
 	}
