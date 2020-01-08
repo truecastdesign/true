@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.6
+ * @version 1.6.7
  */
 class App
 {
@@ -440,7 +440,7 @@ class App
 					$request->post = (object)$_POST; 
 				}
 
-				if ($request->method == 'GET' and !in_array($cleanedContentType, ['application/json'])) {
+				if ($request->method == 'GET') {
 					$request->get = (object)$_GET;
 				}
 
