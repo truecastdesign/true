@@ -437,8 +437,8 @@ class Auth
 			'CONTENT_MD5'    => 'Content-Md5',
 		);
 		foreach ($_SERVER as $key => $value) {
-			if (substr($key, 0, 5) === 'HEADER') {
-				 $key = substr($key, 5);
+			if (substr($key, 0, 6) === 'HEADER') {
+				 $key = substr($key, 7);
 				 if (!isset($copy_server[$key]) || !isset($_SERVER[$key])) {
 					  $key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
 					  $headers[$key] = $value;
