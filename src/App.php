@@ -144,7 +144,7 @@ class App
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function write(string $filename, $data, bool $append)
+	public function write(string $filename, $data, bool $append = false)
 	{
 		$content = '';
 		$sections = '';
