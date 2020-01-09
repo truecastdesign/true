@@ -11,7 +11,7 @@ namespace True;
 *
 * @package True Framework
 * @author Daniel Baldwin
-* @version 1.3.1
+* @version 1.3.2
 */
 class Auth
 {
@@ -424,7 +424,7 @@ class Auth
 	*
 	* A replacement for apache_request_headers()
 	* You need to add header redirects like the following for this method to work.
-	* RewriteRule .? - [E=HTTP_>Authorization:%{HTTP:Authorization}]
+	* RewriteRule .? - [E=HEADER>Authorization:%{HTTP:Authorization}]
 	*
 	* @return string[string] The HTTP header key/value pairs.
 	*/
@@ -437,7 +437,7 @@ class Auth
 			'CONTENT_MD5'    => 'Content-Md5',
 		);
 		foreach ($_SERVER as $key => $value) {
-			if (substr($key, 0, 5) === 'HTTP_') {
+			if (substr($key, 0, 5) === 'HEADER') {
 				 $key = substr($key, 5);
 				 if (!isset($copy_server[$key]) || !isset($_SERVER[$key])) {
 					  $key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));

@@ -151,18 +151,8 @@ class App
 		$globals = '';
 		$fileContents = '';
 
-		// no sections
-
-		if (is_object($data)) {
-			$values = (array)$data;
-			foreach($values as $key => $value) {
-				$content.= "\n" . $key . "=" . $this->normalizeValue($value);
-			}
-		}
-
 		// has sections
-
-		elseif (is_array($data)) {
+		if (is_array(reset($data))) {
 			foreach($data as $section => $values) {
 				$content.= "\n[" . $section . "]";
 				foreach($values as $key => $value) {
@@ -170,7 +160,14 @@ class App
 				}
 			}
 		}
-
+		// no sections
+		elseif (is_object($data)) {
+			$values = (array)$data;
+			foreach($values as $key => $value) {
+				$content.= "\n" . $key . "=" . $this->normalizeValue($value);
+			}
+		}
+			echo $content;
 		if ($append) {
 			$fileContents = file_get_contents($filename) . "\n";
 		}
