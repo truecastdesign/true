@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.8
+ * @version 1.6.7
  */
 class App
 {

@@ -378,12 +378,23 @@ class Functions
 	}
 
 	/**
+	 * A lightweight convert text with two line breaks to text with <p> tags wrapped around each paragraph. Leaves any existing html in the text alone.
+	 *
+	 * @param string $string
+	 * @return string
+	 */
+	public function addPtags(string $string): string
+	{
+		return "<p>" . implode( "</p>\n\n<p>", preg_split( '/(?:\s*\n)+/', $string ) ) . "</p>";
+	}
+
+	/**
 	 * Convert text with two line breaks to text with <p> tags wrapped around each paragraph. Leaves any existing html in the text alone.
 	 *
 	 * @param string $string
 	 * @return string
 	 */
-	public static function addPtags(string $string): string
+	public static function addPtagsExtra(string $string): string
 	{
 		#return "<p>" . implode( "</p>\n\n<p>", preg_split( '/(?:\s*\n)+/', $string ) ) . "</p>";
 
