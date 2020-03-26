@@ -181,7 +181,7 @@ class DataCleaner
 		
 	}
 
-	public function currency($str)
+	public static function currency($str)
 	{
 		return '$'.number_format($str, 2, '.', ',');
 	}
