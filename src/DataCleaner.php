@@ -181,6 +181,11 @@ class DataCleaner
 		
 	}
 
+	public function currency($str)
+	{
+		return '$'.number_format($str, 2, '.', ',');
+	}
+
 	public static function titleCase($string) 
 	{
 		$word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc', 'Mac');
