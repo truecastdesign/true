@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.9
+ * @version 1.6.10
  */
 class App
 {
@@ -19,7 +19,12 @@ class App
 	 */
 	public function __construct($files = null)
 	{
-		$this->load($files);
+		$this->container['config'] = (object)[];
+		
+		if (is_string($files)) {
+			$this->load($files);
+		}
+		
 		$GLOBALS['pageErrors'] = '';
 		$GLOBALS['errorUserError'] = '';
 		$GLOBALS['errorUserWarning'] = '';
@@ -42,8 +47,6 @@ class App
 	 */
 	public function load($files)
 	{
-		$this->container['config'] = (object)[];
-
 		// multiple files
 		if (strpos($files, ',')) {
 			$filesList = explode(',', $files);
