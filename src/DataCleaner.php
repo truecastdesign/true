@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.2.0
+ * @version 1.3.0
  */
 class DataCleaner
 {
@@ -98,7 +98,13 @@ class DataCleaner
 	{
 		return filter_var($str,FILTER_SANITIZE_URL);
 	}
-	
+
+	# remove urls from string
+	public static function filterOutURLs($str) 
+	{
+		return preg_replace('/\b((https?|ftp|file|http):\/\/|www\.)[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]/i', ' ', $str);
+	}
+
 	public static function ip($str)
 	{
 		return filter_var($str,FILTER_VALIDATE_IP);
