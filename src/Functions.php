@@ -383,7 +383,7 @@ class Functions
 	 * @param string $string
 	 * @return string
 	 */
-	public function addPtags(string $string): string
+	public static function addPtags(string $string): string
 	{
 		return "<p>" . implode( "</p>\n\n<p>", preg_split( '/(?:\s*\n)+/', $string ) ) . "</p>";
 	}
