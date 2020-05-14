@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.0
+ * @version 1.8.0
  */
 class App
 {
@@ -436,7 +436,7 @@ class App
 			$urlElements = explode('/', $requestUrl);
 			
 			$request = $this->makeRequestObject();
-
+			
 			// if not * found, than check to make sure pattern elements count and url elements count match
 
 			if (strstr($pattern, '*') === false) {
@@ -489,27 +489,7 @@ class App
 
 			if ($this->match) {
 				
-				$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
-
-				$cleanedContentTypeParts = explode(';', $request->contentType);
-				$cleanedContentType = trim($cleanedContentTypeParts[0]);
 				
-				if ($request->method == 'POST' and in_array($cleanedContentType, $postContentTypes)) {
-					// parsed body must be $_POST
-					$request->post = (object)$_POST; 
-				}
-
-				if ($request->method == 'GET' and !in_array($cleanedContentType, ['application/json'])) {
-					$request->get = (object)$_GET;
-				}
-
-				if (in_array($cleanedContentType, ['application/json'])) {
-					$requestBody = file_get_contents('php://input');
-					$requestKey = strtolower($request->method);
-					if (!empty($requestBody)) {
-						$request->$requestKey = json_decode($requestBody);
-					}
-				}
 
 				# make $request object available whereever $App is available like in the view. Should not be used by controllers. Use the passed $request object where available.
 				$this->container['request'] = $request;
@@ -650,11 +630,39 @@ class App
 		}
 
 		if (isset($_FILES)) {
-			$request->files = $_FILES;
+			$request->files = (object)[];
+			foreach ($_FILES as $name=>$file) {
+				$request->files->{$name} = new \True\File($file);
+			}
+			
+		}
+
+		$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+				
+		$cleanedContentTypeParts = explode(';', $request->contentType);
+		$cleanedContentType = trim($cleanedContentTypeParts[0]);
+		
+		if ($request->method == 'POST' and in_array($cleanedContentType, $postContentTypes)) {
+			// parsed body must be $_POST
+			$request->post = (object)$_POST; 
+		}
+
+		if ($request->method == 'GET' and !in_array($cleanedContentType, ['application/json'])) {
+			$request->get = (object)$_GET;
+		}
+		
+		if (in_array($cleanedContentType, ['application/json'])) {
+			$requestBody = file_get_contents('php://input');
+			$requestKey = strtolower($request->method);
+			if (!empty($requestBody)) {
+				$request->$requestKey = json_decode($requestBody);
+			}
 		}
 
 		return $request;		
 	}
+
+	
 
 	/**
 	 * Create and output response
