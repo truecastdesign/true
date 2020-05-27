@@ -1,11 +1,14 @@
 <?php
 namespace True;
+
+use Exception;
+
 /**
  * App class for main framework interactions
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.1
+ * @version 1.8.2
  */
 class App
 {
@@ -57,6 +60,11 @@ class App
 
 		foreach($filesList as $file) {
 			$file = trim($file);
+
+			// default to BP./app/config/ dir
+			if (substr($file, 0, 1 ) != "/") {
+				$file = BP.'/app/config/'.$file;
+			}
 
 			// convert file into array
 			if (file_exists($file)) {
@@ -199,6 +207,10 @@ class App
 			$data = (array)$data;
 		}
 
+		if (!is_array($data)) {
+			throw new Exception("The data provided was not an array or object!");
+		}
+
 		$content = '';		
 		
 		if (isset($section)) {
@@ -236,9 +248,8 @@ class App
 				$content .= "\n".$key."=".$value;
 			}
 		}
-
-		file_put_contents($filename, $content);
 		
+		file_put_contents($filename, $content);		
 	}
 
 	/**
