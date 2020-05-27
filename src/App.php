@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.0
+ * @version 1.8.1
  */
 class App
 {
@@ -147,7 +147,7 @@ class App
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function write(string $filename, $data, bool $append)
+	public function write(string $filename, $data, bool $append = false)
 	{
 		$content = '';
 		$sections = '';
@@ -185,7 +185,7 @@ class App
 	 * Update config ini file
 	 *
 	 * @param string $filename full path or filename in app/config dir
-	 * @param object $data
+	 * @param object|array $data ['field'=>'value', 'field'=>'value']
 	 * @param string $section example: site
 	 * @return void
 	 */
@@ -195,46 +195,50 @@ class App
 			$filename = BP.'/app/config/'.$filename;
 		}
 
-		$content = '';
 		if (is_object($data)) {
-			$values = (array)$data;
-			if (isset($section)) {
-				$content .= "[".$section."]";
-			}
-			foreach($values as $key => $value) {
-				if (is_array($value)) {
-					foreach ($value as $item) {
-						if (is_numeric($item)) {
-							$item = $item;
-						} elseif (is_string($item)) {
-							if (empty($item)) {
-								$item = '0';
-							} else {
-								$item = '"'.$item.'"';
-							}
+			$data = (array)$data;
+		}
+
+		$content = '';		
+		
+		if (isset($section)) {
+			$content .= "[".$section."]";
+		}
+
+		foreach($data as $key => $value) {
+			if (is_array($value)) {
+				foreach ($value as $item) {
+					if (is_numeric($item)) {
+						$item = $item;
+					} elseif (is_string($item)) {
+						if (empty($item)) {
+							$item = '0';
 						} else {
-							$item = ($item? 1:0);
-						}
-						$content .= "\n".$key."[]=".$item;
-					}
-				} else {
-					if (is_numeric($value)) {
-						$value = $value;
-					} elseif (is_string($value)) {
-						if (empty($value)) {
-							$value = '0';
-						} else {
-							$value = '"'.$value.'"';
+							$item = '"'.$item.'"';
 						}
 					} else {
-						$value = ($value? 1:0);
+						$item = ($item? 1:0);
 					}
-					$content .= "\n".$key."=".$value;
+					$content .= "\n".$key."[]=".$item;
 				}
+			} else {
+				if (is_numeric($value)) {
+					$value = $value;
+				} elseif (is_string($value)) {
+					if (empty($value)) {
+						$value = '0';
+					} else {
+						$value = '"'.$value.'"';
+					}
+				} else {
+					$value = ($value? 1:0);
+				}
+				$content .= "\n".$key."=".$value;
 			}
-
-			file_put_contents($filename, $content);
 		}
+
+		file_put_contents($filename, $content);
+		
 	}
 
 	/**

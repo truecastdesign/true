@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.3.8
+ * @version 5.4.0
  */
 class PhpView
 {
@@ -97,6 +97,15 @@ class PhpView
 		} else {
 			return '';
 		}
+	}
+
+	/**
+	 * Allows you to clear out js and css files to cache
+	 *
+	 * @param string $key
+	 */
+	public function __unset($key) {
+		$this->vars[$key] = '';
 	}
 
 	/**
