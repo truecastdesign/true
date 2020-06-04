@@ -8,7 +8,7 @@ namespace True;
  * Extend this class to get access to standard methods without writing them each time.
  *
  * @author Dan Baldwin
- * @version 1.4.7
+ * @version 1.4.8
  */
  
  class GenericClass
@@ -44,6 +44,13 @@ namespace True;
 	 */
 	public function get($id=null, $options=null)
 	{
+		$where = '';
+		$orderby = '';
+		$limit = '';
+		if (!isset($options['values'])) {
+			$options['values'] = [];
+		}
+		
 		if(!isset($options['fields'])) $options['fields']='*';
 		if(!isset($options['idField'])) $options['idField']='id';
 		
