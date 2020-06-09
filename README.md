@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.19.2
+v1.20.0
 
 These classes form the basic functionality of True framework.
 
@@ -350,8 +350,22 @@ The second parameter is an array of variable that will be available to the page.
 $App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.phtml');
 ```
 
+### Emailing
 
+True has a builtin SMTP email class for sending out emails using a SMTP email account for better deliverability and features.
 
+```php
+$mail = new \True\Email('domain.com', 465);
+$mail->setLogin('user@domain.com', 'password')
+->setFrom('user@domain.com')
+->addTo('user@domain.com')
+->setSubject('Test subject')
+->setHtmlMessage('<strong>HTML Text Message</strong>');
+
+if (!$mail->send()) {
+	echo 'Error sending email';   
+}
+```
 
 Usage
 -----
