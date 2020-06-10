@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.1
+ * @version 1.1.1
  * 
 $mail = new \True\Email('domain.com', 465);
 $mail->setLogin('user@domain.com', 'password')
@@ -116,7 +116,6 @@ class Email
 		$this->connectionTimeout = $connectionTimeout;
 		$this->responseTimeout = $responseTimeout;
 		$this->hostname = empty($hostname) ? gethostname() : $hostname;
-		$this->headers['X-Mailer'] = 'TrueEmail';
 		$this->headers['MIME-Version'] = '1.0';
 	}
 
