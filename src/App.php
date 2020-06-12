@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.2
+ * @version 1.8.3
  */
 class App
 {
@@ -693,6 +693,7 @@ class App
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
 		header_remove("X-Powered-By");
+		header_remove("cache-control");
 		
 		switch ($type) {
 			case 'html':

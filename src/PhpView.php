@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.4.0
+ * @version 5.5.0
  */
 class PhpView
 {
@@ -259,6 +259,34 @@ class PhpView
 			echo $this->metaData['_html'];
 			die();
 		}
+	}
+
+	/**
+	 * Simple way to display error pages
+	 * 
+	 * Be sure to have the error page view files created based on the names listed at the top of this script.
+	 *
+	 * @param integer $type
+	 * @return void
+	 */
+	public function error(int $type)
+	{
+		switch ($type) {
+			case 404:
+				header("HTTP/2 404 Not Found");
+				$this->render($this->vars['404']);
+			break;
+
+			case 401:
+				header("HTTP/2 401 Unauthorized");
+				$this->render($this->vars['401']);
+			break;
+
+			case 403:
+				header("HTTP/2 401 Forbidden");
+				$this->render($this->vars['403']);
+			break;
+		}		
 	}
 
 	private function processMetaData($metaData = null)

@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.20.1
+v1.21.0
 
 These classes form the basic functionality of True framework.
 
@@ -348,6 +348,12 @@ The second parameter is an array of variable that will be available to the page.
 
 ```php
 $App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.phtml');
+```
+
+### Render an error page
+
+```php
+$App->view->error(404); // other errors supported: 401, 403
 ```
 
 ### Emailing
