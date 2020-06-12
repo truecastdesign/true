@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.0
+ * @version 5.5.1
  */
 class PhpView
 {
@@ -56,6 +56,9 @@ class PhpView
 	 * ex: $App->view->css = 'assets/css/global.css';
 	 * $App->view->modified // set to date time modified for page
 	 * $App->view->timezone // use to set the timezone of the modified date so it will be converted to GMT
+	 * $App->view->title // use to set the title tag value
+	 * $App->view->description // use to set the meta description and og:description value
+	 * $App->view->canonical // use to set the canonical url value
 	 *
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
@@ -310,6 +313,10 @@ class PhpView
 		if (isset($this->vars['linkText'])) {
 			$this->metaData['_metaLinkText'] = trim($this->vars['linkText']);
 		}
+		
+		if (isset($this->vars['canonical'])) {
+			$this->metaData['_metaCanonical'] = trim($this->vars['canonical']);
+		}
 
 		if (isset($this->vars['headHtml'])) {
 			$this->metaData['_headHTML'] = trim($this->vars['headHtml']);
@@ -337,6 +344,10 @@ class PhpView
 		
 		if (isset($metaData['linkText'])) {
 			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
+		}
+
+		if (isset($metaData['canonical'])) {
+			$this->metaData['_metaCanonical'] = trim($metaData['canonical']);
 		}
 
 		if (isset($metaData['headHtml'])) {

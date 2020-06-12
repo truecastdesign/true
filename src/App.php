@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.3
+ * @version 1.8.4
  */
 class App
 {
@@ -621,7 +621,10 @@ class App
 		
 		$request->url->host = $_SERVER['HTTP_HOST'];
 		$request->url->full = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		
+		$request->url->protocol = $_SERVER['REQUEST_SCHEME'];
+		$request->url->protocolhost = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
+		$request->url->scheme = $_SERVER['REQUEST_SCHEME'].'://';
+
 		$urlParts = Functions::parseUrl($request->url->full);
 		
 		if (isset($urlParts->domain)) {

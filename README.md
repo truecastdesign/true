@@ -327,6 +327,17 @@ Set to true or false. Caching is on by default and set to expire in 1 week. Indi
 $App->view->cache = true; 
 ```
 
+#### Other variables
+
+```php
+$App->view->title = "Title Tag";  // Output variable: $_metaTitle
+$App->view->description = "This is the meta description and og:description";  // Output variable: $_metaDescription
+$App->view->canonical = "http://www.domain.com/canonical-url"; // Output variable: $_metaCanonical
+$App->view->linkText = "Clickable Text to link to page"; // Output variable: $_metaLinkText
+$App->view->headHtml = "<script src='/path/js/dom/js'></script>"; // Output variable: $_headHTML
+```
+
+
 ### Creating and Using View Files
 
 View files need to be named {name}.phtml
