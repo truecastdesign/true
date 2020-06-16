@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.4
+ * @version 1.9.0
  */
 class App
 {
@@ -149,107 +149,41 @@ class App
 	 * Write a data object to a ini file
 	 *
 	 * @param $filename, path and filename of ini file
-	 * @param $data, array of objects for configs with sections and just an object for no sections for ini file
-	 * @param $append, true if you want to append to end of file
+	 * @param array $data []
 	 * @return void
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function write(string $filename, $data, bool $append = false)
+	public function writeConfig(string $filename, array $data, array $parent = array())
 	{
-		$content = '';
-		$sections = '';
-		$globals = '';
-		$fileContents = '';
-
-		// no sections
-
-		if (is_object($data)) {
-			$values = (array)$data;
-			foreach($values as $key => $value) {
-				$content.= "\n" . $key . "=" . $this->normalizeValue($value);
-			}
-		}
-
-		// has sections
-
-		elseif (is_array($data)) {
-			foreach($data as $section => $values) {
-				$content.= "\n[" . $section . "]";
-				foreach($values as $key => $value) {
-					$content.= "\n" . $key . "=" . $this->normalizeValue($value);
-				}
-			}
-		}
-
-		if ($append) {
-			$fileContents = file_get_contents($filename) . "\n";
-		}
-
-		file_put_contents($filename, $fileContents . $content);
-	}
-
-	/**
-	 * Update config ini file
-	 *
-	 * @param string $filename full path or filename in app/config dir
-	 * @param object|array $data ['field'=>'value', 'field'=>'value']
-	 * @param string $section example: site
-	 * @return void
-	 */
-	public function updateConfigFile(string $filename, $data, $section = null)
-	{
+		$out = $this->writeConfigRec($data);
+		
 		if (substr($filename, 0, 1 ) != "/") {
 			$filename = BP.'/app/config/'.$filename;
 		}
-
-		if (is_object($data)) {
-			$data = (array)$data;
-		}
-
-		if (!is_array($data)) {
-			throw new Exception("The data provided was not an array or object!");
-		}
-
-		$content = '';		
 		
-		if (isset($section)) {
-			$content .= "[".$section."]";
-		}
+		file_put_contents($filename, $out);
+	}
 
-		foreach($data as $key => $value) {
-			if (is_array($value)) {
-				foreach ($value as $item) {
-					if (is_numeric($item)) {
-						$item = $item;
-					} elseif (is_string($item)) {
-						if (empty($item)) {
-							$item = '0';
-						} else {
-							$item = '"'.$item.'"';
-						}
-					} else {
-						$item = ($item? 1:0);
-					}
-					$content .= "\n".$key."[]=".$item;
-				}
-			} else {
-				if (is_numeric($value)) {
-					$value = $value;
-				} elseif (is_string($value)) {
-					if (empty($value)) {
-						$value = '0';
-					} else {
-						$value = '"'.$value.'"';
-					}
-				} else {
-					$value = ($value? 1:0);
-				}
-				$content .= "\n".$key."=".$value;
+	private function writeConfigRec(array $data, array $parent = array())
+	{
+		$out = '';
+		foreach ($data as $k => $v) {
+			if (is_array($v)) {
+					//subsection case
+					//merge all the sections into one array...
+					$sec = array_merge((array) $parent, (array) $k);
+					//add section information to the output
+					$out .= '[' . join('.', $sec) . ']' . PHP_EOL;
+					//recursively traverse deeper
+					$out .= $this->writeConfigRec($v, $sec);
+			}
+			else {
+					//plain key->value case
+					$out .= $k.'="'.$v.'"'.PHP_EOL;
 			}
 		}
-		
-		file_put_contents($filename, $content);		
+		return $out;
 	}
 
 	/**
@@ -528,7 +462,7 @@ class App
 	 * 	$App->get('/api/one/*:path', function($request) use ($App) {
 	 *			Run code
 	 * 	});
-    *	}, [ new \App\AuthMiddleware ]);
+	 *	}, [ new \App\AuthMiddleware ]);
 	 *
 	 * @param [type] $pattern url path to match with path parts and asterisk. Does not support or pass on variables.
 	 * @param function $callable a closure or callable function
@@ -869,50 +803,50 @@ class App
 	}
 
 	/**
-     * Parse a non-normalized, i.e. $_FILES superglobal, tree of uploaded file data.
-     *
-     * @param array $uploadedFiles The non-normalized tree of uploaded file data.
-     *
-     * @return array A normalized tree of UploadedFile instances.
-     */
-    private static function parseUploadedFiles(array $uploadedFiles)
-    {
-        $parsed = [];
-        foreach ($uploadedFiles as $field => $uploadedFile) {
-            if (!isset($uploadedFile['error'])) {
-                if (is_array($uploadedFile)) {
-                    $parsed[$field] = static::parseUploadedFiles($uploadedFile);
-                }
-                continue;
-            }
+	  * Parse a non-normalized, i.e. $_FILES superglobal, tree of uploaded file data.
+	  *
+	  * @param array $uploadedFiles The non-normalized tree of uploaded file data.
+	  *
+	  * @return array A normalized tree of UploadedFile instances.
+	  */
+	 private static function parseUploadedFiles(array $uploadedFiles)
+	 {
+		  $parsed = [];
+		  foreach ($uploadedFiles as $field => $uploadedFile) {
+				if (!isset($uploadedFile['error'])) {
+					 if (is_array($uploadedFile)) {
+						  $parsed[$field] = static::parseUploadedFiles($uploadedFile);
+					 }
+					 continue;
+				}
 
-            $parsed[$field] = [];
-            if (!is_array($uploadedFile['error'])) {
-                $parsed[$field] = new static(
-                    $uploadedFile['tmp_name'],
-                    isset($uploadedFile['name']) ? $uploadedFile['name'] : null,
-                    isset($uploadedFile['type']) ? $uploadedFile['type'] : null,
-                    isset($uploadedFile['size']) ? $uploadedFile['size'] : null,
-                    $uploadedFile['error'],
-                    true
-                );
-            } else {
-                $subArray = [];
-                foreach ($uploadedFile['error'] as $fileIdx => $error) {
-                    // normalise subarray and re-parse to move the input's keyname up a level
-                    $subArray[$fileIdx]['name'] = $uploadedFile['name'][$fileIdx];
-                    $subArray[$fileIdx]['type'] = $uploadedFile['type'][$fileIdx];
-                    $subArray[$fileIdx]['tmp_name'] = $uploadedFile['tmp_name'][$fileIdx];
-                    $subArray[$fileIdx]['error'] = $uploadedFile['error'][$fileIdx];
-                    $subArray[$fileIdx]['size'] = $uploadedFile['size'][$fileIdx];
+				$parsed[$field] = [];
+				if (!is_array($uploadedFile['error'])) {
+					 $parsed[$field] = new static(
+						  $uploadedFile['tmp_name'],
+						  isset($uploadedFile['name']) ? $uploadedFile['name'] : null,
+						  isset($uploadedFile['type']) ? $uploadedFile['type'] : null,
+						  isset($uploadedFile['size']) ? $uploadedFile['size'] : null,
+						  $uploadedFile['error'],
+						  true
+					 );
+				} else {
+					 $subArray = [];
+					 foreach ($uploadedFile['error'] as $fileIdx => $error) {
+						  // normalise subarray and re-parse to move the input's keyname up a level
+						  $subArray[$fileIdx]['name'] = $uploadedFile['name'][$fileIdx];
+						  $subArray[$fileIdx]['type'] = $uploadedFile['type'][$fileIdx];
+						  $subArray[$fileIdx]['tmp_name'] = $uploadedFile['tmp_name'][$fileIdx];
+						  $subArray[$fileIdx]['error'] = $uploadedFile['error'][$fileIdx];
+						  $subArray[$fileIdx]['size'] = $uploadedFile['size'][$fileIdx];
 
-                    $parsed[$field] = static::parseUploadedFiles($subArray);
-                }
-            }
-        }
+						  $parsed[$field] = static::parseUploadedFiles($subArray);
+					 }
+				}
+		  }
 
-        return $parsed;
-    }
+		  return $parsed;
+	 }
 
 	/**
 	 * [includeController description]
