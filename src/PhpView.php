@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.1
+ * @version 5.5.2
  */
 class PhpView
 {
@@ -154,16 +154,7 @@ class PhpView
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
 		header_remove("X-Powered-By");
 		
-		if (isset($this->vars['modified'])) {
-			if (isset($this->vars['timezone'])) {
-				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
-				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$modifiedDate = new \DateTime($this->vars['modified']);
-			}		
-
-			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s") . " GMT");
-		}
+		
 				
 		if (isset($this->vars['base_path']) and !$fullPath) {
 			$taView = $this->vars['base_path'].$taView;
@@ -173,6 +164,25 @@ class PhpView
 			header("HTTP/1.1 404 Not Found");
 			$this->metaData['_metaTitle'] = "File Not Found";
 			$taView = $this->vars['base_path'].$this->vars['404'];
+		}
+
+		if (isset($this->vars['modified'])) {
+			if (isset($this->vars['timezone'])) {
+				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
+				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$modifiedDate = new \DateTime($this->vars['modified']);
+			}		
+
+			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
+		} else {
+			if (isset($this->vars['timezone'])) {
+				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)), new \DateTimeZone($this->vars['timezone']));
+				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
+			}
+			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
 		}
 
 		global $App;

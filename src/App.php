@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.9.0
+ * @version 1.9.1
  */
 class App
 {
@@ -702,99 +702,95 @@ class App
 	 * Creates a request to a server. Use the get, post, etc. methods to access it.
 	 *
 	 * @param string $method GET, POST, etc
-	 * @param string $url 'http://www.server.com'
+	 * @param string $endpoint 'http://www.server.com'
 	 * @param callable function $callable function($response) {}
 	 * @param array $options ['type'=>'json|xml|form', 'timeout'=>'360', 'tlsv1.2'=>true, 'proxy'=>'', 'query'=>'']
 	 * @return void
 	 */
-	public function request($method, $url, $callable, $body, $options)
-	{
-		$protocol = 'http';
-		$stream['method'] = $method;
-		$stream['header'] = [];
+	public function request($method, $endpoint, $callable, $body, $options) {
+		$method = strtoupper($method);
+		$ciphers = '';
 
-		if (array_key_exists('header', $options)) {
-			if (is_array($options['header'])) {
-				$stream['header'] = $options['header'];
+		if (array_key_exists('headers', $options)) {
+			if (is_array($options['headers'])) {
+				$headers = $options['headers'];
 			} else {
-				$stream['header'][] = $options['header'];
+				$headers[] = $options['headers'];
 			}			
 		}
-		
+
+		if (array_key_exists('timeout', $options)) {
+			$timeout = "--connect-timeout ".$options['timeout'];
+		} else {
+			$timeout = "--connect-timeout 60";
+		}
+
 		if (array_key_exists('type', $options)) {
 			if ($options['type'] == 'json') {
-				$stream['header'][] = 'Content-Type: application/json';
+				$headers[] = 'Content-Type: application/json';
 			} elseif ($options['type'] == 'xml') {
-				$stream['header'][] = 'Content-Type: application/xml';
+				$headers[] = 'Content-Type: application/xml';
 			} elseif ($options['type'] == 'form') {
-				$stream['header'][] = 'Content-Type: application/x-www-form-urlencoded';
+				$headers[] = 'Content-Type: application/x-www-form-urlencoded';
 			}
 		} else {
 			$options['type'] = 'text';
 		}
 
-		if (array_key_exists('timeout', $options)) {
-			$stream['timeout'] = $options['timeout'];
-		}
-
-		if (array_key_exists('proxy', $options)) {
-			$stream['proxy'] = $options['proxy'];
-		}
-
 		if (substr($url, 0, 5 ) == "https") {
-			$stream['ssl'] = ['SNI_enabled' => false];
 			if (array_key_exists('tlsv1.2', $options) and $options['tlsv1.2']) {
-				$stream['ssl']['ciphers'] = 'DEFAULT:!TLSv1.0:!TLSv1.1:!SSLv3';
+				$ciphers = '--ciphers DEFAULT:!TLSv1.0:!TLSv1.1:!SSLv3';
 			}
-			$protocol = 'https';
 		}
 
 		if (array_key_exists('query', $options)) {
-			$url = $url.'?'.http_build_query($context['query']);
+			$endpoint = $endpoint.'?'.http_build_query($options['query']);
 		}
 
 		if (is_array($body) and count($body) > 0) {
 			if ($options['type'] == 'json') {
-				$stream['content'] = json_encode($body);
+				$body = json_encode($body);
+				$headers[] = "Accept: application/json";
 			} elseif ($options['type'] == 'xml') {
 				$xml = new SimpleXMLElement('<root/>');
 				array_walk_recursive($body, array($xml, 'addChild'));
-				$stream['content'] = $xml->asXML();
+				$body = $xml->asXML();
 			} elseif ($options['type'] == 'form') {
-				$stream['content'] = http_build_query($body);
+				$body = http_build_query($body);
 			}
-		} elseif (!empty($body)) {
-			$stream['content'] = $body;
 		}
 
-		$stream['ignore_errors'] = true;
-		
-		$context = stream_context_create([$protocol=>$stream]);
-		#$context['ignore_errors'] = true;
+		$headers[] = 'Content-Length: '.strlen($body);
 
-		$responseBody = file_get_contents($url, false, $context);
+		$header = '-H "'.implode('" -H "', $headers).'"';
+
+		$curlStr = "curl -iL -X $method $ciphers $endpoint $timeout $header -d '''$body'''";	
 		
+		$responseBody = shell_exec($curlStr);
+
 		$response = (object)[];
-
-		$response->body = $responseBody;
+		
 		$response->headers = [];
 
-		foreach ($http_response_header as $header) {
+		$resStatusString = substr($responseBody, 0, strpos($responseBody, "\r\n"));
+		list($response->version, $response->status) = explode(" ", $resStatusString);	
+		
+
+		$resHeader = substr($responseBody, 0, strpos($responseBody, "\r\n\r\n"));
+
+		$resHeaders = explode("\r\n", $resHeader);
+
+		foreach ($resHeaders as $header) {
 			if (! preg_match('/^([^:]+):(.*)$/', $header, $output)) continue;	
 			
 			if ($output[1] == 'Set-Cookie') {
-				$cookies[] = $output[2];
+				$response->headers['Cookies'][] = $output[2];
 			} else {
 				$response->headers[$output[1]] = $output[2];
 			}			
-		} 
-
-		if (isset($cookies)) {
-			$response->headers['Cookies'] = $cookies;
 		}
-		#preg_match('/^(\w+)\/(\d+\.\d+) (\d+) (.+?)$/', $status_line, $matches)
-		preg_match('|HTTP/\d\.\d\s+(\d+)\s+.*|',$http_response_header[0],$match);
-		$response->status = $match[1];
+
+		$response->body = trim(substr($responseBody, strpos($responseBody, "\r\n\r\n")));
 
 		if (is_callable($callable)) {
 			$callbackArgs[] = $response;

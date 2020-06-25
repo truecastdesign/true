@@ -18,6 +18,8 @@ class Auth
 	var $bearerTokensFile = BP.'/app/data/auth-tokens';
 	var $loginTokensDb = BP.'/app/data/auth-login-tokens.db';
 	var $csrfSession = 'kkj43kj';
+	var $jwtSession = 'jk4k88d';
+	var $jwtPrivateKey = BP.'/app/config/jwt-key.ini';
 
 	/**
 	 * bearerTokensFile : should include the base path to a text file
@@ -32,6 +34,27 @@ class Auth
 
 		if (isset($params['loginTokensDb'])) {
 			$this->loginTokensDb = $params['loginTokensDb'];
+		}
+	}
+
+	/**
+	 * Inject needed objects
+	 *
+	 * @param object|array of objects $obj
+	 * @return void
+	 */
+	public function inject($obj)
+	{
+		if (is_object($obj)) {
+			$pathFragments = explode("\\", get_class($obj));
+			$name = end($pathFragments);
+			$this->{$name} = $obj;
+		} elseif (is_array($obj)) {
+			foreach ($obj as $item) {
+				$pathFragments = explode("\\", get_class($item));
+				$name = end($pathFragments);
+				$this->{$name} = $item;
+			}
 		}
 	}
 
@@ -135,6 +158,86 @@ class Auth
 		else {
 			trigger_error('The function openssl_random_pseudo_bytes is not available in PHP!',256);
 		}
+	}
+
+	/**
+	 * set a new JWT to a cookie
+	 * inject your instance of App with a config of site with a property of secure set to true or false; $this->App->config->site->secure
+	 *
+	 * @param [type] $userId
+	 * @param [type] $cookie
+	 * @return void
+	 */
+	public function setJWT($userId, $cookie = null)
+	{
+		$payload['id'] = $userId;
+		$payload['exp'] = time() + (7 * 24 * 60 * 60); # 7 days
+		
+		if (!file_exists($this->jwtPrivateKey)) {			
+			$privateKey = $this->genToken();
+			$App->writeConfig($this->jwtPrivateKey, ['privateKey'=>$privateKey]);			
+		} else {
+			$config = parse_ini_file($this->jwtPrivateKey);
+			$privateKey = $config['privateKey'];
+		}
+
+		$token = \True\JWT::encode($payload, $privateKey);
+
+		$secure = $this->App->config->site->secure;
+
+		if (is_null($cookie)) {
+			$cookie = $this->jwtSession;
+		}
+
+		setcookie($cookie, $token, time()+31557600, "/", "", $secure, true);
+		
+		return $token;
+	}
+
+	public function checkJWT($cookie = null)
+	{
+		if (is_null($cookie)) {
+			$cookie = $this->jwtSession;
+		}
+		
+		$token = $_COOKIE[$cookie];
+		if (empty($token)) {
+			return false;
+		}
+
+		$config = parse_ini_file($this->jwtPrivateKey);
+		$privateKey = $config['privateKey'];
+
+		try {
+			$payload = JWT::decode($token, $privateKey, ['HS256']);
+			
+			if (!is_numeric($payload->id)) {
+				throw new \Exception("Can’t find user id!");
+			}
+
+			if (!isset($payload->exp)) {
+				return $payload->id;
+			}
+
+			if ($payload->exp < time()) {
+				throw new \Exception("Token is expired!");
+			}
+
+			return (int) $payload->id;
+		}
+		catch(\Exception $e) {
+			throw new \Exception($e->getMessage());
+		}
+	}
+
+	public function deleteJWT($cookie = null)
+	{
+		if (is_null($cookie)) {
+			$cookie = $this->jwtSession;
+		}
+
+		$secure = $this->App->config->site->secure;
+		setcookie("ikje", '', time()-2, "/", "", $secure, true);
 	}
 
 	/**
