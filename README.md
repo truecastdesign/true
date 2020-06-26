@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.23.1
+v1.23.2
 
 These classes form the basic functionality of True framework.
 
@@ -363,8 +363,18 @@ $App->view->render(BP.'/vendor/truecastdesign/trueadmin/views/not-authorized.pht
 
 ### Render an error page
 
+Default error pages: 404-error.phtml 401-error.phtml 403-error.phtml error.phtml
+
+For the error.phtml page, there is provided $errorCode and $errorText variables to display which error it is.
+
 ```php
-$App->view->error(404); // other errors supported: 401, 403
+$App->view->error(404); // other errors supported: 301, 302, 303, 304, 307, 308, 400, 401, 403, 404, 405
+```
+
+### Set custom error page
+
+```php
+$App->view->403 = 'not-authorized.phtml';
 ```
 
 ## Emailing

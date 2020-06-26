@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.2
+ * @version 5.5.3
  */
 class PhpView
 {
@@ -43,6 +43,9 @@ class PhpView
 		
 		# put in base_path dir; ex: 403-error.phtml
 		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); 
+
+		# put in base_path dir; ex: 403-error.phtml
+		$this->vars['error_page'] = (isset($args['error_page'])? $args['error_page']:'error.phtml');
 
 		# turn on or off page caching
 		$this->vars['cache'] = (isset($args['cache'])? $args['cache']:true);
@@ -134,6 +137,22 @@ class PhpView
 		$searchFiles = [];
 		$replaceTags = [];
 		$searchTags = [];
+		$httpCodesHeaders = ['301'=>'Moved Permanently', '302'=>'Found', '303'=>'See Other', '304'=>'Not Modified', '307'=>'Temporary Redirect', '308'=>'Permanent Redirect', '400'=>'Bad Request', '401'=>'Unauthorized', '403'=>'Forbidden', '404'=>'Not Found', '405'=>'Method Not Allowed'];
+
+		# check for error page
+		if (is_int($taView)) {
+			header_remove("X-Powered-By");
+			
+			header("HTTP/2 ".$taView." ".$httpCodesHeaders[$taView]);
+			$this->metaData['_metaTitle'] = $httpCodesHeaders[$taView];
+			if (key_exists($taView, $this->vars)) {
+				$taView = $this->vars['base_path'].$this->vars[$taView];
+			} else {
+				$variables['errorCode'] = $taView;
+				$variables['errorText'] = $httpCodesHeaders[$taView];
+				$taView = $this->vars['base_path'].$this->vars['error_page'];
+			}			
+		}
 
 		if (!is_array($variables)) {
 			\trigger_error("variables passed needs to be inside an array. ['varname'=>'value'].", 256);
@@ -161,7 +180,7 @@ class PhpView
 		}
 		
 		if (file_exists($taView) === false) {
-			header("HTTP/1.1 404 Not Found");
+			header("HTTP/2 404 Not Found");
 			$this->metaData['_metaTitle'] = "File Not Found";
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
