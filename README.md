@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.23.2
+v1.24.0
 
 These classes form the basic functionality of True framework.
 
@@ -395,6 +395,19 @@ if (!$mail->send()) {
 ```
 
 ## JWT Javascript Web Token
+
+## LogParser
+
+```php
+$logFile = BP."/logs/access.log";
+
+$Parser = new True\LogParser($logFile);
+
+foreach ($Parser as $row) {
+	print_r($row);
+}
+```
+
 
 Usage
 -----
