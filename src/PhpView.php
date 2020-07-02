@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.3
+ * @version 5.5.4
  */
 class PhpView
 {
@@ -989,7 +989,7 @@ class PhpView
 	{
 		$out = "";
 		foreach (explode(" ", $str) as $word) {
-			$out .= (!in_array($word, $exceptions)) ? strtoupper($word{0}) . substr($word, 1) . " " : $word . " ";
+			$out .= (!in_array($word, $exceptions)) ? strtoupper($word[0]) . substr($word, 1) . " " : $word . " ";
 		}
 		return rtrim($out);
 	}
