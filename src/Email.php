@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.1.1
+ * @version 1.1.2
  * 
 $mail = new \True\Email('domain.com', 465);
 $mail->setLogin('user@domain.com', 'password')
@@ -314,6 +314,8 @@ class Email
 	*/
 	public function send()
 	{
+		$message = '';
+		
 		$this->socket = fsockopen(
 			$this->getServer(),
 			$this->port,

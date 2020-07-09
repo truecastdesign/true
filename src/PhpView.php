@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.4
+ * @version 5.5.5
  */
 class PhpView
 {
@@ -17,7 +17,7 @@ class PhpView
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
 	# in the route or controller, set meta data using $App->view->meta_name. 
-	# meta_names are: title, description, css, js, no_cache, sort, not_live, label, not_in_nav
+	# meta_names are: title, description, css, js, cache, sort, not_live, label, not_in_nav
 	# They work the same as the inline meta data in the view file
 	# These inline meta data in the view file will override these if they are set.
 
@@ -265,8 +265,8 @@ class PhpView
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 		} else { 
 			header_remove("Pragma");
-			header('Cache-Control: max-age=604800, public'); # 7 days
-			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+7 days")).' GMT');
+			header('Cache-Control: max-age=3600, public'); # 1 hour
+			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+1 hour")).' GMT');
 		}
 
 		if (isset($fileParts[1])) {
