@@ -26,8 +26,8 @@ $mail->setLogin('user@domain.com', 'password')
 if ($mail->send()) {
 	echo 'SMTP Email has been sent' . PHP_EOL;   
 } else {
-echo 'An error has occurred. Please check the logs below:' . PHP_EOL;
-pr($mail->getLogs());
+	echo 'An error has occurred. Please check the logs below:' . PHP_EOL;
+	pr($mail->getLogs());
 }
 */
 class Email

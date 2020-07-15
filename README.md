@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.25.0
+v1.25.1
 
 These classes form the basic functionality of True framework.
 
@@ -382,15 +382,27 @@ $App->view->403 = 'not-authorized.phtml';
 True has a builtin SMTP email class for sending out emails using a SMTP email account for better deliverability and features.
 
 ```php
-$mail = new \True\Email('domain.com', 465);
+$mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
-->setFrom('user@domain.com')
-->addTo('user@domain.com')
+->setFrom('user@domain.com', 'name')
+->addReplyTo('user@domain.com', 'name')
+->addTo('user@domain.com', 'name')
+->addCc('user@domain.com', 'name')
+->addBcc('user@domain.com', 'name')
+->addAttachment(BP.'/path/to/filename.jpg')
+->addHeader('header-title', 'header value')
+->setCharset('utf-16', 'header value') // default: utf-8;  values: utf-16, utf-32, ascii, iso 8859-1 
 ->setSubject('Test subject')
-->setHtmlMessage('<strong>HTML Text Message</strong>');
+->setTextMessage('Plain text message')
+->setHtmlMessage('<strong>HTML Text Message</strong>')
+->setHTMLMessageVariables('name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message')
+->addHeader('X-Auto-Response-Suppress', 'All');
 
-if (!$mail->send()) {
-	echo 'Error sending email';   
+if ($mail->send()) {
+	echo 'SMTP Email has been sent' . PHP_EOL;   
+} else {
+	echo 'An error has occurred. Please check the logs below:' . PHP_EOL;
+	pr($mail->getLogs());
 }
 ```
 
