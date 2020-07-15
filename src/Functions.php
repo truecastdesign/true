@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.6.2
+ * @version 1.7.0
  */
 class Functions
 {
@@ -687,6 +687,54 @@ class Functions
 	public static function percentDiscountPrice($price, $percentOff)
 	{
 		return ((100 - $percentOff)/100) * $price;
+	}
+
+	/**
+	 * conver time in seconds to a string, array or object
+	 *
+	 * @param [type] $from
+	 * @param [type] $to
+	 * @param string $type
+	 * @return string, array, object '2 weeks 1 day 10 hours 5 minutes 22 seconds'
+	 */
+	public static function timeToStr($from, $to = null, $type = 'string')
+	{
+		$to = (is_null($to)? time():$to);	
+		$time = $from - $to;	
+		
+		$years = floor($time / 31536000);
+		$time -= 31536000 * $years;
+	
+		$weeks = floor($time / 604800);
+		$time -= 604800 * $weeks;
+		
+		$days = floor($time / 86400);
+		$time -= 86400 * $days;
+		
+		$hours = floor($time / 3600);
+		$time -= 3600 * $hours;
+	
+		$minutes = floor($time / 60);
+		$time -= 60 * $minutes;
+	
+		$seconds = floor($time);
+		
+		$str = '';
+		$str .= ($years > 0? "$years year".($years > 1? 's':''):'');
+		$str .= ($weeks > 0? "$weeks week".($weeks > 1? 's':''):'');
+		$str .= ($days > 0? " $days day".($days > 1? 's':''):'');
+		$str .= ($hours > 0? " $hours hour".($hours > 1? 's':''):'');
+		$str .= ($minutes > 0? " $minutes minute".($minutes > 1? 's':''):'');
+		$str .= ($seconds > 0? " $seconds second".($seconds > 1? 's':''):'');
+	
+		$array = compact('years', 'weeks', 'days', 'hours', 'minutes', 'seconds');
+	
+		switch ($type) {
+			case 'string': return $str; break;
+			case 'array': return $array; break;
+			case 'object': return (object)$array; break;
+			default: return $time;
+		}
 	}
 
 	public static function contains($content, $str, $ignorecase=true)

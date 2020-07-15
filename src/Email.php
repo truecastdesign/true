@@ -5,15 +5,22 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.1.2
+ * @version 1.2.0
  * 
-$mail = new \True\Email('domain.com', 465);
+$mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
-->setFrom('user@domain.com')
-->addTo('user@domain.com')
+->setFrom('user@domain.com', 'name')
+->addReplyTo('user@domain.com', 'name')
+->addTo('user@domain.com', 'name')
+->addCc('user@domain.com', 'name')
+->addBcc('user@domain.com', 'name')
+->addAttachment(BP.'/path/to/filename.jpg')
+->addHeader('header-title', 'header value')
+->setCharset('utf-16', 'header value') // default: utf-8;  values: utf-16, utf-32, ascii, iso 8859-1 
 ->setSubject('Test subject')
 ->setTextMessage('Plain text message')
 ->setHtmlMessage('<strong>HTML Text Message</strong>')
+->setHTMLMessageVariables('name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message')
 ->addHeader('X-Auto-Response-Suppress', 'All');
 
 if ($mail->send()) {
@@ -229,12 +236,12 @@ class Email
 	 * Set SMTP Server protocol
 	* -- default value is null (no secure protocol)
 	*
-	* @param string $protocol
+	* @param string $protocol 'tls'
 	* @return Email
 	*/
 	public function setProtocol($protocol = null)
 	{
-		if ($protocol === self::TLS) {
+		if ($protocol == 'tls') {
 			$this->isTLS = true;
 		}
 
@@ -297,6 +304,28 @@ class Email
 	}
 
 	/**
+	 * Set html message body
+	*
+	* @param array $params ['name'=>'My Name', 'message'=>"Message\nthis is just plan text."]
+	* The variables get outputted in the order you put them in the array.
+	* If it finds a message key, it will convert the value to html.
+	* 
+	* @return Email
+	*/
+	public function setHTMLMessageVariables(array $params): object
+	{
+		foreach ($params as $key=>$value) {
+			if ($key == 'message') {
+				$this->htmlMessage .= \True\Functions::txt2html($value);
+			} else {
+				$this->htmlMessage .= "<p>$value</p>";
+			}
+		}
+		
+		return $this;
+	}
+
+	/**
 	 * Get log array
 	* -- contains commands and responses from SMTP server
 	*
@@ -324,7 +353,10 @@ class Email
 			$this->connectionTimeout
 		);
 
-		if (empty($this->socket)) {
+		$this->logs['SocketInfo'] = "Server: ".$this->getServer()."; Port: ".$this->port;
+		$this->logs['Socket'] = "Error:".$errorNumber." ".$errorMessage;
+
+		if (empty($this->socket)) {			
 			return false;
 		}
 

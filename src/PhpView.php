@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.5
+ * @version 5.5.6
  */
 class PhpView
 {
@@ -170,6 +170,7 @@ class PhpView
 		}
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
+		header('X-Frame-Options: sameorigin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
 		header_remove("X-Powered-By");
 		
