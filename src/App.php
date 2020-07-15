@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.9.1
+ * @version 1.9.2
  */
 class App
 {
@@ -1062,13 +1062,13 @@ class App
 		if (!isset($userNotice))
 			$userNotice = 'displayUserNotice';
 		  
-		echo (empty($GLOBALS['pageErrors'])? '':'<div id="'.$noticeBox.'"><div id="'.$debugError.'"><div>'.$GLOBALS['pageErrors'].'</div><button id="displayUserCloseButton"></button></div></div>');
-		
-		echo (empty($GLOBALS['errorUserError'])? '':'<div id="'.$noticeBox.'"><div id="'.$userError.'"><div>'.$GLOBALS['errorUserError'].'</div><button id="displayUserCloseButton"></button></div></div>');
-		
-		echo (empty($GLOBALS['errorUserWarning'])? '':'<div id="'.$noticeBox.'"><div id="'.$userWarning.'"><div>'.$GLOBALS['errorUserWarning'].'</div><button id="displayUserCloseButton"></button></div></div>');
-		
 		echo (empty($GLOBALS['errorUserNotice'])? '':'<div id="'.$noticeBox.'"><div id="'.$userNotice.'"><div>'.$GLOBALS['errorUserNotice'].'</div><button id="displayUserCloseButton"></button></div></div>');
+
+		echo (empty($GLOBALS['errorUserWarning'])? '':'<div id="'.$noticeBox.'"><div id="'.$userWarning.'"><div>'.$GLOBALS['errorUserWarning'].'</div><button id="displayUserCloseButton"></button></div></div>');
+
+		echo (empty($GLOBALS['errorUserError'])? '':'<div id="'.$noticeBox.'"><div id="'.$userError.'"><div>'.$GLOBALS['errorUserError'].'</div><button id="displayUserCloseButton"></button></div></div>');
+
+		echo (empty($GLOBALS['pageErrors'])? '':'<div id="'.$noticeBox.'"><div id="'.$debugError.'"><div>'.$GLOBALS['pageErrors'].'</div><button id="displayUserCloseButton"></button></div></div>');
 		
 		if (!empty($GLOBALS['pageErrors']) or !empty($GLOBALS['errorUserError']) or !empty($GLOBALS['errorUserWarning']) or !empty($GLOBALS['errorUserNotice']) ) {
 			echo "<script>document.querySelector('#displayUserCloseButton').onclick = function() {document.querySelector('#{$noticeBox}').parentNode.removeChild(document.querySelector('#{$noticeBox}'))}</script>";
