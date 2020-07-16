@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.9.2
+ * @version 1.9.3
  */
 class App
 {
@@ -104,6 +104,11 @@ class App
 	 */
 	public function getConfig(string $file, string $key = null)
 	{
+		// default to BP./app/config/ dir
+		if (substr($file, 0, 1 ) != "/") {
+			$file = BP.'/app/config/'.$file;
+		}
+	
 		$config = parse_ini_file($file, true);
 		if ($key != null) {
 			return $config[$key];
