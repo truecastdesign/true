@@ -2,11 +2,11 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.25.4
+v1.26.4
 
 These classes form the basic functionality of True framework.
 
-Requires PHP 5.5 or newer.
+Requires PHP 7.1 or newer.
 
 Install
 -------

@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.0.0
+ * @version 1.1.0
  */
 class AuthenticationJWT
 {
@@ -41,7 +41,7 @@ class AuthenticationJWT
 		}
 	}
 
-	public function login($username, $password, $duration = null)
+	public function login(string $username, string $password, $duration = null): bool
 	{
 		# check if fields are missing
 		if(empty($username) AND empty($password)) {
@@ -86,17 +86,17 @@ class AuthenticationJWT
 
 		$jwtToken = $this->JWT->encode($this->userId, $this->config->key, $this->config->alg);
 
-		setcookie($this->config->cookie, $jwtToken, $this->config->ttl, '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);	 
+		$this->setCookie($jwtToken);	 
 
 		return true;
 	}
 
-	public function logout()
+	public function logout(): void
 	{
-		setcookie($this->config->cookie, '', time() - 3600, '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
+		$this->setCookie('', time() - 3600);
 	}
 
-	public function isLoggedIn()
+	public function isLoggedIn(): bool
 	{
 		$jwtToken = $_COOKIE[$this->config->cookie];
 
@@ -104,9 +104,10 @@ class AuthenticationJWT
 			$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
 
 			if (is_numeric($payload)) {
-				setcookie($this->config->cookie, $jwtToken, $this->config->ttl, '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
+				$this->setCookie($jwtToken);
 				$this->userId = $payload;
 				$this->getUserInfo();
+				$this->loggedIn = true;
 				return true;
 			} else {
 				return false;
@@ -116,7 +117,7 @@ class AuthenticationJWT
 		return $this->loggedIn;
 	}
 
-	public function getUserInfo()
+	public function getUserInfo(): void
 	{
 		$info = $this->user->get($this->userId);
 		
@@ -131,7 +132,7 @@ class AuthenticationJWT
 	 * @return int|false user id
 	 * @author Daniel Baldwin
 	 */
-	public function id()
+	public function id(): ?int
 	{
 		if($this->loggedIn AND !is_null($this->userId)) {
 			return $this->userId;
@@ -147,7 +148,7 @@ class AuthenticationJWT
 	 * @return string users name
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function fullName()
+	public function fullName(): string
 	{
 		if(is_null($this->fullName) AND $this->id()) 
 		{ 
@@ -163,8 +164,21 @@ class AuthenticationJWT
 	 * @return string email address
 	 * @author Daniel Baldwin
 	 */
-	public function email()
+	public function email(): string
 	{
 		return $this->email;
+	}
+
+	private function getDomain(): string
+	{
+		return strtok($_SERVER['HTTP_HOST'], ':');
+	}
+	
+	private function setCookie(string $jwtToken, $time=null): void
+	{
+		if (is_null($time)) 
+			$time = $this->config->ttl;
+
+		setcookie($this->config->cookie, $jwtToken, $time, '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
 	}
 }
