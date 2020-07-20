@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.1.0
+ * @version 1.1.1
  */
 class AuthenticationJWT
 {
@@ -100,21 +100,21 @@ class AuthenticationJWT
 	{
 		$jwtToken = $_COOKIE[$this->config->cookie];
 
-		if (!empty($jwtToken)) {
-			$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
-
-			if (is_numeric($payload)) {
-				$this->setCookie($jwtToken);
-				$this->userId = $payload;
-				$this->getUserInfo();
-				$this->loggedIn = true;
-				return true;
-			} else {
-				return false;
-			}
-		}
+		if (empty($jwtToken))
+			return false;
 		
-		return $this->loggedIn;
+		$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
+
+		if (!is_numeric($payload))
+			return false;
+
+		$this->loggedIn = true;
+		$this->userId = $payload;
+		$this->getUserInfo();
+
+		setcookie($this->config->cookie, $jwtToken, $this->config->ttl, '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
+
+		return true;
 	}
 
 	public function getUserInfo(): void
@@ -134,7 +134,7 @@ class AuthenticationJWT
 	 */
 	public function id(): ?int
 	{
-		if($this->loggedIn AND !is_null($this->userId)) {
+		if ($this->loggedIn) {
 			return $this->userId;
 		} else {
 			trigger_error("User is not logged in or username not set.",512);
