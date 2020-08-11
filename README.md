@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.26.5
+v1.27.0
 
 These classes form the basic functionality of True framework.
 
@@ -289,6 +289,37 @@ try {
 $App->response('{"result":"success"}', 'json'); // this will run if the above 
 // response does not but will not run if there was already a response run above.
 ```
+
+Using Controllers
+-----------------
+
+Controllers should be .php files that live in the app/controllers directory. You can trigger them to run by a custom route like $App->get('/path', 'filename.php'); or if you are using the default route that comes with TrueFramework it handles controllers and views automatically. In that case you can match the path to the controller and view. If url is www.domain.com it will run the index.php controller and display the index.phtml view. You can skip the controller altogether because it is run using a @include which if the file is not available it just quietly skips it.
+
+Controllers should be just simple PHP scripts not classes. One PHP file per route. Nest controlers in directories named the same as the parent controller.
+
+Example: 
+Path -> Controller
+/about -> about.php
+/about/staff -> about/staff.php
+/about/staff/john-doe -> about/staff/john-doe.php
+
+Here is what the default route looks like. You can modify it as needed.
+
+```php
+$App->any('/*:path', function($request) use ($App) {
+	$vars = []; 
+	@include $App->controller($request->route->path);
+
+	$vars['config'] = $App->config;
+
+	# check selected nav item
+	$vars['selectedNav'] = (object) [$request->route->path => ' class="sel"'];
+	
+	$App->view->render($request->route->path.'.phtml', $vars);
+});
+```
+
+Controllers are passed the $App object and the $request object.
 
 Using PHPView
 -------------

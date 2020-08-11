@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.9.3
+ * @version 1.9.4
  */
 class App
 {
@@ -599,13 +599,24 @@ class App
 		$cleanedContentTypeParts = explode(';', $request->contentType);
 		$cleanedContentType = trim($cleanedContentTypeParts[0]);
 		
-		if ($request->method == 'POST' and in_array($cleanedContentType, $postContentTypes)) {
-			// parsed body must be $_POST
+		if (isset($_POST)) {
 			$request->post = (object)$_POST; 
 		}
 
-		if ($request->method == 'GET' and !in_array($cleanedContentType, ['application/json'])) {
+		if (isset($_GET)) {
 			$request->get = (object)$_GET;
+		}
+
+		if (isset($_PUT)) {
+			$request->put = (object)$_PUT;
+		}
+
+		if (isset($_DELETE)) {
+			$request->delete = (object)$_DELETE;
+		}
+
+		if (isset($_REQUEST)) {
+			$request->all = (object)$_REQUEST;
 		}
 		
 		if (in_array($cleanedContentType, ['application/json'])) {
