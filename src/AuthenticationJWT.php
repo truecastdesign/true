@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.1.1
+ * @version 1.2.0
  */
 class AuthenticationJWT
 {
@@ -103,7 +103,11 @@ class AuthenticationJWT
 		if (empty($jwtToken))
 			return false;
 		
-		$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
+		try {
+			$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
+		} catch (\Exception $e) {
+			return false;
+		}
 
 		if (!is_numeric($payload))
 			return false;
@@ -156,6 +160,19 @@ class AuthenticationJWT
 		}	
 		else 
 			return $this->fullName;
+	}
+
+	/**
+	 * Returns the current logged in username
+	 *
+	 * @return false or string username
+	 */
+	public function username(): ?string
+	{
+		if (!is_numeric($this->id()))
+			return false;
+
+		return $this->user->username($this->id());
 	}
 
 	/**
