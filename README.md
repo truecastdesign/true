@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v1.28.0
+v2.0.0
 
 These classes form the basic functionality of True framework.
 
@@ -28,41 +28,7 @@ AddHandler application/x-httpd-php .html .phtml .php
 	RewriteBase /
 
 	RewriteRule .? - [E=HEADER>Authorization:%{HTTP:Authorization}]
-	RewriteRule .? - [E=HEADER>Accept:%{HTTP:Accept}]
-	RewriteRule .? - [E=HEADER>Accept-Charset:%{HTTP:Accept-Charset}]
-	RewriteRule .? - [E=HEADER>Access-Control-Request-Method:%{HTTP:Access-Control-Request-Method}]
-	RewriteRule .? - [E=HEADER>Cache-Control:%{HTTP:Cache-Control}]
-	RewriteRule .? - [E=HEADER>Connection:%{HTTP:Connection}]
-	RewriteRule .? - [E=HEADER>Content-Length:%{HTTP:Content-Length}]
-	RewriteRule .? - [E=HEADER>Content-Type:%{HTTP:Content-Type}]
-	RewriteRule .? - [E=HEADER>Date:%{HTTP:Date}]
-	RewriteRule .? - [E=HEADER>Expect:%{HTTP:Expect}]
-	RewriteRule .? - [E=HEADER>Forwarded:%{HTTP:Forwarded}]
-	RewriteRule .? - [E=HEADER>Host:%{HTTP:Host}]
-	RewriteRule .? - [E=HEADER>HTTP2-Settings:%{HTTP:HTTP2-Settings}]
-	RewriteRule .? - [E=HEADER>If-Match:%{HTTP:If-Match}]
-	RewriteRule .? - [E=HEADER>If-Modified-Since:%{HTTP:If-Modified-Since}]
-	RewriteRule .? - [E=HEADER>If-None-Match:%{HTTP:If-None-Match}]
-	RewriteRule .? - [E=HEADER>If-Range:%{HTTP:If-Range}]
-	RewriteRule .? - [E=HEADER>If-Unmodified-Since:%{HTTP:If-Unmodified-Since}]
-	RewriteRule .? - [E=HEADER>Origin:%{HTTP:Origin}]
-	RewriteRule .? - [E=HEADER>Pragma:%{HTTP:Pragma}]
-	RewriteRule .? - [E=HEADER>Proxy-Authorization:%{HTTP:Proxy-Authorization}]
-	RewriteRule .? - [E=HEADER>Range:%{HTTP:Range}]
-	RewriteRule .? - [E=HEADER>Referer:%{HTTP:Referer}]
-	RewriteRule .? - [E=HEADER>TE:%{HTTP:TE}]
-	RewriteRule .? - [E=HEADER>User-Agent:%{HTTP:User-Agent}]
-	RewriteRule .? - [E=HEADER>Upgrade:%{HTTP:Upgrade}]
-	RewriteRule .? - [E=HEADER>Upgrade-Insecure-Requests:%{HTTP:Upgrade-Insecure-Requests}]
-	RewriteRule .? - [E=HEADER>Via:%{HTTP:Via}]
-	RewriteRule .? - [E=HEADER>X-Requested-With:%{HTTP:X-Requested-With}]
-	RewriteRule .? - [E=HEADER>DNT:%{HTTP:DNT}]
-	RewriteRule .? - [E=HEADER>X-Forwarded-For:%{HTTP:X-Forwarded-For}]
-	RewriteRule .? - [E=HEADER>X-Forwarded-Host:%{HTTP:X-Forwarded-Host}]
-	RewriteRule .? - [E=HEADER>X-Forwarded-Proto:%{HTTP:X-Forwarded-Proto}]
-	RewriteRule .? - [E=HEADER>X-HTTP-Method-Override:%{HTTP:X-HTTP-Method-Override}]
-	RewriteRule .? - [E=HEADER>Proxy-Connection:%{HTTP:Proxy-Connection}]
-
+	
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ^ index.php [QSA,L]
@@ -80,26 +46,25 @@ require '../init.php';
 
 ```php
 <?php
-session_start();
-
 define('BP', __DIR__);
 
 require 'vendor/autoload.php';
 
-$App = new \True\App;
+$App = new True\App;
 
-$App->load('../app/config/site.ini');
+$App->load('site.ini');
 
-$GLOBALS['debug'] = $App->config->site->debug;
-$GLOBALS['dev'] = $App->config->site->dev;
-
-if ($GLOBALS['debug']) {
-	error_reporting(E_ALL);
+if ($App->config->site->debug) {
+	$GLOBALS['debug'] = true;
+	error_reporting(E_ALL & ~E_NOTICE);
 } else {
-	error_reporting(E_ALL & E_WARNING & ~E_NOTICE);
+	$GLOBALS['debug'] = false;
+	error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 }
 
-$App->view = new \True\PhpView;
+$App->view = new True\PhpView;
+
+$App->response = new True\Response;
 
 # global css and js files
 $App->view->css = '/vendor/truecastdesign/true/assets/default.css, /assets/css/site.css'; # global css files
@@ -118,14 +83,20 @@ $App->view->variables = ['key'=>'value', 'key3'=>'value3'];
 
 # check routes
 require 'app/routes.php';
+
+function e($var) {
+	return htmlspecialchars($var, ENT_QUOTES, 'UTF-8');
+}	
 ```
 
 ### /app/routes.php
 
 ```php
-$App->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
+$Router = new True\Router(new True\Request);
 
-$App->any('/path/:id', function($request) use ($App) {
+$Router->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
+
+$Router->any('/path/:id', function($request) use ($App) {
 	$vars = [];
 	
 	# include controller
@@ -139,9 +110,9 @@ $App->any('/path/:id', function($request) use ($App) {
 	$App->view->render('_layouts/filename.phtml', $vars);
 });
 
-$App->any('/*:path', function($request) use ($App) {
+$Router->any('/*:path', function($request) use ($App) {
 	$vars = []; 
-	@include $App->controller($request->route->path);
+	@include $Router->controller($request->route->path);
 	
 	# check selected nav item
 	$vars['selNav'] = ['/'.$request->route->path => true];
@@ -151,21 +122,21 @@ $App->any('/*:path', function($request) use ($App) {
 
 # Put all code in a controller for a route
 
-$App->get('/path/:id', 'filename.php'); 
+$Router->get('/path/:id', 'filename.php'); 
 # It will look in the /app/controllers dir for the file filename.php and include it.
 # The $App object and the $request object will be available inside the filename.php script.
 
 # Specify the exact request method to match
-$App->get(...);
-$App->post(...);
-$App->put(...);
-$App->patch(...);
-$App->delete(...);
-$App->options(...);
+$Router->get(...);
+$Router->post(...);
+$Router->put(...);
+$Router->patch(...);
+$Router->delete(...);
+$Router->options(...);
 
 # Use map to specify several methods
 
-$App->map(['GET', 'POST', 'PUT'], '/path', 'controller.php');
+$Router->map(['GET', 'POST', 'PUT'], '/path', 'controller.php');
 
 # The $App object is automatically passed to the controller.php script. The conroller.php file should just be simple code you want that outputs JSON or renders a view, etc. Should not be a class. Should look like the code in the closure.  
 ```
@@ -178,9 +149,9 @@ Allows you to run middleware for certain grouped requests. This allows you to au
 When passing in a middleware class instance, it should have an __invoke method and return either true or false if the containing routes should run or not.
 
 ```php
-$App->group('/api/*', function() use ($App) {
+$Router->group('/api/*', function() use ($App, $Router) {
 	# code in here only runs if path matches /api/ and /api/[any further path parts]
-	$App->get('/api/user/*:id', function($request) use ($App) {
+	$Router->get('/api/user/*:id', function($request) use ($App) {
 		echo $request->route->id;
 	});
 });
@@ -195,8 +166,8 @@ Route middleware is handy to hide code in a separate file to clean up your route
 You can pass in an array of class instances that are invokable as the their parameter of the group method. Use [ new \App\AuthMiddleware, new \VendorName\SampleMiddleware ] for multiple layers. The middleware layers are run left to right. If any return false, the others will not run.
 
 ```php
-$App->group('/api/*', function() use ($App) {
-	$App->get('/api/user/*:id', function($request) use ($App) {
+$Router->group('/api/*', function() use ($App, $Router) {
+	$Router->get('/api/user/*:id', function($request) use ($App) {
 		echo $request->route->id;
 	});
 }, [ new \App\AuthMiddleware ]);

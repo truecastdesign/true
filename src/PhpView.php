@@ -282,7 +282,7 @@ class PhpView
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
-		extract($variables);		
+		extract($variables);	
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];

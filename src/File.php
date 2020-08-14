@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.0.0
+ * @version 1.0.1
  * 
  * Use:
  * 
