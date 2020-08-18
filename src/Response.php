@@ -2,6 +2,7 @@
 namespace True;
 
 /**
+ * @version 1.0.2
  * $response = new True\Response;
  * $response = new True\Response(['cacheJson','cacheHTML']); if you want all json or html responses to be cached pass cacheJson, cacheHTML, or both as array values. 
  * $response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"]);
@@ -12,7 +13,7 @@ class Response
 {
 	var $prefs = [];
 	
-	public function __construct($prefs)
+	public function __construct($prefs = [])
 	{
 		$this->prefs = $prefs;
 	}
