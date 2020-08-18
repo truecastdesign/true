@@ -4,10 +4,10 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.0
+ * @version v1.0.1
  * 
  * Available keys
- * method # post
+ * method # GET,POST,etc
  * ip # 192.168.0.1
  * status # 200
  * contentType # application/json
@@ -37,80 +37,66 @@ namespace True;
 
 class Request
 {
+	var $method;
+	var $ip;
+	var $status;
+	var $contentType;
+	var $userAgent;
+	var $referrer;
+	var $headers;
+	var $https;
+	var $url;
+	var $files;
+	var $get;
+	var $post;
+	var $delete;
+	var $put;
+	var $patch;
+	var $all;
+
 	public function __construct()
 	{
-		$request = (object)[];
 		$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
-		$request->method = $_SERVER['REQUEST_METHOD'];
-		$request->ip = $_SERVER['REMOTE_ADDR'];
-		$request->status = http_response_code();
+		$this->method = $_SERVER['REQUEST_METHOD'];
+		$this->ip = $_SERVER['REMOTE_ADDR'];
+		$this->status = http_response_code();
+		$this->contentType = $_SERVER['CONTENT_TYPE'] ? strtok($_SERVER['CONTENT_TYPE'], ';'):'';
+		$this->userAgent = $_SERVER['HTTP_USER_AGENT'];		
+		$this->referrer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER']:'';	
+		$this->headers = (object) $this->getallheaders();
+		$this->https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
 
-		if (isset($_SERVER['CONTENT_TYPE'])) {
-			$contentParts = explode(';',$_SERVER['CONTENT_TYPE']);
-			$request->contentType = $contentParts[0];
-		} else
-			$request->contentType = '';
-
-		$request->userAgent = $_SERVER['HTTP_USER_AGENT'];
-		
-		if (isset($_SERVER['HTTP_REFERER']))
-			$request->referrer = $_SERVER['HTTP_REFERER'];
-		else
-			$request->referrer = '';			
-
-		$request->headers = (object) $this->getallheaders();
-
-		if (array_key_exists('HTTPS', $_SERVER))
-			$request->https = ($_SERVER['HTTPS'] == 'on' ? true : false);
-		else
-			$request->https = false;
-
-		$request->url = (object)[];
-		$request->url->path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');		
-		$request->url->host = $_SERVER['HTTP_HOST'];
-		$request->url->full = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		$request->url->protocol = $_SERVER['REQUEST_SCHEME'];
-		$request->url->protocolhost = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
-		$request->url->scheme = $_SERVER['REQUEST_SCHEME'].'://';
-		$request->url->domain = str_replace('www.','',$_SERVER['HTTP_HOST']);
+		$this->url = (object)[];
+		$this->url->path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');		
+		$this->url->host = $_SERVER['HTTP_HOST'];
+		$this->url->protocol = $_SERVER['REQUEST_SCHEME'] ?? $this->https ? 'https':'http';
+		$this->url->full = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		$this->url->protocolhost = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'];
+		$this->url->scheme = $this->url->protocol.'://';
+		$this->url->domain = strtok(str_replace('www.','',$_SERVER['HTTP_HOST']),':');
 
 		if (isset($_FILES)) {
-			$request->files = (object)[];
+			$this->files = (object)[];
 			foreach ($_FILES as $name=>$file)
-				$request->files->{$name} = new \True\File($file);			
+				$this->files->{$name} = new \True\File($file);			
 		}
 
-		$postContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
-				
-		$cleanedContentTypeParts = explode(';', $request->contentType);
-		$cleanedContentType = trim($cleanedContentTypeParts[0]);
+		$cleanedContentType = trim(explode(';', $this->contentType)[0]);		
 		
-		if (isset($_POST))
-			$request->post = (object)$_POST; 
-
-		if (isset($_GET))
-			$request->get = (object)$_GET;
-
-		if (isset($_PUT))
-			$request->put = (object)$_PUT;
-
-		if (isset($_PATCH))
-			$request->patch = (object)$_PATCH;
-
-		if (isset($_DELETE))
-			$request->delete = (object)$_DELETE;
-
-		if (isset($_REQUEST))
-			$request->all = (object)$_REQUEST;
+		$this->post = (object) $_POST ?? [];
+		$this->get = (object) $_GET ?? [];
+		$this->put = (object) $_PUT ?? [];
+		$this->patch = (object) $_PATCH ?? [];
+		$this->delete = (object) $_DELETE ?? [];
 		
 		if (in_array($cleanedContentType, ['application/json'])) {
 			$requestBody = file_get_contents('php://input');
-			$requestKey = strtolower($request->method);
-			if (!empty($requestBody))
-				$request->$requestKey = json_decode($requestBody);
+			$requestKey = strtolower($this->method);
+			if (!empty($requestBody)) 
+				$this->$requestKey = json_decode($requestBody);
 		}
 
-		return $request;
+		$this->all = (object) array_merge((array) $this->get, (array) $this->post, (array) $this->put, (array) $this->patch, (array) $this->delete);
 	}
 
 	/**

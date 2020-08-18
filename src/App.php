@@ -8,12 +8,13 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.10.0
+ * @version 1.11.0
  */
 class App
 {
 	private $container = [];
 	private $debug = false;
+	private $classes = [];
 	/**
 	 * Create new application
 	 *
@@ -148,6 +149,19 @@ class App
 	{
 		$this->container[$key] = $value;
 	}
+
+	/**
+	 * Call class
+	 * Example: $App->title('sdfsd');
+	 *
+	 * @param class instance $method
+	 * @param array $args
+	 * @return void
+	 */
+	function __call($method, $args=[])
+   {
+    	call_user_func_array($this->container[$method], $args);
+   }
 
 	/**
 	 * Write a data object to a ini file
@@ -303,7 +317,7 @@ class App
 			return 'Benchmark not started';
 		}
 
-		return "Completed in ".(round(microtime(true) * 1000) - $this->startTime)." ms - ";
+		return "Completed in ".(round(microtime(true) * 1000) - $this->startTime)." ms";
 	}
 
 	/**

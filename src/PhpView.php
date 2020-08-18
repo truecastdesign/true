@@ -7,8 +7,9 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.6
+ * @version 5.5.7
  */
+
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
@@ -282,7 +283,7 @@ class PhpView
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
-		extract($variables);	
+		extract($variables);			
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
@@ -995,4 +996,6 @@ class PhpView
 		return rtrim($out);
 	}
 }
+
+
 ?>

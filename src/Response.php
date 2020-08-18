@@ -62,7 +62,7 @@ class Response
 		if (in_array('cacheHTML', $this->prefs) and $type == 'html') {
 			header_remove("Pragma");
          header('Cache-Control: max-age=604800, public');
-			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+7 days")).' GMT')                
+			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+7 days")).' GMT');               
       }
 
 		if (!is_null($headers)) {

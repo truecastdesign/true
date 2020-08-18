@@ -1,6 +1,9 @@
 <?php
 namespace True;
 
+/**
+ * @version 1.0.0
+ */
 class Router
 {
 	var $request;
@@ -218,13 +221,12 @@ class Router
 			// given pattern matches the request url
 			if ($this->match) {
 				# make $request object available whereever $App is available like in the view. Should not be used by controllers. Use the passed $request object where available.
-				$this->container['request'] = $request;
 				
 				if (is_string($callable))
 					$this->includeController($callable, $request, $passedVars);
 				elseif (is_callable($callable)) {
 					$callbackArgs[] = $request;
-					$response = call_user_func_array($callable, $callbackArgs);
+					return call_user_func_array($callable, $callbackArgs);
 				}
 			}
 		}
