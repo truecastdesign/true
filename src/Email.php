@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.2.0
+ * @version 1.3.0
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -103,6 +103,13 @@ class Email
 
 	/** @var array $headers */
 	protected $headers = array();
+
+	# DKIM variables
+	protected $privateKey;
+	protected $domainName;
+	protected $selector = 'default';
+	protected $hashMethod = null;
+	protected $insertDKIM = false;
 
 	/**
 	 * Class constructor
@@ -202,6 +209,67 @@ class Email
 		$this->headers[$name] = $value;
 
 		return $this;
+	}
+
+	/**
+	 * Sign your email with DKIM (DomainKeys Identified Mail) for better deliveribility
+	 *
+	 * @param string $privateKey
+	 * @param string $domainName
+	 * @param string $selector
+	 * @param string $hashMethod available rsa-sha1 or rsa-sha256 (default)
+	 * @return void
+	 */
+	public function addDKIM(string $privateKey, string $domainName, string $selector = 'default', string $hashMethod = null)
+	{
+		$this->insertDKIM = true;
+		$this->privateKey = $privateKey;
+		$this->domainName = $domainName;
+		$this->selector = $selector;
+		$this->hashMethod = $hashMethod;
+
+		return $this;
+	}
+
+	private function generateDKIM()
+	{
+		if (is_null($hashMethod)) 
+			$hashMethod = defined('OPENSSL_ALGO_SHA256')? 'rsa-sha256':'rsa-sha1';
+
+		if (!in_array($hashMethod, ['rsa-sha256','rsa-sha1']))
+			throw new \Exception("The DKIM hashing algorithm must be rsa-sha1 or rsa-sha256. $hashMethod provided.");
+
+		$pkeyId = openssl_get_privatekey($privateKey);
+
+		if (!$pkeyId)
+			throw new \Exception('Unable to load DKIM Private Key ['.openssl_error_string().']');
+
+		$headers = '';
+		foreach ($this->headers as $k=>$v) {
+			$headers .= strtolower(trim($k)).': '.$v;
+		}
+
+		if (!openssl_sign($headers, $signature, $pkeyId, $hashMethod))
+         throw new \Exception('Unable to sign DKIM Hash ['.openssl_error_string().']');
+		
+		$bodyHash = base64_encode($signature);
+		
+		$params = [
+			'v'=>'1', 
+			'a'=>$hashMethod,
+			'c'=>'relaxed/relaxed',
+			'd'=>$domainName,
+			'h'=>'mime-version:content-type:content-transfer-encoding:subject:from:to:'.implode(':', array_keys($this->headers)),
+			's'=>$selector,
+			'bh'=>$bodyHash,
+			'i'=>"@$domainName"
+		];
+
+		foreach ($params as $k => $v)
+			$string .= $k.'='.$v.'; ';
+      $string = trim($string);
+
+		$this->addHeader('DKIM-Signature', $string);
 	}
 
 	/**
@@ -312,8 +380,14 @@ class Email
 	* 
 	* @return Email
 	*/
-	public function setHTMLMessageVariables(array $params): object
+	public function setHTMLMessageVariables($params): object
 	{
+		if (is_object($params))
+			$params = (array) $params;
+
+		if (!is_array($params))
+			throw new \Exception("setHTMLMessageVariables needs to be passed an array or object");
+		
 		foreach ($params as $key=>$value) {
 			if ($key == 'message') {
 				$this->htmlMessage .= \True\Functions::txt2html($value);
@@ -425,18 +499,18 @@ class Email
 
 		if (!empty($this->attachments)) {
 			foreach ($this->attachments as $attachment) {
-					$filename = pathinfo($attachment, PATHINFO_BASENAME);
-					$contents = file_get_contents($attachment);
-					$type = mime_content_type($attachment);
-					if (!$type) {
-						$type = 'application/octet-stream';
-					}
+				$filename = pathinfo($attachment, PATHINFO_BASENAME);
+				$contents = file_get_contents($attachment);
+				$type = mime_content_type($attachment);
+				if (!$type) {
+					$type = 'application/octet-stream';
+				}
 
-					$message .= '--mixed-' . $boundary . self::CRLF;
-					$message .= 'Content-Type: ' . $type . '; name="' . $filename . '"' . self::CRLF;
-					$message .= 'Content-Disposition: attachment; filename="' . $filename . '"' . self::CRLF;
-					$message .= 'Content-Transfer-Encoding: base64' . self::CRLF . self::CRLF;
-					$message .= chunk_split(base64_encode($contents)) . self::CRLF;
+				$message .= '--mixed-' . $boundary . self::CRLF;
+				$message .= 'Content-Type: ' . $type . '; name="' . $filename . '"' . self::CRLF;
+				$message .= 'Content-Disposition: attachment; filename="' . $filename . '"' . self::CRLF;
+				$message .= 'Content-Transfer-Encoding: base64' . self::CRLF . self::CRLF;
+				$message .= chunk_split(base64_encode($contents)) . self::CRLF;
 			}
 
 			$message .= '--mixed-' . $boundary . '--';
@@ -446,6 +520,9 @@ class Email
 		foreach ($this->headers as $k => $v) {
 			$headers .= $k . ': ' . $v . self::CRLF;
 		}
+
+		if ($this->insertDKIM)
+			$this->generateDKIM();
 
 		$this->logs['MESSAGE'] = $message;
 		$this->logs['HEADERS'] = $headers;

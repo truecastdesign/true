@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.0.2
+v2.1.0
 
 These classes form the basic functionality of True framework.
 
@@ -51,7 +51,6 @@ define('BP', __DIR__);
 require 'vendor/autoload.php';
 
 $App = new True\App;
-
 $App->load('site.ini');
 
 if ($App->config->site->debug) {
@@ -62,9 +61,10 @@ if ($App->config->site->debug) {
 	error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 }
 
-$App->view = new True\PhpView;
-
+$App->request = new True\Request;
 $App->response = new True\Response;
+$App->router = new True\Router($App->request);
+$App->view = new True\PhpView;
 
 # global css and js files
 $App->view->css = '/vendor/truecastdesign/true/assets/default.css, /assets/css/site.css'; # global css files
@@ -86,17 +86,23 @@ require 'app/routes.php';
 
 function e($var) {
 	return htmlspecialchars($var, ENT_QUOTES, 'UTF-8');
+}
+
+function p($var) {
+	print_r($var);
+}
+
+function ph($var) {
+	echo '<!--'; print_r($var); echo '-->';
 }	
 ```
 
 ### /app/routes.php
 
 ```php
-$Router = new True\Router(new True\Request);
+$App->router->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
 
-$Router->redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
-
-$Router->any('/path/:id', function($request) use ($App) {
+$App->router->any('/path/:id', function($request) use ($App) {
 	$vars = [];
 	
 	# include controller
@@ -110,9 +116,9 @@ $Router->any('/path/:id', function($request) use ($App) {
 	$App->view->render('_layouts/filename.phtml', $vars);
 });
 
-$Router->any('/*:path', function($request) use ($App) {
+$App->router->any('/*:path', function($request) use ($App) {
 	$vars = []; 
-	@include $Router->controller($request->route->path);
+	@include $App->router->controller($request->route->path);
 	
 	# check selected nav item
 	$vars['selNav'] = ['/'.$request->route->path => true];
@@ -122,21 +128,21 @@ $Router->any('/*:path', function($request) use ($App) {
 
 # Put all code in a controller for a route
 
-$Router->get('/path/:id', 'filename.php'); 
+$App->router->get('/path/:id', 'filename.php'); 
 # It will look in the /app/controllers dir for the file filename.php and include it.
 # The $App object and the $request object will be available inside the filename.php script.
 
 # Specify the exact request method to match
-$Router->get(...);
-$Router->post(...);
-$Router->put(...);
-$Router->patch(...);
-$Router->delete(...);
-$Router->options(...);
+$App->router->get(...);
+$App->router->post(...);
+$App->router->put(...);
+$App->router->patch(...);
+$App->router->delete(...);
+$App->router->options(...);
 
 # Use map to specify several methods
 
-$Router->map(['GET', 'POST', 'PUT'], '/path', 'controller.php');
+$App->router->map(['GET', 'POST', 'PUT'], '/path', 'controller.php');
 
 # The $App object is automatically passed to the controller.php script. The conroller.php file should just be simple code you want that outputs JSON or renders a view, etc. Should not be a class. Should look like the code in the closure.  
 ```
@@ -149,9 +155,9 @@ Allows you to run middleware for certain grouped requests. This allows you to au
 When passing in a middleware class instance, it should have an __invoke method and return either true or false if the containing routes should run or not.
 
 ```php
-$Router->group('/api/*', function() use ($App, $Router) {
+$App->router->group('/api/*', function() use ($App) {
 	# code in here only runs if path matches /api/ and /api/[any further path parts]
-	$Router->get('/api/user/*:id', function($request) use ($App) {
+	$App->router->get('/api/user/*:id', function($request) use ($App) {
 		echo $request->route->id;
 	});
 });
@@ -166,8 +172,8 @@ Route middleware is handy to hide code in a separate file to clean up your route
 You can pass in an array of class instances that are invokable as the their parameter of the group method. Use [ new \App\AuthMiddleware, new \VendorName\SampleMiddleware ] for multiple layers. The middleware layers are run left to right. If any return false, the others will not run.
 
 ```php
-$Router->group('/api/*', function() use ($App, $Router) {
-	$Router->get('/api/user/*:id', function($request) use ($App) {
+$App->router->group('/api/*', function() use ($App) {
+	$App->router->get('/api/user/*:id', function($request) use ($App) {
 		echo $request->route->id;
 	});
 }, [ new \App\AuthMiddleware ]);
