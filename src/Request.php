@@ -60,7 +60,7 @@ class Request
 		$this->method = $_SERVER['REQUEST_METHOD'];
 		$this->ip = $_SERVER['REMOTE_ADDR'];
 		$this->status = http_response_code();
-		$this->contentType = $_SERVER['CONTENT_TYPE'] ? strtok($_SERVER['CONTENT_TYPE'], ';'):'';
+		$this->contentType = isset($_SERVER['CONTENT_TYPE']) ? strtok($_SERVER['CONTENT_TYPE'], ';'):'text/html';
 		$this->userAgent = $_SERVER['HTTP_USER_AGENT'];		
 		$this->referrer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER']:'';	
 		$this->headers = (object) $this->getallheaders();
@@ -83,11 +83,11 @@ class Request
 
 		$cleanedContentType = trim(explode(';', $this->contentType)[0]);		
 		
-		$this->post = (object) $_POST ?? [];
-		$this->get = (object) $_GET ?? [];
-		$this->put = (object) $_PUT ?? [];
-		$this->patch = (object) $_PATCH ?? [];
-		$this->delete = (object) $_DELETE ?? [];
+		$this->post = (object) ($_POST ?? []);
+		$this->get = (object) ($_GET ?? []);
+		$this->put = (object) ($_PUT ?? []);
+		$this->patch = (object) ($_PATCH ?? []);
+		$this->delete = (object) ($_DELETE ?? []);
 		
 		if (in_array($cleanedContentType, ['application/json'])) {
 			$requestBody = file_get_contents('php://input');

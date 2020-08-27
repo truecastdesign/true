@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.3.0
+ * @version 1.3.1
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -21,7 +21,8 @@ $mail->setLogin('user@domain.com', 'password')
 ->setTextMessage('Plain text message')
 ->setHtmlMessage('<strong>HTML Text Message</strong>')
 ->setHTMLMessageVariables('name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message')
-->addHeader('X-Auto-Response-Suppress', 'All');
+->addHeader('X-Auto-Response-Suppress', 'All')
+->addDKIM(BP.'/app/data/dkim.private', 'domain.com');
 
 if ($mail->send()) {
 	echo 'SMTP Email has been sent' . PHP_EOL;   
@@ -214,16 +215,16 @@ class Email
 	/**
 	 * Sign your email with DKIM (DomainKeys Identified Mail) for better deliveribility
 	 *
-	 * @param string $privateKey
+	 * @param string $privateKey full path to key file
 	 * @param string $domainName
 	 * @param string $selector
 	 * @param string $hashMethod available rsa-sha1 or rsa-sha256 (default)
 	 * @return void
 	 */
-	public function addDKIM(string $privateKey, string $domainName, string $selector = 'default', string $hashMethod = null)
+	public function addDKIM(string $privateKey, string $domainName, string $selector = 'default', string $hashMethod = 'rsa-sha256')
 	{
 		$this->insertDKIM = true;
-		$this->privateKey = $privateKey;
+		$this->privateKey = file_get_contents($privateKey);
 		$this->domainName = $domainName;
 		$this->selector = $selector;
 		$this->hashMethod = $hashMethod;
@@ -233,13 +234,13 @@ class Email
 
 	private function generateDKIM()
 	{
-		if (is_null($hashMethod)) 
-			$hashMethod = defined('OPENSSL_ALGO_SHA256')? 'rsa-sha256':'rsa-sha1';
+		if (is_null($this->hashMethod)) 
+			$this->hashMethod = defined('OPENSSL_ALGO_SHA256')? 'rsa-sha256':'rsa-sha1';
 
-		if (!in_array($hashMethod, ['rsa-sha256','rsa-sha1']))
-			throw new \Exception("The DKIM hashing algorithm must be rsa-sha1 or rsa-sha256. $hashMethod provided.");
+		if (!in_array($this->hashMethod, ['rsa-sha256','rsa-sha1']))
+			throw new \Exception("The DKIM hashing algorithm must be rsa-sha1 or rsa-sha256. ".$this->hashMethod." provided.");
 
-		$pkeyId = openssl_get_privatekey($privateKey);
+		$pkeyId = openssl_get_privatekey($this->privateKey, '');
 
 		if (!$pkeyId)
 			throw new \Exception('Unable to load DKIM Private Key ['.openssl_error_string().']');
@@ -249,22 +250,23 @@ class Email
 			$headers .= strtolower(trim($k)).': '.$v;
 		}
 
-		if (!openssl_sign($headers, $signature, $pkeyId, $hashMethod))
+		if (!openssl_sign($headers, $signature, $pkeyId, $this->hashMethod))
          throw new \Exception('Unable to sign DKIM Hash ['.openssl_error_string().']');
 		
 		$bodyHash = base64_encode($signature);
 		
 		$params = [
 			'v'=>'1', 
-			'a'=>$hashMethod,
+			'a'=>$this->hashMethod,
 			'c'=>'relaxed/relaxed',
-			'd'=>$domainName,
+			'd'=>$this->domainName,
 			'h'=>'mime-version:content-type:content-transfer-encoding:subject:from:to:'.implode(':', array_keys($this->headers)),
-			's'=>$selector,
+			's'=>$this->selector,
 			'bh'=>$bodyHash,
-			'i'=>"@$domainName"
+			'i'=>"@".$this->domainName
 		];
 
+		$string = '';
 		foreach ($params as $k => $v)
 			$string .= $k.'='.$v.'; ';
       $string = trim($string);

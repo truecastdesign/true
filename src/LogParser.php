@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.0.0
+ * @version 1.0.1
  */
 class LogParser implements \Iterator
 {
@@ -60,7 +60,7 @@ class LogParser implements \Iterator
 			$all = $records[$i+1];
 			// parse other fields
 			preg_match("/\[(.+)\]/", $all, $match);
-			$access_time = $match[1];
+			$access_time = date("Y-m-d H:i:s",strtotime($match[1]));
 			$all = str_replace($match[1], "", $all);
 			preg_match("/\"[A-Z]{3,7} (.[^\"]+)/", $all, $match);
 			$http = $match[1];
