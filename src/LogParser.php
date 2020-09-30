@@ -6,7 +6,8 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.0.1
+ * @version 1.1.0
+ * Supports .gz log files as of 1.1.0
  */
 class LogParser implements \Iterator
 {
@@ -44,7 +45,11 @@ class LogParser implements \Iterator
 
 	public function parse($logFile)
 	{
-		$ac_arr = file($logFile);
+		$ac_arr = [];
+		if ($this->endsWith($logFile, '.gz'))
+			$ac_arr = gzfile($logFile);
+		else
+			$ac_arr = file($logFile);		
 
 		$astring = join("", $ac_arr);
 		$astring = preg_replace("/(\n|\r|\t)/", "", $astring);
@@ -85,5 +90,12 @@ class LogParser implements \Iterator
 			$i = $i + 2;
 			$each_rec++;
 		}
+	}
+
+	function endsWith(string $haystack, string $needle) {
+		$length = strlen($needle);
+		if (!$length)
+			return true;
+		return substr($haystack, -$length) === $needle;
 	}
 }
