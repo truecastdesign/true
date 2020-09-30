@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.3.1
+ * @version 1.4.0
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -20,9 +20,10 @@ $mail->setLogin('user@domain.com', 'password')
 ->setSubject('Test subject')
 ->setTextMessage('Plain text message')
 ->setHtmlMessage('<strong>HTML Text Message</strong>')
-->setHTMLMessageVariables('name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message')
+->setHTMLMessageVariables(['name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message'])
+->setMessageReplaceVariables(['{{first name}}'=>'John', '{{last name}}'=>'Doe'])
 ->addHeader('X-Auto-Response-Suppress', 'All')
-->addDKIM(BP.'/app/data/dkim.private', 'domain.com');
+->addDKIM(BP.'/app/data/dkim.private', 'domain.com'); # usually not needed
 
 if ($mail->send()) {
 	echo 'SMTP Email has been sent' . PHP_EOL;   
@@ -111,6 +112,12 @@ class Email
 	protected $selector = 'default';
 	protected $hashMethod = null;
 	protected $insertDKIM = false;
+
+	# message replace variables
+	protected $messageReplaceVariables = null;
+
+	# message values output
+	protected $messageValuesVariables = null;
 
 	/**
 	 * Class constructor
@@ -374,9 +381,14 @@ class Email
 	}
 
 	/**
-	 * Set html message body
+	 * Set key/values to outout in HTML message body
 	*
-	* @param array $params ['name'=>'My Name', 'message'=>"Message\nthis is just plan text."]
+	* @param array $params ['name'=>'My Name', 'message'=>"The Message\nthis is just plan text."]
+	* <p>My Name</p>
+	*
+	* <p>The Message<br>
+	* this is just plan text.</p>
+	*
 	* The variables get outputted in the order you put them in the array.
 	* If it finds a message key, it will convert the value to html.
 	* 
@@ -390,13 +402,20 @@ class Email
 		if (!is_array($params))
 			throw new \Exception("setHTMLMessageVariables needs to be passed an array or object");
 		
-		foreach ($params as $key=>$value) {
-			if ($key == 'message') {
-				$this->htmlMessage .= \True\Functions::txt2html($value);
-			} else {
-				$this->htmlMessage .= "<p>$value</p>";
-			}
-		}
+		$this->messageValuesVariables = $params;
+		
+		return $this;
+	}
+
+	/**
+	 * 
+	 *
+	 * @param array $params ['{find_string}'=>'Replace with string']
+	 * @return void
+	 */
+	public function setMessageReplaceVariables(array $params): object
+	{
+		$this->messageReplaceVariables = $params;
 		
 		return $this;
 	}
@@ -491,6 +510,22 @@ class Email
 		}
 
 		if (!empty($this->htmlMessage)) {
+			if (is_array($this->messageValuesVariables)) {
+				foreach ($this->messageValuesVariables as $key=>$value) {
+					if ($key == 'message') {
+						$this->htmlMessage .= \True\Functions::txt2html($value);
+					} else {
+						$this->htmlMessage .= "<p>$value</p>";
+					}
+				}
+			}
+			
+			if (is_array($this->messageReplaceVariables)) {
+				$searchStrings = array_keys($this->messageReplaceVariables);
+				$replaceStrings = array_values($this->messageReplaceVariables);
+				$this->htmlMessage = str_replace($searchStrings, $replaceStrings, $this->htmlMessage);
+			}							
+			
 			$message .= '--alt-' . $boundary . self::CRLF;
 			$message .= 'Content-Type: text/html; charset=' . $this->charset . self::CRLF;
 			$message .= 'Content-Transfer-Encoding: base64' . self::CRLF . self::CRLF;

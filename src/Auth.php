@@ -11,7 +11,7 @@ namespace True;
 *
 * @package True Framework
 * @author Daniel Baldwin
-* @version 1.3.3
+* @version 1.3.4
 */
 class Auth
 {
@@ -555,7 +555,7 @@ class Auth
 		}
 
 		# used for PHP built-in server
-		if (isset($_SERVER['Authorization'])) {
+		if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
 			$headers['Authorization'] = $_SERVER['HTTP_AUTHORIZATION'];
 		}	
 

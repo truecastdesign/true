@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.2.1
+v2.2.3
 
 These classes form the basic functionality of True framework.
 
@@ -403,7 +403,7 @@ $mail->setLogin('user@domain.com', 'password')
 ->setSubject('Test subject')
 ->setTextMessage('Plain text message')
 ->setHtmlMessage('<strong>HTML Text Message</strong>')
-->setHTMLMessageVariables('name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message')
+->setHTMLMessageVariables(['name'=>'John Doe', 'phone'=>'541-555-5555', 'message'=>'Plain text message'])
 ->addHeader('X-Auto-Response-Suppress', 'All');
 
 if ($mail->send()) {

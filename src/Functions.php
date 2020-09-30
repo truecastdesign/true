@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.0
+ * @version 1.7.1
  */
 class Functions
 {
@@ -72,7 +72,7 @@ class Functions
 		**/
 	public static function host()
 	{
-		return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
+		return (isset($_SERVER['REQUEST_SCHEME'])? $_SERVER['REQUEST_SCHEME']:'http').'://'.$_SERVER['HTTP_HOST'];
 	}
 
 	/**
