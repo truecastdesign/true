@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.3.0
+v2.4.0
 
 These classes form the basic functionality of True framework.
 
@@ -241,6 +241,98 @@ if (is_numeric($userId)) {
 	echo json_encode(['result'=>'not logged in']);
 }
 ```
+
+## Request object
+
+The Router object creates an instance of the Request object and inserts that into any controller as $request.
+
+The router also passes in the $request object to the routing closure as follows.
+
+```php
+$App->router->get('/api/user/*:id', function($request){
+	echo $request->route->id;
+});
+```
+
+### Working with uploaded images in the $request object
+
+#### Check if files are uploaded
+
+```php
+if ($request->files->file->uploaded) {
+	// do something like move or resize it
+	echo $request->files->file->ext; // jpg
+	echo $request->files->file->mime; // image/jpeg
+	echo $request->files->file->tmp_name; // /path/j23k4j8d
+}
+```
+
+#### Resize Images
+
+```php
+$request->files->file->imageWidth = 800;
+$request->files->file->imageHeight = 800;
+try {
+	$request->files->file->resize();
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+The keyword 'file' in the above code is the name of the file input field. Be sure to use not use hyphens (-) in the name as that will break the object reference. Just underscores or camelCase names. If you set one dimension the other will be calulated for you.
+
+#### Cropping Images
+
+The crop method allows you to crop the top, right, bottom, or left size off of images. The values passed in the array are in that clockwise order just like in CSS.
+
+```php
+try {
+	$request->files->file->crop([0,20,0,0]);
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+
+To crop the image square automatically
+
+```php
+try {
+	$request->files->file->cropSquare();
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+
+To crop the image square keeping the top part and removing just the bottom automatically, use the cropBottomSquare() method.
+
+```php
+try {
+	$request->files->file->cropBottomSquare();
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+
+To crop the image square keeping the bottom part and removing just the top automatically, use the cropTopSquare() method.
+
+```php
+try {
+	$request->files->file->cropTopSquare();
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+
+After you crop the image or resize it, you will want to move it to a new location by using the move method and passing in the path and the filename. To use the uploaded file extension, use the $request->files->file->ext proterty.
+
+```php
+try {
+	$request->files->file->move('/path/', 'newFileName.'.$request->files->file->ext);
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
+
+
 
 Creating a Response for REST or Similar Responses
 ---
