@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.4.0
+ * @version 1.4.1
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -509,21 +509,20 @@ class Email
 			$message .= chunk_split(base64_encode($this->textMessage)) . self::CRLF;
 		}
 
-		if (!empty($this->htmlMessage)) {
-			if (is_array($this->messageValuesVariables)) {
-				foreach ($this->messageValuesVariables as $key=>$value) {
-					if ($key == 'message') {
-						$this->htmlMessage .= \True\Functions::txt2html($value);
-					} else {
-						$this->htmlMessage .= "<p>$value</p>";
-					}
-				}
+		if (is_array($this->messageValuesVariables)) {
+			foreach ($this->messageValuesVariables as $key=>$value) {
+				if ($key == 'message')
+					$this->htmlMessage .= \True\Functions::txt2html($value);
+				else
+					$this->htmlMessage .= "<p>$value</p>";
 			}
-			
+		}
+
+		if (!empty($this->htmlMessage)) {
 			if (is_array($this->messageReplaceVariables)) {
 				$searchStrings = array_keys($this->messageReplaceVariables);
 				$replaceStrings = array_values($this->messageReplaceVariables);
-				$this->htmlMessage = str_replace($searchStrings, $replaceStrings, $this->htmlMessage);
+				$this->htmlMessage .= str_replace($searchStrings, $replaceStrings, $this->htmlMessage);
 			}							
 			
 			$message .= '--alt-' . $boundary . self::CRLF;
@@ -539,9 +538,8 @@ class Email
 				$filename = pathinfo($attachment, PATHINFO_BASENAME);
 				$contents = file_get_contents($attachment);
 				$type = mime_content_type($attachment);
-				if (!$type) {
+				if (!$type)
 					$type = 'application/octet-stream';
-				}
 
 				$message .= '--mixed-' . $boundary . self::CRLF;
 				$message .= 'Content-Type: ' . $type . '; name="' . $filename . '"' . self::CRLF;
