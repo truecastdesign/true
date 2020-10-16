@@ -132,7 +132,7 @@ class PhpView
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function render($taView, $variables = [], $fullPath = false)
+	public function render(string $taView, array $variables = [], bool $fullPath = false)
 	{
 		$outputFiles = [];
 		$searchFiles = [];
