@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.7
+ * @version 5.5.8
  */
 
 class PhpView
@@ -142,8 +142,6 @@ class PhpView
 
 		# check for error page
 		if (is_int($taView)) {
-			header_remove("X-Powered-By");
-			
 			header("HTTP/2 ".$taView." ".$httpCodesHeaders[$taView]);
 			$this->metaData['_metaTitle'] = $httpCodesHeaders[$taView];
 			if (key_exists($taView, $this->vars)) {
@@ -155,31 +153,26 @@ class PhpView
 			}			
 		}
 
-		if (!is_array($variables)) {
-			\trigger_error("variables passed needs to be inside an array. ['varname'=>'value'].", 256);
-		}
+		if (!is_array($variables))
+			throw new \Exception("variables passed needs to be inside an array. ['varname'=>'value'].");
 
-		if (empty($taView) or $taView == '.phtml') {
+		if (empty($taView) or $taView == '.phtml')
 			$taView = 'index.phtml';
-		}
 
 		$fullPath = ($taView[0] == '/')? true:false;
 
 		header('X-Frame-Options: SAMEORIGIN');
-		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') {
+		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on')
 			header('Strict-Transport-Security: max-age=31536000');
-		}
+		
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
 		header('X-Frame-Options: sameorigin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
-		header_remove("X-Powered-By");
-		
-		
+		header_remove("X-Powered-By");		
 				
-		if (isset($this->vars['base_path']) and !$fullPath) {
+		if (isset($this->vars['base_path']) and !$fullPath)
 			$taView = $this->vars['base_path'].$taView;
-		}
 		
 		if (file_exists($taView) === false) {
 			header("HTTP/2 404 Not Found");
@@ -225,11 +218,11 @@ class PhpView
 		}
 
 		
-		if(isset($fileParts[0]) and isset($fileParts[1])) { # does the template have meta data
+		if (isset($fileParts[0]) and isset($fileParts[1]))  # does the template have meta data
 			$this->processMetaData( parse_ini_string($fileParts[0]) );
-		} else {
+		else
 			$this->processMetaData(); # just process global meta data
-		}
+	
 
 		# insert template into page if needed
 		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
@@ -255,9 +248,8 @@ class PhpView
 		}
 
 		# find and replace special tags
-		if (isset($fileParts[1])) {
+		if (isset($fileParts[1]))
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
-		}		
 		
 		if (!$this->vars['cache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
@@ -271,15 +263,15 @@ class PhpView
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+1 hour")).' GMT');
 		}
 
-		if (isset($fileParts[1])) {
+		if (isset($fileParts[1]))
 			$this->metaData['_html'] = $fileParts[1];
-		}
-		elseif (isset($fileParts[0])) {
+		
+		elseif (isset($fileParts[0]))
 			$this->metaData['_html'] = $fileParts[0];
-		}
-		else {
+		
+		else
 			$this->metaData['_html'] = '';
-		}
+		
 
 		extract($this->metaData);
 		extract($this->vars['variables']);

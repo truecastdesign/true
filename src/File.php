@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.2.0
+ * @version 1.2.1
  * 
  * Use:
  * 
@@ -120,7 +120,7 @@ class File
 		
 		if ($this->cropTop > 0 or $this->cropRight > 0 or $this->cropBottom > 0 or $this->cropLeft > 0) {
 			imagecopyresampled($targetImage, $sourceImage, 0,0,$cropX,$cropY, $this->imageWidth, $this->imageHeight, $sourceXSize - $cropX, $sourceYSize - $cropY);
-		} else { echo $this->imageWidth.' '.$this->imageHeight;
+		} else {
 			imagecopyresampled($targetImage, $sourceImage, 0,0,0,0, $this->imageWidth, $this->imageHeight, $sourceXSize, $sourceYSize);
 		}		
 	

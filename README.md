@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.5.0
+v2.5.3
 
 These classes form the basic functionality of True framework.
 
@@ -507,6 +507,32 @@ if ($mail->send()) {
 ```
 
 ## JWT Javascript Web Token
+```php
+$Users = new Users($DB);
+$LoginAttempts = new True\LoginAttempts($DB);
+$JWT = new True\JWT;
+$PasswordGenerator = new True\PasswordGenerator;
+
+$taAuthConfig = $App->getConfig('trueadminAuth.ini');
+
+$Auth = new True\AuthenticationJWT($Users, $LoginAttempts, $JWT, $PasswordGenerator, $App, [
+	'privateKeyFile'=>BP.'/app/data/key_private_rsa.pem', 
+	'publicKeyFile'=>BP.'/app/data/key_public_rsa.pem', 
+	'encryptionPasswordFile'=>'trueadminAuth.ini', 
+	'pemkeyPassword'=>$taAuthConfig->pemkey_password, 
+	'https'=>$taAuthConfig->https,
+	'ttl'=>$taAuthConfig->pemkey_password,
+	'alg'=>$taAuthConfig->alg
+]);
+
+try {
+	if ($Auth->isLoggedIn()) {
+		# user logged in
+	} 
+} catch (Exception $e) {
+	echo $e->getMessage();
+}
+```
 
 ## LogParser
 

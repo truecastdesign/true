@@ -26,35 +26,101 @@ class AuthenticationJWT
 	 * @param class $userClass
 	 * @param class $loginAttemptClass
 	 * @param class $JWT
-	 * @param array $config ['cookie'=>'auth1']
+	 * @param class $PasswordGenerator  needs a generate method that accepts word count. Passes it 5.
+	 * @param class $App True app class with getConfig and writeConfig methods
+	 * @param array $config ['attemptsAllowed'=>8, 'alg'=>'RS256', 'privateKey'=>'/path/key.pem', 'publicKey'=>'/path/key.pem', 'pemkeyPassword'=>'string', 'encryptionPasswordFile'=>'trueadminAuth.ini', 'cookie'=>'authjwt', 'ttl'=>time()+60*60*24*30, 'https'=>true, 'httpOnly'=>true]]
 	 */
-	public function __construct($userClass, $loginAttemptClass, $JWT, $config = [])
+	public function __construct(object $userClass, object $loginAttemptClass, object $JWT, object $PasswordGenerator, object $App, array $config = [])
 	{
 		$this->user = $userClass;
 		$this->loginAttempts = $loginAttemptClass;
 		$this->JWT = $JWT;
-		$this->config = (object)['attemptsAllowed'=>8, 'alg'=>'HS512', 'key'=>null, 'cookie'=>'authjwt', 'ttl'=>time()+60*60*24*30, 'https'=>true, 'httpOnly'=>true];
-		$this->config = (object) array_merge((array)$this->config, $config);
+		// defaults
+		$this->config = [
+			'attemptsAllowed'=>8, 
+			'alg'=>'RS256', 
+			'privateKeyFile'=>null, 
+			'publicKeyFile'=>null, 
+			'pemkeyPassword'=>null, 
+			'encryptionPasswordFile'=>null, 
+			'cookie'=>'authjwt', 
+			'ttl'=>time()+60*60*24*30, 
+			'https'=>true, 
+			'httpOnly'=>true
+		];
+		
+		// merge the defaults with the passed config values
+		$this->config = (object) array_merge($this->config, $config);
+		
+		if (is_null($this->config->privateKeyFile))
+			throw new \Exception("The private encription key is missing. Pass it in the 'privateKeyFile' array key in the config paramater of the construct.");		
 
-		if (is_null($this->config->key)) {
-			throw new \Exception("The private encription key is missing. Pass it in the 'key' array key in the config paramater of the construct.");
-		}
+		if (is_null($this->config->publicKeyFile))
+			throw new \Exception("The public encription key is missing. Pass it in the 'publicKeyFile' array key in the config paramater of the construct.");
+			
+		if (is_null($this->config->pemkeyPassword))
+			throw new \Exception("The private encription key password is missing. Pass it in the 'pemkeyPassword' array key in the config paramater of the construct.");
+
+		if (is_null($this->config->encryptionPasswordFile))
+			throw new \Exception("The encryptionPasswordFile with the trueadminAuth.ini file path is missing!");	
+
+		// If encryption keys are not available, create them and save password
+		if (!file_exists($this->config->privateKeyFile) or !file_exists($this->config->publicKeyFile)) {
+			$conf = [
+				'private_key_bits'=>4096,
+				'encrypt_key_cipher'=>OPENSSL_CIPHER_AES_256_CBC,
+				'encrypt_key'=>true,
+				'digest_alg'=>"sha512"
+			];
+			
+			$password = $PasswordGenerator->generate(5);
+
+			$pkeyRes = openssl_pkey_new($conf);
+			openssl_pkey_export($pkeyRes, $privateKey, $password, $conf);
+			
+			$publicKey = openssl_pkey_get_details($pkeyRes);
+			
+			if (empty($privateKey))
+				throw new \Exception("The private key failed to generate.");
+
+			if (empty($publicKey["key"]))
+				throw new \Exception("The public key failed to generate.");
+
+			file_put_contents($this->config->privateKeyFile, $privateKey);
+			
+			if (filesize($this->config->privateKeyFile) == 0) {
+				unlink($this->config->privateKeyFile);
+				throw new \Exception("The private key failed to generate in ".$this->config->privateKeyFile);				
+			}
+
+			file_put_contents($this->config->publicKeyFile, $publicKey["key"]);
+
+			if (filesize($this->config->publicKeyFile) == 0) {
+				unlink($this->config->publicKeyFile);
+				throw new \Exception("The public key failed to generate in ".$this->config->publicKeyFile);
+				
+			}
+
+			// save password to config file
+			$authConfig = $App->getConfig($this->config->encryptionPasswordFile);
+			$authConfig->pemkey_password = $password;
+			$App->writeConfig($this->config->encryptionPasswordFile, (array)$authConfig);
+
+			$this->logout();
+		}			
 	}
 
-	public function login(string $username, string $password, $duration = null): bool
+	public function login(string $username, string $password): bool
 	{
 		# check if fields are missing
-		if(empty($username) AND empty($password)) {
+		if (empty($username) AND empty($password))
 			throw new \Exception("Missing Username and Password.");
-		}
 		
-		if(empty($password)) {
+		if (empty($password))
 			throw new \Exception("Missing the Password.");
-		} 
 		
-		if(empty($username)) {
+		if (empty($username))
 			throw new \Exception("Missing the Username.");
-		}
 
 		# clean username and password
 		$username = trim(strip_tags($username));
@@ -78,13 +144,12 @@ class AuthenticationJWT
 		$this->loggedIn = true;	
 		$this->userId = $this->user->getId();
 
-		if (!is_numeric($this->userId)) {
+		if (!is_numeric($this->userId))
 			throw new \Exception("User id not available.");
-		}
 
 		$this->getUserInfo();
-
-		$jwtToken = $this->JWT->encode($this->userId, $this->config->key, $this->config->alg);
+		
+		$jwtToken = $this->JWT->encode($this->userId, $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
 
 		$this->setCookie($jwtToken);	 
 
@@ -96,19 +161,21 @@ class AuthenticationJWT
 		$this->setCookie('', time() - 3600);
 	}
 
+	/**
+	 * check if user is logged in
+	 *
+	 * @return boolean
+	 * @throws Exception
+	 */
 	public function isLoggedIn(): bool
 	{
 		$jwtToken = $_COOKIE[$this->config->cookie];
-
+		
 		if (empty($jwtToken))
 			return false;
 		
-		try {
-			$payload = $this->JWT->decode($jwtToken, $this->config->key, [$this->config->alg]);
-		} catch (\Exception $e) {
-			return false;
-		}
-
+		$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
+		
 		if (!is_numeric($payload))
 			return false;
 
@@ -155,9 +222,7 @@ class AuthenticationJWT
 	public function fullName(): string
 	{
 		if(is_null($this->fullName) AND $this->id()) 
-		{ 
-			return $this->fullName = $this->user->fullName($this->id());
-		}	
+			return $this->fullName = $this->user->fullName($this->id());	
 		else 
 			return $this->fullName;
 	}

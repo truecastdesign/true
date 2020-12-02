@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.0
+ * @version 1.11.1
  */
 class App
 {
@@ -198,7 +198,7 @@ class App
 			}
 			else {
 					//plain key->value case
-					$out .= $k.'="'.$v.'"'.PHP_EOL;
+					$out .= $k.' = "'.$v.'"'.PHP_EOL;
 			}
 		}
 		return $out;
