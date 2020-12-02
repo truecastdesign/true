@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.3
+ * @version 1.11.4
  */
 class App
 {
@@ -176,7 +176,7 @@ class App
 		if (substr($filename, 0, 1 ) != "/")
 			$filename = BP.'/app/config/'.$filename;
 		
-		file_put_contents($filename, $out);
+		file_put_contents($filename, trim($out));
 	}
 
 	private function writeConfigRec(array $data, array $parent = array())
@@ -188,7 +188,7 @@ class App
 					//merge all the sections into one array...
 					$sec = array_merge((array) $parent, (array) $k);
 					//add section information to the output
-					$out .= '[' . join('.', $sec) . ']' . PHP_EOL;
+					$out .= (empty($out)? '':PHP_EOL).'[' . join('.', $sec) . ']' . PHP_EOL;
 					//recursively traverse deeper
 					$out .= $this->writeConfigRec($v, $sec);
 			}
