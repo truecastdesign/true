@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.1
+ * @version 1.11.3
  */
 class App
 {
@@ -105,16 +105,14 @@ class App
 	public function getConfig(string $file, string $key = null)
 	{
 		// default to BP./app/config/ dir
-		if (substr($file, 0, 1 ) != "/") {
+		if (substr($file, 0, 1 ) != "/")
 			$file = BP.'/app/config/'.$file;
-		}
 	
-		$config = parse_ini_file($file, true);
-		if ($key != null) {
+		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
+		if ($key != null)
 			return $config[$key];
-		} else {
+		else
 			return (object)$config;
-		}
 	}
 
 	/**
@@ -130,9 +128,8 @@ class App
 	 */
 	public function __get($key)
 	{
-		if (array_key_exists($key, $this->container)) {
+		if (array_key_exists($key, $this->container))
 			return $this->container[$key];
-		}
 	}
 
 	/**
@@ -167,18 +164,17 @@ class App
 	 * Write a data object to a ini file
 	 *
 	 * @param $filename, path and filename of ini file
-	 * @param array $data []
+	 * @param array|object $data []
 	 * @return void
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function writeConfig(string $filename, array $data, array $parent = array())
+	public function writeConfig(string $filename, $data, array $parent = array())
 	{
-		$out = $this->writeConfigRec($data);
+		$out = $this->writeConfigRec((array)$data);
 		
-		if (substr($filename, 0, 1 ) != "/") {
+		if (substr($filename, 0, 1 ) != "/")
 			$filename = BP.'/app/config/'.$filename;
-		}
 		
 		file_put_contents($filename, $out);
 	}
@@ -198,7 +194,16 @@ class App
 			}
 			else {
 					//plain key->value case
-					$out .= $k.' = "'.$v.'"'.PHP_EOL;
+					if ($v === false)
+						$value = 'Off';
+					elseif ($v === true)
+						$value = 'On';
+					elseif (is_numeric($v))
+						$value = $v;
+					else
+						$value = '"'.$v.'"';
+					
+					$out .= $k.' = '.$value.PHP_EOL;
 			}
 		}
 		return $out;
