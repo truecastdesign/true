@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.0
+ * @version 1.2.2
  */
 class AuthenticationJWT
 {
@@ -57,12 +57,9 @@ class AuthenticationJWT
 
 		if (is_null($this->config->publicKeyFile))
 			throw new \Exception("The public encription key is missing. Pass it in the 'publicKeyFile' array key in the config paramater of the construct.");
-			
-		if (is_null($this->config->pemkeyPassword))
-			throw new \Exception("The private encription key password is missing. Pass it in the 'pemkeyPassword' array key in the config paramater of the construct.");
 
 		if (is_null($this->config->encryptionPasswordFile))
-			throw new \Exception("The encryptionPasswordFile with the trueadminAuth.ini file path is missing!");	
+			throw new \Exception("The encryptionPasswordFile with the trueadminAuth.ini file path is missing!");
 
 		// If encryption keys are not available, create them and save password
 		if (!file_exists($this->config->privateKeyFile) or !file_exists($this->config->publicKeyFile)) {
@@ -104,10 +101,14 @@ class AuthenticationJWT
 			// save password to config file
 			$authConfig = $App->getConfig($this->config->encryptionPasswordFile);
 			$authConfig->pemkey_password = $password;
+			$this->config->pemkeyPassword = $password;
 			$App->writeConfig($this->config->encryptionPasswordFile, (array)$authConfig);
 
 			$this->logout();
-		}			
+		}
+			
+		if (is_null($this->config->pemkeyPassword))
+			throw new \Exception("The private encription key password is missing. Pass it in the 'pemkeyPassword' array key in the config paramater of the construct.");
 	}
 
 	public function login(string $username, string $password): bool
