@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.2
+ * @version 1.2.3
  */
 class AuthenticationJWT
 {
@@ -184,7 +184,7 @@ class AuthenticationJWT
 		$this->userId = $payload;
 		$this->getUserInfo();
 
-		setcookie($this->config->cookie, $jwtToken, $this->config->ttl, '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
+		setcookie($this->config->cookie, $jwtToken, intval($this->config->ttl), '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
 
 		return true;
 	}
@@ -262,6 +262,6 @@ class AuthenticationJWT
 		if (is_null($time)) 
 			$time = $this->config->ttl;
 
-		setcookie($this->config->cookie, $jwtToken, $time, '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
+		setcookie($this->config->cookie, $jwtToken, intval($time), '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
 	}
 }

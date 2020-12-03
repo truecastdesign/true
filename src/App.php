@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.4
+ * @version 1.11.5
  */
 class App
 {
@@ -223,7 +223,7 @@ class App
 	}
 
 	// trigger_error("Error Message", E_USER_WARNING);
-	public static function errorHandler($errNo, $errStr, $errFile, $errLine, $errContext)
+	public static function errorHandler($errNo, $errStr, $errFile, $errLine, $errContext='')
 	{
 		$debugError = $errStr . ': FILE:' . $errFile . ' LINE:' . $errLine;
 

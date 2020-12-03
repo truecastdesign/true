@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.0.2
+ * @version 1.0.3
  * $response = new True\Response;
  * $response = new True\Response(['cacheJson','cacheHTML']); if you want all json or html responses to be cached pass cacheJson, cacheHTML, or both as array values. 
  * $response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"]);
@@ -16,12 +16,14 @@ class Response
 	public function __construct($prefs = [])
 	{
 		$this->prefs = $prefs;
+		if (!isset($this->prefs['hsts']))
+			$this->prefs['hsts'] = false;
 	}
 	
 	public function __invoke($body, $type = 'html', $code = 200, $headers = [])
 	{
 		header('X-Frame-Options: SAMEORIGIN');
-		if ($_SERVER['HTTPS'] == 'on')
+		if ($this->prefs['hsts'] or (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on'))
 			header('Strict-Transport-Security: max-age=31536000');
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
