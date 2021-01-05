@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.4.1
+ * @version 1.4.2
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -134,7 +134,7 @@ class Email
 	{
 		$this->port = $port;
 		$this->server = $server;
-		$this->protocol = $protocol;
+		$this->setProtocol($protocol);
 		$this->connectionTimeout = $connectionTimeout;
 		$this->responseTimeout = $responseTimeout;
 		$this->hostname = empty($hostname) ? gethostname() : $hostname;
@@ -231,6 +231,9 @@ class Email
 	public function addDKIM(string $privateKey, string $domainName, string $selector = 'default', string $hashMethod = 'rsa-sha256')
 	{
 		$this->insertDKIM = true;
+		if (!file_exists(($privateKey))) {
+			
+		}
 		$this->privateKey = file_get_contents($privateKey);
 		$this->domainName = $domainName;
 		$this->selector = $selector;
@@ -467,6 +470,7 @@ class Email
 		$this->logs['AUTH'] = $this->sendCommand('AUTH LOGIN');
 		$this->logs['USERNAME'] = $this->sendCommand(base64_encode($this->username));
 		$this->logs['PASSWORD'] = $this->sendCommand(base64_encode($this->password));
+		
 		$this->logs['MAIL_FROM'] = $this->sendCommand('MAIL FROM: <' . $this->from[0] . '>');
 
 		$recipients = array_merge($this->to, $this->cc, $this->bcc);
@@ -577,22 +581,23 @@ class Email
 	*/
 	protected function getServer()
 	{
-		if (is_null($this->protocol)) {
-			switch ($this->port) {
-				case 25:
-					$this->protocol = 'tcp';
-				break;
-				case 587:
-				case 465:
-				case 2525:
-					$this->protocol = 'ssl';
-				break;
-				default:
-					$this->protocol = 'tcp';
-			}
-		}
+		// if (is_null($this->protocol) and $this->protocol != 'none') {
+		// 	switch ($this->port) {
+		// 		case 25:
+		// 			$this->protocol = 'tcp';
+		// 		break;
+		// 		case 587:
+		// 		case 465:
+		// 		case 2525:
+		// 			$this->protocol = 'ssl';
+		// 		break;
+		// 		default:
+		// 			$this->protocol = 'tcp';
+		// 	}
+		// }
 		
-		return ($this->protocol) ? $this->protocol . '://' . $this->server : $this->server;
+		#return ($this->protocol != 'none') ? $this->protocol . '://' . $this->server : $this->server;
+		return $this->server;
 	}
 
 	/**
