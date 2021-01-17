@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.0.0
+ * @version 1.1.1
  */
 class Router
 {
@@ -396,6 +396,21 @@ class Router
 		header("HTTP/1.1 $header"); 
 		header("Location: /$redirect");
 		exit;
+	}
+
+	/**
+	 * Check if protocal is http and forward to https
+	 *
+	 * @return void
+	 */
+	public function makeHttps(): void
+	{
+		if (!array_key_exists('HTTPS', $_SERVER) and !strstr($_SERVER['HTTP_HOST'], '.test')) {
+			$location = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: ' . $location);
+			exit;
+		}
 	}
 
 	/**

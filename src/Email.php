@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.4.2
+ * @version 1.5.0
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
@@ -150,6 +150,21 @@ class Email
 	*/
 	public function addTo($address, $name = null)
 	{
+		$this->to[] = array($address, $name);
+
+		return $this;
+	}
+
+	/**
+	 * Empty other to recipient email address and set one
+	*
+	* @param string $address
+	* @param string|null $name
+	* @return Email
+	*/
+	public function setTo($address, $name = null)
+	{
+		$this->to = [];
 		$this->to[] = array($address, $name);
 
 		return $this;
