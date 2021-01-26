@@ -5,12 +5,12 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.5.0
+ * @version 1.5.1
  * 
 $mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
 $mail->setLogin('user@domain.com', 'password')
 ->setFrom('user@domain.com', 'name')
-->addReplyTo('user@domain.com', 'name')
+->setReplyTo('user@domain.com', 'name')
 ->addTo('user@domain.com', 'name')
 ->addCc('user@domain.com', 'name')
 ->addBcc('user@domain.com', 'name')
@@ -199,15 +199,15 @@ class Email
 	}
 
 	/**
-	 * Add email reply to address
+	 * Set email reply to address
 	*
 	* @param string $address
 	* @param string|null $name
 	* @return Email
 	*/
-	public function addReplyTo($address, $name = null)
+	public function setReplyTo($address, $name = null)
 	{
-		$this->replyTo[] = array($address, $name);
+		$this->replyTo = array($address, $name);
 
 		return $this;
 	}
@@ -499,15 +499,15 @@ class Email
 		$this->headers['Return-Path'] = $this->formatAddress($this->from);
 		$this->headers['To'] = $this->formatAddressList($this->to);
 
-		if (!empty($this->replyTo)) {
-			$this->headers['Reply-To'] = $this->formatAddressList($this->replyTo);
+		if (count($this->replyTo) > 0) {
+			$this->headers['Reply-To'] = $this->formatAddress($this->replyTo);
 		}
 
-		if (!empty($this->cc)) {
+		if (count($this->cc) > 0) {
 			$this->headers['Cc'] = $this->formatAddressList($this->cc);
 		}
 
-		if (!empty($this->bcc)) {
+		if (count($this->bcc) > 0) {
 			$this->headers['Bcc'] = $this->formatAddressList($this->bcc);
 		}
 
