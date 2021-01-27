@@ -5,9 +5,9 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.5.1
+ * @version 1.6.0
  * 
-$mail = new \True\Email('domain.com', 465);  // ssl and tcp are turned on or off automatacally based on the port provided.
+$mail = new \True\Email('domain.com', 465, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
 ->setFrom('user@domain.com', 'name')
 ->setReplyTo('user@domain.com', 'name')
@@ -96,6 +96,8 @@ class Email
 
 	/** @var bool $isTLS */
 	protected $isTLS = false;
+	protected $isSSL = false;
+	protected $authMethod = 'plain';
 
 	/** @var array $logs */
 	protected $logs = array();
@@ -130,14 +132,15 @@ class Email
 	* @param int $responseTimeout
 	* @param string|null $hostname
 	*/
-	public function __construct($server, $port = 25, $protocol = null, $connectionTimeout = 30, $responseTimeout = 8, $hostname = null)
+	public function __construct($server, $port = 25, $protocol = 'tls', $authMethod = 'plain')
 	{
 		$this->port = $port;
 		$this->server = $server;
 		$this->setProtocol($protocol);
-		$this->connectionTimeout = $connectionTimeout;
-		$this->responseTimeout = $responseTimeout;
-		$this->hostname = empty($hostname) ? gethostname() : $hostname;
+		$this->connectionTimeout = 30;
+		$this->responseTimeout = 8;
+		$this->authMethod = $authMethod;
+		$this->hostname = gethostname();
 		$this->headers['MIME-Version'] = '1.0';
 	}
 
@@ -334,13 +337,28 @@ class Email
 	* @param string $protocol 'tls'
 	* @return Email
 	*/
-	public function setProtocol($protocol = null)
+	public function setProtocol(string $protocol)
 	{
 		if ($protocol == 'tls') {
 			$this->isTLS = true;
+		} elseif ($protocol == 'ssl') {
+			$this->isSSL = true;
 		}
 
 		$this->protocol = $protocol;
+
+		return $this;
+	}
+
+	/**
+	 * set the Auth Method
+	 *
+	 * @param string $method # lowercase version: plain, login, cram-md5, digest-md5
+	 * @return Email
+	 */
+	public function setAuthMethod(string $method)
+	{
+		$this->authMethod = $method;
 
 		return $this;
 	}
@@ -469,26 +487,32 @@ class Email
 		$this->logs['SocketInfo'] = "Server: ".$this->getServer()."; Port: ".$this->port;
 		$this->logs['Socket'] = "Error:".$errorNumber." ".$errorMessage;
 
-		if (empty($this->socket)) {			
+		if (!is_resource($this->socket)) {			
 			return false;
 		}
+
+		stream_set_timeout($this->socket, $this->connectionTimeout);
 
 		$this->logs['CONNECTION'] = $this->getResponse();
 		$this->logs['HELLO'][1] = $this->sendCommand('EHLO ' . $this->hostname);
 
 		if ($this->isTLS) {
 			$this->logs['STARTTLS'] = $this->sendCommand('STARTTLS');
-			stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
-			$this->logs['HELLO'][2] = $this->sendCommand('EHLO ' . $this->hostname);
-		}
+			if (substr($this->logs['STARTTLS'], 0, 3) == "220") {
+				stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT);
+				$this->logs['HELLO'][2] = $this->sendCommand('EHLO ' . $this->hostname);
+			} else {
+				$this->logs['STARTTLS_ERRORS'] = "Server did not respond with 220 successful. Try ssl method.";
+			}			
+		}		
 
-		$this->logs['AUTH'] = $this->sendCommand('AUTH LOGIN');
+		$this->logs['AUTH'] = 'AUTH '.strtoupper($this->authMethod).': '.$this->sendCommand('AUTH '.strtoupper($this->authMethod));
 		$this->logs['USERNAME'] = $this->sendCommand(base64_encode($this->username));
 		$this->logs['PASSWORD'] = $this->sendCommand(base64_encode($this->password));
 		
 		$this->logs['MAIL_FROM'] = $this->sendCommand('MAIL FROM: <' . $this->from[0] . '>');
 
-		$recipients = array_merge($this->to, $this->cc, $this->bcc);
+		$recipients = array_merge($this->to, $this->cc, $this->bcc); 
 		foreach ($recipients as $address) {
 			$this->logs['RECIPIENTS'][] = $this->sendCommand('RCPT TO: <' . $address[0] . '>');
 		}
@@ -575,6 +599,8 @@ class Email
 			$headers .= $k . ': ' . $v . self::CRLF;
 		}
 
+		$this->logs['HEADERS'] = $headers;
+
 		if ($this->insertDKIM)
 			$this->generateDKIM();
 
@@ -584,8 +610,9 @@ class Email
 		$this->logs['DATA'][2] = $this->sendCommand($headers . self::CRLF . $message . self::CRLF . '.');
 		$this->logs['QUIT'] = $this->sendCommand('QUIT');
 		fclose($this->socket);
-
-		return substr($this->logs['DATA'][2], 0, 3) == self::OK;
+		
+		return (substr($this->logs['DATA'][2], 0, 3) == '250'? true:false);
+		//return substr($this->logs['DATA'][2], 0, 3) == self::OK;
 	}
 
 	/**
