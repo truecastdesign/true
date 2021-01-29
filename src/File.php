@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.2.1
+ * @version 1.2.3
  * 
  * Use:
  * 
@@ -15,6 +15,9 @@ namespace True;
  * 	echo $request->files->fieldName->ext; // jpg
  * 	echo $request->files->fieldName->mime; // image/jpeg
  * }
+ * 
+ * Multiple files uploaded with one file field
+ * echo $request->files->fieldName[0]->name;
  * 
  * $request->files->file->imageWidth = 800;
  * $request->files->file->imageHeight = 800;
@@ -40,14 +43,15 @@ class File
 	var $cropBottom = 0;
 	var $cropLeft = 0;
 
-	public function __construct($file)
+	public function __construct($file, $name)
 	{
+		# check for multiple files on one field
 		$this->file = $file;
 		$this->file['uploaded'] = ($file['error']==0? true:false);
 		if ($this->file['uploaded'] and !empty($this->file['tmp_name'])) {
 			$this->file['ext'] = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 			$this->file['mime'] = mime_content_type($file['tmp_name']);
-		}		
+		}
 	}
 
 	public function __get($value)

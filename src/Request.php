@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.1
+ * @version v1.0.2
  * 
  * Available keys
  * method # GET,POST,etc
@@ -77,8 +77,29 @@ class Request
 
 		if (isset($_FILES)) {
 			$this->files = (object)[];
-			foreach ($_FILES as $name=>$file)
-				$this->files->{$name} = new \True\File($file);			
+			foreach ($_FILES as $name=>$file) {
+				
+				if (is_array($file['name'])) {					
+					for ($i=0; $i<count($file['name']); $i++) {
+						$newFile = [];
+						$newFile = [
+							'name'=>$file['name'][$i],
+							'uploaded'=>($file['error'][$i]==0? true:false),
+							'type'=>$file['type'][$i],
+							'tmp_name'=>$file['tmp_name'][$i],
+							'size'=>$file['size'][$i]
+						];
+
+						if ($newFile['uploaded'] and !empty($newFile['tmp_name'])) {
+							$newFile['ext'] = strtolower(pathinfo($newFile['name'], PATHINFO_EXTENSION));
+							$newFile['mime'] = mime_content_type($newFile['tmp_name']);
+						}
+						$this->files->{$name}[$i] = new \True\File($newFile, $newFile['name']);
+					}
+					
+				} else
+					$this->files->{$name} = new \True\File($file, $name);
+			}
 		}
 
 		$cleanedContentType = trim(explode(';', $this->contentType)[0]);		
