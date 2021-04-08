@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.8
+ * @version 5.5.9
  */
 
 class PhpView
@@ -234,7 +234,8 @@ class PhpView
 					extract($this->vars['variables']);
 					extract($variables);
 					extract($this->metaData);
-					include BP.'/app/views/_partials/'.$partial;
+					if (!include(BP.'/app/views/_partials/'.$partial)) 
+						throw new \Exception("Included partial not found: ".BP.'/app/views/_partials/'.$partial);
 				$replaceTags[] = ob_get_clean();
 				$searchTags[] = "{partial:".$partial."}";
 			}
@@ -378,6 +379,10 @@ class PhpView
 		}
 		else {
 			$this->metaData['_headHTML'] = '';
+		}
+
+		foreach ($metaData as $key=>$value) {
+			$this->vars[$key] = $value;
 		}
 
 		if (isset($metaData['css'])) {
@@ -988,6 +993,3 @@ class PhpView
 		return rtrim($out);
 	}
 }
-
-
-?>
