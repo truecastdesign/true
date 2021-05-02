@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.0
+ * @version 1.6.1
  * 
 $mail = new \True\Email('domain.com', 465, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
@@ -123,14 +123,12 @@ class Email
 
 	/**
 	 * Class constructor
-	*  -- Set server name, port and timeout values
+	*  -- Set server name, port, protocal, and auth method
 	*
-	* @param string $server
-	* @param int $port
-	* @param string $protocol // leave null for auto detection. Values: tcp or ssl
-	* @param int $connectionTimeout
-	* @param int $responseTimeout
-	* @param string|null $hostname
+	* @param string $server // hostname domain.com
+	* @param int $port // 25, 465 or 587
+	* @param string $protocol // leave null for auto detection. Values: tls or ssl
+	* @param string $authMethod // Values: plain, login, cram-md5
 	*/
 	public function __construct($server, $port = 25, $protocol = 'tls', $authMethod = 'plain')
 	{
