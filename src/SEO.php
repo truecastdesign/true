@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.0.0
+ * @version 1.1.0
  */
 class SEO
 {
@@ -33,6 +33,23 @@ class SEO
 
 		if (!empty($info->social_media->instagram))
 			$sameAs[] = $info->social_media->instagram;
+
+		$itemListElements = [];
+		if (is_array($info->breadcrumbs)) {
+			$position = 1;
+			foreach ($info->breadcrumbs as $crumb) {
+				$itemListElements[] = (object)[
+					"@type"=>"ListItem",
+					"position"=>$position,
+					"item"=>[
+						"@type"=>"WebSite",
+						"@id"=>$info->base_url.$crumb['url'],
+						"name"=>$crumb['name']
+					]
+				];
+				$position++;
+			}
+		}
 		
 		$data = [
 			"@context" => "http://schema.org",
@@ -81,9 +98,6 @@ class SEO
 					"datePublished"=> $info->datePublished,
 					"dateModified"=> $info->dateModified,
 					"description"=> $info->description,
-					"breadcrumb"=> [
-						"@id"=> $info->url."/#breadcrumb"
-					],
 					"inLanguage"=> "en-GB",
 					"potentialAction"=> [
 						0=>[
@@ -93,6 +107,10 @@ class SEO
 							]
 						]
 					]
+				],
+				3=>[
+					"@type"=>"BreadcrumbList",
+					"itemListElement"=>$itemListElements 
 				]
 				
 			],
@@ -105,20 +123,3 @@ class SEO
 		return $html;
 	}
 }
-
-// 3=>[
-// 					"@type"=> "BreadcrumbList",
-// 					"@id"=> $info->url."/#breadcrumb",
-// 					"itemListElement"=> [
-// 						0=>[
-// 							"@type"=> "ListItem",
-// 							"position"=> 1,
-// 							"item"=> [
-// 								"@type"=> "WebPage",
-// 								"@id"=> $info->url,
-// 								"url"=> $info->url,
-// 								"name"=> "Home"
-// 							]
-// 						]
-// 					]
-// 				]
