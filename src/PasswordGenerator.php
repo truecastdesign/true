@@ -5,11 +5,16 @@ namespace True;
 /**
  * Generate Word Based Passwords
  * 
- * @version 1.0.0
+ * @version 1.0.1
  * 
 */
 class PasswordGenerator
 {
+	public function __construct()
+	{
+		
+	}
+	
 	public function generate($words = 4)
 	{
 		$adjectives = explode(" ",file_get_contents(BP.'/vendor/truecastdesign/true/assets/adjectives.txt'));
