@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.8.5
+v2.9.0
 
 These classes form the basic functionality of True framework.
 
@@ -80,6 +80,7 @@ $App->view->variables = ['key'=>'value'];
 $App->view->variables = ['key2'=>'value2'];
 $App->view->variables = ['key'=>'value', 'key3'=>'value3'];
 # all the arrays will get merged together so you can keep added them and they will all be available. In the view: <?=$key?> <?=$key2?> <?=$key3?>
+
 
 # check routes
 require 'app/routes.php';
@@ -435,6 +436,23 @@ $App->view->description = "This is the meta description and og:description";  //
 $App->view->canonical = "http://www.domain.com/canonical-url"; // Output variable: $_metaCanonical
 $App->view->linkText = "Clickable Text to link to page"; // Output variable: $_metaLinkText
 $App->view->headHtml = "<script src='/path/js/dom/js'></script>"; // Output variable: $_headHTML
+```
+
+#### Custom variables
+
+You can use your own custom variables now so you can pass the values to the base template for outputting in the header for example.
+
+In the meta area of the view/.phtml file, add your custom variable like:
+```php
+customVariable = "custom value"
+{endmeta}
+```
+
+When you put that in the meta area of a file, then the base template will be able to access and check if it is available with the following.
+```php
+<?if ($App->view->isset('customVariable')):?>
+	<?=$App->view->customVariable?>
+<?endif?>
 ```
 
 

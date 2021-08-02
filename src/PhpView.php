@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.5.9
+ * @version 5.6.0
  */
 
 class PhpView
@@ -113,6 +113,17 @@ class PhpView
 	 */
 	public function __unset($key) {
 		$this->vars[$key] = '';
+	}
+
+	/**
+	 * Check if the variable is set
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function isset(string $key)
+	{
+		return isset($this->vars[$key]);
 	}
 
 	/**
