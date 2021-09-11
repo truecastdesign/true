@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.1
+ * @version 1.6.2
  * 
 $mail = new \True\Email('domain.com', 465, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
@@ -679,7 +679,7 @@ class Email
 	*/
 	protected function formatAddress($address)
 	{
-		return (empty($address[1])) ? $address[0] : '"' . $address[1] . '" <' . $address[0] . '>';
+		return (empty($address[1]) ? $address[0]:'"'.$address[1].'" <'.$address[0].'>');
 	}
 
 	/**

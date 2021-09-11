@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.0
+ * @version 5.6.1
  */
 
 class PhpView
@@ -24,6 +24,13 @@ class PhpView
 
 	public function __construct($args = null)
 	{
+		global $App;
+		
+		if (isset($App->config->site->public_dir))
+			$publicDir = $App->config->site->public_dir;
+		else
+			$publicDir = 'public_html';
+		
 		# from root; end with /; ex: BP.'/app/views/'
 		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/');
 		
@@ -31,7 +38,7 @@ class PhpView
 		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/');
 		
 		# from root; end with /; ex: BP.'/public_html/assets/'
-		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/public_html/assets/'); 
+		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/'.$publicDir.'/assets/'); 
 		
 		# from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
 		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); 
