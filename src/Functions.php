@@ -692,8 +692,8 @@ class Functions
 	/**
 	 * conver time in seconds to a string, array or object
 	 *
-	 * @param [type] $from
-	 * @param [type] $to
+	 * @param int $from
+	 * @param int $to
 	 * @param string $type
 	 * @return string, array, object '2 weeks 1 day 10 hours 5 minutes 22 seconds'
 	 */
