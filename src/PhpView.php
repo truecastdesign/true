@@ -14,6 +14,7 @@ class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
+	static $version = "5.6.2";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -657,6 +658,8 @@ class PhpView
 
 		global $TAConfig;
 
+		$str = '';
+
 		#echo ' -- '.$Config->controlling_module.' -- ';
 		#echo $_SERVER["SCRIPT_FILENAME"]."\n";
 		
@@ -707,6 +710,7 @@ class PhpView
 			}
 			else
 			{
+				$url = '';
 				$url .= '/'.$parts[$i];
 
 				if($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
@@ -875,6 +879,7 @@ class PhpView
 		if($page == 1) $pageRange = $pageRange + 2;
 		$totalPages = ceil($rowCount/$perPage);
 		$rangeLimit = ceil($pageRange/2);
+		$output = '';
 
 		$output .= '
 		<div class="Pages">
@@ -975,6 +980,8 @@ class PhpView
 	public function getSectionActions()
 	{
 		global $TAConfig;
+
+		$str = '';
 		
 		if(is_object($this->vars['section_action'][0]))
 		foreach($this->vars['section_action'] as $action)
