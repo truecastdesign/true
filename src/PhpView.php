@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.1
+ * @version 5.6.2
  */
 
 class PhpView
@@ -237,7 +237,7 @@ class PhpView
 
 		
 		if (isset($fileParts[0]) and isset($fileParts[1]))  # does the template have meta data
-			$this->processMetaData( parse_ini_string($fileParts[0]) );
+			$this->processMetaData( parse_ini_string($fileParts[0]));
 		else
 			$this->processMetaData(); # just process global meta data
 	
@@ -397,6 +397,22 @@ class PhpView
 		}
 		else {
 			$this->metaData['_headHTML'] = '';
+		}
+
+		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
+		$protocol = $_SERVER['REQUEST_SCHEME'] ?? $https ? 'https':'http';
+		$urlStart = $protocol.'://'.$_SERVER['HTTP_HOST'];
+
+		$this->vars['breadcrumbs'] = [];
+
+		if (isset($metaData['breadcrumb'])) {
+			if (is_array($metaData['breadcrumb'])) {
+
+				foreach ($metaData['breadcrumb'] as $crumb) {
+					$parts = explode('|', $crumb);
+					$this->vars['breadcrumbs'][] = ['name'=>$parts[0], 'url'=>$urlStart.$parts[1]];
+				}
+			}
 		}
 
 		foreach ($metaData as $key=>$value) {

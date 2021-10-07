@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.1.0
+ * @version 1.2.0
  */
 class SEO
 {
@@ -14,7 +14,7 @@ class SEO
 	/**
 	 * Used by Google
 	 *
-	 * @param object $info {"url", "title", "description", "site_logo_url", "site_logo_width", "site_logo_height", "site_logo_caption", "datePublished", "dateModified", "social_media"=>{"facebook", "twitter", "youtube", "instagram"}}
+	 * @param object $info {"url", "title", "description", "site_logo_url", "site_logo_width", "site_logo_height", "site_logo_caption", "datePublished", "dateModified", "social_media"=>{"facebook", "twitter", "youtube", "instagram"}, "breadcrumbs"=>[{"name"=>"Books", "url"=>"/books/"},{"name"=>"Science Fiction", "url"=>"/books/sciencefiction/"}]}
 	 * @return void
 	 */
 	public function schemaGraph(object $info)
@@ -41,6 +41,25 @@ class SEO
 				$itemListElements[] = (object)[
 					"@type"=>"ListItem",
 					"position"=>$position,
+					"name"=>$crumb['name'],
+					"item"=>$crumb['url']
+				];
+				$position++;
+			}
+
+			$itemListElements[] = (object)[
+				"@type"=>"ListItem",
+				"position"=>$position,
+				"name"=>$info->title
+			];
+		}
+
+		/*if (is_array($info->breadcrumbs)) {
+			$position = 1;
+			foreach ($info->breadcrumbs as $crumb) {
+				$itemListElements[] = (object)[
+					"@type"=>"ListItem",
+					"position"=>$position,
 					"item"=>[
 						"@type"=>"WebSite",
 						"@id"=>$info->base_url.$crumb['url'],
@@ -49,7 +68,7 @@ class SEO
 				];
 				$position++;
 			}
-		}
+		}*/
 		
 		$data = [
 			"@context" => "http://schema.org",
