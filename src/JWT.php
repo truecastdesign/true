@@ -8,7 +8,7 @@ namespace True;
  * Neuman Vong and Anant Narayanan found here: https://github.com/firebase/php-jwt
  * 
  * @license  http://opensource.org/licenses/BSD-3-Clause 3-clause BSD
- * @version v1.2
+ * @version v1.2.1
  * 
  */
 class JWT 
@@ -17,6 +17,7 @@ class JWT
 	public static $leeway = 0;                      // allows for nbf, iat or exp clock skew
 	public static $timestamp = null;                // allow timestamp to be specified for testing. Defaults to php (time) if null.
 	public static $supported_algs = [
+		'SHA1' => ['openssl', OPENSSL_ALGO_SHA1],
 		'RS256' => ['openssl', OPENSSL_ALGO_SHA256],
 		'RS384' => ['openssl', OPENSSL_ALGO_SHA384],
 		'RS512' => ['openssl', OPENSSL_ALGO_SHA512]
@@ -61,13 +62,13 @@ class JWT
 			throw new \Exception('Invalid signature encoding');
 
 		if (empty($header->alg))
-			throw new \Exception('Empty algorithm');
+			throw new \Exception('Empty algorithm!');
 
 		if (empty(static::$supported_algs[$header->alg]))
-			throw new \Exception('Algorithm not supported');
+			throw new \Exception('Algorithm '.$header->alg.' not supported!');
 
 		if (!in_array($header->alg, $allowed_algs))
-			throw new \Exception('Algorithm not allowed');
+			throw new \Exception('Algorithm '.$header->alg.' not allowed!');
 
 		if (is_array($key) || $key instanceof ArrayAccess) {
 			if (isset($header->kid)) {
@@ -152,7 +153,7 @@ class JWT
 	public static function sign(string $msg, string $key, string $keyPassword, $alg = 'RS256'): string
 	{ 
 		if (empty(static::$supported_algs[$alg]))
-			throw new \Exception('Algorithm not supported');
+			throw new \Exception('Algorithm '.$alg.' not supported!');
 	
 		list($function, $algorithm) = static::$supported_algs[$alg];
 		
@@ -183,7 +184,7 @@ class JWT
 	private static function verify(string $msg, string $signature, string $key, string $alg)
 	{
 		if (empty(static::$supported_algs[$alg]))
-			throw new \Exception('Algorithm not supported');
+			throw new \Exception('Algorithm '.$alg.' not supported!');
 		
 		list($function, $algorithm) = static::$supported_algs[$alg];
 		
