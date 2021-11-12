@@ -431,11 +431,12 @@ $App->view->cache = true;
 #### Other variables
 
 ```php
-$App->view->title = "Title Tag";  // Output variable: $_metaTitle
-$App->view->description = "This is the meta description and og:description";  // Output variable: $_metaDescription
-$App->view->canonical = "http://www.domain.com/canonical-url"; // Output variable: $_metaCanonical
-$App->view->linkText = "Clickable Text to link to page"; // Output variable: $_metaLinkText
-$App->view->headHtml = "<script src='/path/js/dom/js'></script>"; // Output variable: $_headHTML
+$App->view->title = "Title Tag";
+$App->view->description = "This is the meta description and og:description";
+$App->view->canonical = "http://www.domain.com/canonical-url";
+$App->view->linkText = "Clickable Text to link to page"; 
+$App->view->headHtml = "<script src='/path/js/dom/js'></script>"; 
+$App->view->html // page body HTML 
 $App->view->breadcrumbs // array of breadcrumbs with name and url
 // populate using meta area of view file like the following. Only on pages with parent pages. Home is not a parent page according to Google. Put them in decending order from parents down.
 // breadcrumb[] = "Top Parent Title|/parent"
