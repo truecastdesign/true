@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.2
+ * @version 5.6.3
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.6.2";
+	static $version = "5.6.3";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -134,6 +134,11 @@ class PhpView
 		return isset($this->vars[$key]);
 	}
 
+	public function __isset($key)
+	{
+		return isset($this->vars[$key]);
+	}
+
 	/**
 	 * Render views. Use .phtml file
 	 * Format files with meta data at the top with {endmeta} before the html starts
@@ -188,7 +193,7 @@ class PhpView
 		header('Referrer-Policy: same-origin');
 		header('X-Frame-Options: sameorigin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
-		header_remove("X-Powered-By");		
+		header_remove("X-Powered-By");
 				
 		if (isset($this->vars['base_path']) and !$fullPath)
 			$taView = $this->vars['base_path'].$taView;
@@ -235,13 +240,25 @@ class PhpView
 			$fileParts[1] = $fileContents;
 			unset($fileParts[0]);
 		}
-
 		
-		if (isset($fileParts[0]) and isset($fileParts[1]))  # does the template have meta data
-			$this->processMetaData( parse_ini_string($fileParts[0]));
+		if (isset($fileParts[0]) and isset($fileParts[1])) {  # does the template have meta data
+			$metaDataArray = parse_ini_string($fileParts[0]);
+			foreach ($metaDataArray as $metaKey=>$metaValue) {
+				if ($metaKey == 'cache') {
+					$metaValue = ($metaValue == 1) ? true:false;
+				}
+				$App->view->{$metaKey} = $metaValue;
+			}
+			$this->processMetaData($metaDataArray);
+		}
 		else
-			$this->processMetaData(); # just process global meta data
-	
+			$this->processMetaData(); # just process global meta data	
+		
+		# if status in view is set but not to published it will return 404 page.
+		if (isset($App->view->status) and $App->view->status != 'published') {
+			$App->view->status = null;
+			$this->render($this->vars['base_path'].$this->vars['404'], $variables);
+		}
 
 		# insert template into page if needed
 		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
@@ -291,11 +308,13 @@ class PhpView
 		
 		else
 			$this->metaData['_html'] = '';
+
+		$App->view->html = $this->metaData['_html'];
 		
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
-		extract($variables);			
+		extract($variables);
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
@@ -337,15 +356,17 @@ class PhpView
 
 	private function processMetaData($metaData = null)
 	{	
-		if($metaData == null) {
+		if ($metaData == null) {
 			$metaData = [];
 		}
+
+		global $App;
 
 		$css = [];
 		$js = [];
 
 		# add in global vars
-		if (isset($this->vars['title'])) {
+		/*if (isset($this->vars['title'])) {
 			$this->metaData['_metaTitle'] = trim($this->vars['title']);
 		}			
 		
@@ -366,7 +387,7 @@ class PhpView
 		}
 		else {
 			$this->metaData['_headHTML'] = '';
-		}
+		}*/
 
 		if (isset($this->vars['css'])) {
 			$css = explode(',',trim($this->vars['css']));
@@ -377,7 +398,7 @@ class PhpView
 		}
 
 		# template meta
-		if (isset($metaData['title'])) {
+		/*if (isset($metaData['title'])) {
 			$this->metaData['_metaTitle'] = trim($metaData['title']);
 		}			
 		
@@ -398,7 +419,7 @@ class PhpView
 		}
 		else {
 			$this->metaData['_headHTML'] = '';
-		}
+		}*/
 
 		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
 		$protocol = $_SERVER['REQUEST_SCHEME'] ?? $https ? 'https':'http';
@@ -416,9 +437,9 @@ class PhpView
 			}
 		}
 
-		foreach ($metaData as $key=>$value) {
-			$this->vars[$key] = $value;
-		}
+		// foreach ($metaData as $key=>$value) {
+		// 	$this->vars[$key] = $value;
+		// }
 
 		if (isset($metaData['css'])) {
 			$css = array_merge($css, explode(',',trim($metaData['css'])));
@@ -428,23 +449,25 @@ class PhpView
 			$js = array_merge($js, explode(',',trim($metaData['js'])));
 		}
 
-		if (isset($metaData['cache'])) {
-			if ($metaData['cache'] == 1) {
-				$this->vars['cache'] = true;
-			} else {
-				$this->vars['cache'] = false;
-			}
-		}
+		// if (isset($metaData['cache'])) {
+		// 	if ($metaData['cache'] == 1) {
+		// 		$this->vars['cache'] = true;
+		// 	} else {
+		// 		$this->vars['cache'] = false;
+		// 	}
+		// }
 
 		$css = $this->processAssetsPaths($css);
 		$js = $this->processAssetsPaths($js);
 		
 		if (is_array($js)) {	
-			$this->metaData['_js'] = $this->buildJSFile($js);		
+			$this->metaData['_js'] = $this->buildJSFile($js);
+			$App->view->jsoutput = $this->metaData['_js'];
 		}
 
 		if (is_array($css)) {
 			$this->metaData['_css'] = $this->buildCSSFile($css);
+			$App->view->cssoutput = $this->metaData['_css'];
 		}
 	}
 
