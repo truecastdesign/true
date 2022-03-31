@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.10.2
+v2.10.3
 
 These classes form the basic functionality of True framework.
 
@@ -569,6 +569,29 @@ foreach ($Parser as $row) {
 }
 ```
 
+## SEO/OpenGraph LD+JSON
+
+Use this method of the SEO class to output LD+JSON schema.org meta data.
+
+```php
+$schemaInfo = (object)[
+	"base_url"=>$App->config->site->url,
+	"url"=>$App->request->url->full, 
+	"title"=>$App->view->title, 
+	"description"=>$App->view->description, 
+	"site_logo_url"=>$App->config->site->site_logo_url, 
+	"site_logo_width"=>$App->config->site->site_logo_width, 
+	"site_logo_height"=>$App->config->site->site_logo_height, 
+	"site_logo_caption"=>$App->config->site->site_logo_caption, 
+	"datePublished"=>$App->view->datePublished, 
+	"dateModified"=>$App->view->dateModified, 
+	"social_media"=>$App->config->social_media,
+	"breadcrumbs"=>$App->view->breadcrumbs,
+	"
+];
+
+echo $SEO->schemaGraph($schemaInfo);
+```
 
 Usage
 -----

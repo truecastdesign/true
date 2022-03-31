@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.2
+ * @version 1.6.3
  * 
 $mail = new \True\Email('domain.com', 465, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
@@ -563,7 +563,7 @@ class Email
 			if (is_array($this->messageReplaceVariables)) {
 				$searchStrings = array_keys($this->messageReplaceVariables);
 				$replaceStrings = array_values($this->messageReplaceVariables);
-				$this->htmlMessage .= str_replace($searchStrings, $replaceStrings, $this->htmlMessage);
+				$this->htmlMessage = str_replace($searchStrings, $replaceStrings, $this->htmlMessage);
 			}							
 			
 			$message .= '--alt-' . $boundary . self::CRLF;
