@@ -478,6 +478,15 @@ $App->view->render('page.phtml', ['var1'=>6]);
 
 The second parameter is an array of variable that will be available to the page. In the above example, `$var1` will be equel to 6. You can pass class objects this way as well.
 
+### Using a Custom Layout (header/footer code) to insert your view into.
+
+Make a custom controller and in the controller put:
+
+```php
+$App->view->layout = BP."/app/views/_layouts/landing-page.phtml";
+$App->view->render('page.phtml');
+```
+
 ### Render file that is not in the /app/views directory
 
 ```php
