@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.2.0
+ * @version 1.2.1
  */
 class SEO
 {
@@ -22,17 +22,12 @@ class SEO
 		$info->url = rtrim($info->url, '/');
 		
 		$sameAs = [];
-		if (!empty($info->social_media->facebook))
-			$sameAs[] = $info->social_media->facebook;
-
-		if (!empty($info->social_media->twitter))
-			$sameAs[] = $info->social_media->twitter;
-
-		if (!empty($info->social_media->youtube))
-			$sameAs[] = $info->social_media->youtube;
-
-		if (!empty($info->social_media->instagram))
-			$sameAs[] = $info->social_media->instagram;
+		
+		if (is_object($info->social_media)) {
+			$socialMedia = (array) $info->social_media;
+			foreach ($socialMedia as $site)
+				$sameAs[] = $site;
+		}
 
 		$itemListElements = [];
 		if (is_array($info->breadcrumbs)) {

@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.3
+ * @version 5.6.4
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.6.3";
+	static $version = "5.6.4";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -76,6 +76,32 @@ class PhpView
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
 	public function __set($key, $value)
+	{
+		switch ($key) {
+			case 'variables':
+				$this->vars['variables'] = array_merge($this->vars['variables'], $value);
+			break;
+			case 'css':
+			case 'js':
+				if (!empty($this->vars[$key])) {
+					$this->vars[$key] .= ', '.$value;
+				} else {
+					$this->vars[$key] = $value;
+				}		 
+			break;
+			default:
+				$this->vars[$key] = $value;
+		}	
+	}
+
+	/**
+	 * force adding to var array
+	 *
+	 * @param string $key
+	 * @param string|array $value
+	 * @return void
+	 */
+	public function addVar($key, $value)
 	{
 		switch ($key) {
 			case 'variables':
@@ -223,9 +249,8 @@ class PhpView
 			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
 		}
 
-		global $App;
-
 		ob_start(); 
+			global $App;
 			extract($this->vars['variables']);
 			extract($variables);
 			extract($this->metaData);
@@ -243,20 +268,20 @@ class PhpView
 		
 		if (isset($fileParts[0]) and isset($fileParts[1])) {  # does the template have meta data
 			$metaDataArray = parse_ini_string($fileParts[0]);
+			
 			foreach ($metaDataArray as $metaKey=>$metaValue) {
-				if ($metaKey == 'cache') {
+				if ($metaKey == 'cache')
 					$metaValue = ($metaValue == 1) ? true:false;
-				}
-				$App->view->{$metaKey} = $metaValue;
+
+				$this->addVar($metaKey, $metaValue);
 			}
-			$this->processMetaData($metaDataArray);
 		}
-		else
-			$this->processMetaData(); # just process global meta data	
+
+		$this->processMetaData(); # just process global meta data	
 		
 		# if status in view is set but not to published it will return 404 page.
-		if (isset($App->view->status) and $App->view->status != 'published') {
-			$App->view->status = null;
+		if (isset($this->vars['status']) and $this->vars['status'] != 'published') {
+			$this->vars['status'] = null;
 			$this->render($this->vars['base_path'].$this->vars['404'], $variables);
 		}
 
@@ -309,12 +334,13 @@ class PhpView
 		else
 			$this->metaData['_html'] = '';
 
-		$App->view->html = $this->metaData['_html'];
+		$this->vars['html'] = $this->metaData['_html'];
 		
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
 		extract($variables);
+		global $App;
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
@@ -356,70 +382,19 @@ class PhpView
 
 	private function processMetaData($metaData = null)
 	{	
-		if ($metaData == null) {
+		if ($metaData == null)
 			$metaData = [];
-		}
 
-		global $App;
+		//global $App;
 
 		$css = [];
 		$js = [];
 
-		# add in global vars
-		/*if (isset($this->vars['title'])) {
-			$this->metaData['_metaTitle'] = trim($this->vars['title']);
-		}			
-		
-		if (isset($this->vars['description'])) {
-			$this->metaData['_metaDescription'] = trim($this->vars['description']);
-		}
-		
-		if (isset($this->vars['linkText'])) {
-			$this->metaData['_metaLinkText'] = trim($this->vars['linkText']);
-		}
-		
-		if (isset($this->vars['canonical'])) {
-			$this->metaData['_metaCanonical'] = trim($this->vars['canonical']);
-		}
-
-		if (isset($this->vars['headHtml'])) {
-			$this->metaData['_headHTML'] = trim($this->vars['headHtml']);
-		}
-		else {
-			$this->metaData['_headHTML'] = '';
-		}*/
-
-		if (isset($this->vars['css'])) {
+		if (isset($this->vars['css']))
 			$css = explode(',',trim($this->vars['css']));
-		}
 		
-		if (isset($this->vars['js'])) {
+		if (isset($this->vars['js']))
 			$js = explode(',',trim($this->vars['js']));
-		}
-
-		# template meta
-		/*if (isset($metaData['title'])) {
-			$this->metaData['_metaTitle'] = trim($metaData['title']);
-		}			
-		
-		if (isset($metaData['description'])) {
-			$this->metaData['_metaDescription'] = trim($metaData['description']);
-		}
-		
-		if (isset($metaData['linkText'])) {
-			$this->metaData['_metaLinkText'] = trim($metaData['linkText']);
-		}
-
-		if (isset($metaData['canonical'])) {
-			$this->metaData['_metaCanonical'] = trim($metaData['canonical']);
-		}
-
-		if (isset($metaData['headHtml'])) {
-			$this->metaData['_headHTML'] = trim($metaData['headHtml']);
-		}
-		else {
-			$this->metaData['_headHTML'] = '';
-		}*/
 
 		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
 		$protocol = $_SERVER['REQUEST_SCHEME'] ?? $https ? 'https':'http';
@@ -429,7 +404,6 @@ class PhpView
 
 		if (isset($metaData['breadcrumb'])) {
 			if (is_array($metaData['breadcrumb'])) {
-
 				foreach ($metaData['breadcrumb'] as $crumb) {
 					$parts = explode('|', $crumb);
 					$this->vars['breadcrumbs'][] = ['name'=>$parts[0], 'url'=>$urlStart.$parts[1]];
@@ -437,37 +411,23 @@ class PhpView
 			}
 		}
 
-		// foreach ($metaData as $key=>$value) {
-		// 	$this->vars[$key] = $value;
-		// }
-
-		if (isset($metaData['css'])) {
+		if (isset($metaData['css']))
 			$css = array_merge($css, explode(',',trim($metaData['css'])));
-		}
 
-		if (isset($metaData['js'])) {
+		if (isset($metaData['js']))
 			$js = array_merge($js, explode(',',trim($metaData['js'])));
-		}
-
-		// if (isset($metaData['cache'])) {
-		// 	if ($metaData['cache'] == 1) {
-		// 		$this->vars['cache'] = true;
-		// 	} else {
-		// 		$this->vars['cache'] = false;
-		// 	}
-		// }
 
 		$css = $this->processAssetsPaths($css);
 		$js = $this->processAssetsPaths($js);
 		
 		if (is_array($js)) {	
 			$this->metaData['_js'] = $this->buildJSFile($js);
-			$App->view->jsoutput = $this->metaData['_js'];
+			$this->vars['jsoutput'] = $this->metaData['_js'];
 		}
 
 		if (is_array($css)) {
 			$this->metaData['_css'] = $this->buildCSSFile($css);
-			$App->view->cssoutput = $this->metaData['_css'];
+			$this->vars['cssoutput'] = $this->metaData['_css'];
 		}
 	}
 
@@ -510,38 +470,32 @@ class PhpView
 		$cssCachePath = $this->vars['assets_path'].'css/cache/';
 		$cssCacheRootPath = $this->vars['base_assets_path'].'css/cache/';
 				
-		if(!empty($firstPartFilename))
+		if (!empty($firstPartFilename))
 		{
 			$cacheFilename = $firstPartFilename.'.css';
 		
-			if(file_exists($cssCachePath.$cacheFilename))
-			{
+			if (file_exists($cssCachePath.$cacheFilename))
 				return '<link rel="stylesheet" href="'.$cssCachePath.$cacheFilename.'">'."\n";
-			}
-			else
-			{
+			
+			else {
 				# make one instance of SCSS parser
-				if(in_array('.scss', $cssList) !== false) {
+				if (in_array('.scss', $cssList) !== false)
 					$TAscss = new \True\SCSS;
-				}
 			
 				$cachedStr = '';
 			
-				foreach($cssList as $file)
+				foreach ($cssList as $file)
 				{
 					# check to make sure it is a css file
-					if(substr($file, strrpos($file, '.') + 1) == 'css')
-					{ 
-						if(file_exists($file))
+					if (substr($file, strrpos($file, '.') + 1) == 'css') { 
+						if (file_exists($file))
 							$cachedStr .= file_get_contents($file);
 					}
 			
-					elseif(substr($file, strrpos($file, '.') + 1) == 'scss')
+					elseif (substr($file, strrpos($file, '.') + 1) == 'scss')
 					{
-						if(file_exists($file))
-						{
-							 $cachedStr .= $TAscss->compile( file_get_contents($file) );
-						}	
+						if (file_exists($file))
+							$cachedStr .= $TAscss->compile( file_get_contents($file) );
 					}
 				} # end foreach
 			
@@ -574,58 +528,47 @@ class PhpView
 		$cachedJSStr = '';
 
 		# check if only non local files or combined files have already been cached
-		if($cacheFilename === false OR file_exists($jsCacheRootPath))
-		{
-			if(is_array($jsFiles))
-			foreach($jsFiles as $file)
-			{
-				if(strpos($file, '://') !== false OR strpos($file, '*') !== false)
-				{
+		if ($cacheFilename === false OR file_exists($jsCacheRootPath)) {
+			if (is_array($jsFiles))
+			foreach ($jsFiles as $file) {
+				if (strpos($file, '://') !== false OR strpos($file, '*') !== false) {
 					$file = str_replace('*', '', $file);
 
 					$jsScripts .= '<script src="'.$file.'"></script>'."\n";
 				}	
 			}
 
-			if($cacheFilename !== false)
+			if ($cacheFilename !== false)
 				$jsScripts .= '<script src="'.$jsCachePath.'"></script>'."\n";
 			
 			return $jsScripts;
 		}
 		# generate new js files and include them
-		else
-		{
-			foreach($jsFiles as $file)
-			{
+		else {
+			foreach ($jsFiles as $file) {
 			
 				# check to make sure it is a js file
-				if(substr($file, strrpos($file, '.') + 1) == 'js')
+				if (substr($file, strrpos($file, '.') + 1) == 'js')
 				{
-					if(strpos($file, '://') !== false OR strpos($file, '*') !== false)
-					{
+					if (strpos($file, '://') !== false OR strpos($file, '*') !== false)
 						$cdnFiles[] = $file;
-					}
 					else
-					{
 						if(file_exists($file))
 							$cachedJSStr .= file_get_contents($file)."\n";
-					}
 				}
 			}
 			
 			# check and add in external or non cached js files
 			
-			if(isset($cdnFiles))
-			foreach($cdnFiles as $file)
-			{
+			if (isset($cdnFiles))
+			foreach($cdnFiles as $file) {
 				$file = str_replace('*', '', $file);
 
 				$jsScripts .= '<script src="'.$file.'"></script>'."\n";
 			}
 			
 			# check to make sure there is some js code to put in file, else there probably was noting but CDN files.
-			if(!empty($cachedJSStr))
-			{
+			if (!empty($cachedJSStr)) {
 				# minify js string
 				$cachedJSStrMin = \True\JSMin::process($cachedJSStr);
 			
@@ -654,13 +597,12 @@ class PhpView
 	{
 		$content = '';
 
-		foreach($files as $file)
-		{
-			if(strpos($file, '://') === false)
+		foreach ($files as $file) {
+			if (strpos($file, '://') === false)
 				$content .= file_get_contents($file);
 		}
 		
-		if(empty($content))
+		if (empty($content))
 			return false;
 		else
 			return md5($content);
@@ -688,19 +630,18 @@ class PhpView
 		
 		$allParts = explode('/',$path);
 		
-		foreach($allParts as $key=>$value)
-		{
-			if($value) $parts[] = $value;
+		foreach ($allParts as $key=>$value) {
+			if ($value) 
+				$parts[] = $value;
 		}
 		
 		$c = count($parts);
-		for($i=0; $i < $c; $i++)
-		{ 
-			if($i+1 == $c) # last one
+		for ($i=0; $i < $c; $i++) { 
+			if ($i+1 == $c) # last one
 			{
 				$fileParts = explode('.',$parts[$i]);
 
-				if($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
+				if ($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
 				{
 					$fullFilePath = $_SERVER["DOCUMENT_ROOT"].'/modules/'.$TAConfig->controlling_module.'/views'.$path.'.html'; 
 										
@@ -708,23 +649,22 @@ class PhpView
 
 					$j = 0;
 		
-					foreach($lines as $line)
-					{ 
-						if(strpos($line,'?>') !== false)
+					foreach($lines as $line) { 
+						if (strpos($line,'?>') !== false)
 							break;
 						
-						if(strpos($line,'#linkText:') !== false)
-						{
+						if (strpos($line,'#linkText:') !== false) {
 							$viewParts = explode(':',$line,2);
 							$pageLinkText = trim($viewParts[1]);
 						}
 
-						if($j > 12) break;
+						if ($j > 12) 
+							break;
 						$j++;
 					}
 				}
 
-				if(isset($pageLinkText))
+				if (isset($pageLinkText))
 					$linkText = $pageLinkText;
 				else
 					$linkText = self::ucwordss(str_replace('-',' ',$fileParts[0]), ["is", "to", "the", "for"]);
@@ -736,7 +676,7 @@ class PhpView
 				$url = '';
 				$url .= '/'.$parts[$i];
 
-				if($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
+				if ($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
 				{
 					$fullFilePath = $_SERVER["DOCUMENT_ROOT"].'/modules/'.$TAConfig->controlling_module.'/views'.$url.'.html'; 
 					
@@ -744,12 +684,12 @@ class PhpView
 
 					$j = 0;
 		
-					foreach($lines as $line)
+					foreach ($lines as $line)
 					{ 
-						if(strpos($line,'?>') !== false)
+						if (strpos($line,'?>') !== false)
 							break;
 						
-						if(strpos($line,'#linkText:') !== false)
+						if (strpos($line,'#linkText:') !== false)
 						{
 							$viewParts = explode(':',$line,2);
 							$pageLinkText = trim($viewParts[1]);
@@ -760,9 +700,9 @@ class PhpView
 					}
 				}
 
-				if(!empty($parts[$i]))
+				if (!empty($parts[$i]))
 				{
-					if(isset($pageLinkText))
+					if (isset($pageLinkText))
 						$linkText = $pageLinkText;
 					else
 						$linkText = self::ucwordss(str_replace('-',' ',$parts[$i]), ["is", "to", "the", "for"]);
@@ -787,10 +727,10 @@ class PhpView
 	 */
 	public static function nav($propsStr = null)
 	{
-		if($propsStr != null)
+		if ($propsStr != null)
 			$props = json_decode($propsStr, true);
 		
-		if(!isset($props['wrapper'])) 
+		if (!isset($props['wrapper'])) 
 			$props['wrapper'] = 'ul';
 		
 		$html = '';
@@ -873,10 +813,9 @@ class PhpView
 			} 
 			unset($meta, $lines);
 		}
-		if($props['wrapper'] == 'ul')
-		{
+
+		if ($props['wrapper'] == 'ul')
 			$html .= '</ul>';
-		}
 		
 		return $html;
 	}
@@ -1032,8 +971,7 @@ class PhpView
 	 */
 	public function version($str=null)
 	{
-		if($str)
-		{
+		if ($str) {
 			if($str >= self::$version) return true;
 			else return false;
 		}
