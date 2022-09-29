@@ -5,9 +5,9 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.3
+ * @version 1.6.4
  * 
-$mail = new \True\Email('domain.com', 465, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
+$mail = new \True\Email('domain.com', 587, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
 ->setFrom('user@domain.com', 'name')
 ->setReplyTo('user@domain.com', 'name')
@@ -532,6 +532,10 @@ class Email
 		if (count($this->bcc) > 0) {
 			$this->headers['Bcc'] = $this->formatAddressList($this->bcc);
 		}
+		
+		$this->headers['Message-ID'] = '<'.time().'-'.md5($this->from[0].$this->to[0][0]).'@'.$this->getServer().'>';
+		$this->headers['Accept-Language'] = "en-US";
+		$this->headers['Content-Language'] = "en-US";
 
 		$boundary = md5(uniqid(microtime(true), true));
 

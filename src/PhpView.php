@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.4
+ * @version 5.6.5
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.6.4";
+	static $version = "5.6.5";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -612,109 +612,56 @@ class PhpView
 	
 	/**
 	 * create bread crumbs for site
+	 * 
+	 * By default it uses the filename to build the breadcrum link text. If you want custom link text for a page, use the meta data section of the page to set it and add "true" as the boolean second value passed to the function. See below for format.
+	 * 
+	 * linkText = "Page Link Text"
 	 *
 	 * @param string $sep the separator between pages
 	 * @return string html
 	 * @author Daniel Baldwin
 	 */
-	public static function getBreadcrumbs($sep='&#x279D;', $checkLinkText=false)
+	public static function getBreadcrumbs($sep='&#x279D;')
 	{
 		$path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
-		global $TAConfig;
-
 		$str = '';
+		$linkURL = '';
 
-		#echo ' -- '.$Config->controlling_module.' -- ';
-		#echo $_SERVER["SCRIPT_FILENAME"]."\n";
-		
-		$allParts = explode('/',$path);
-		
-		foreach ($allParts as $key=>$value) {
-			if ($value) 
-				$parts[] = $value;
-		}
-		
-		$c = count($parts);
-		for ($i=0; $i < $c; $i++) { 
+		$pagesList = explode('/',ltrim($path, "/"));
+
+		$c = count($pagesList);
+		for ($i=0; $i < $c; $i++) {
+			unset($linkText);
+
+			$page = array_shift($pagesList);
+			
+			$linkURL .= "/$page";
+			
+			$fullFilePath = BP."/app/views$linkURL.phtml";
+			
+			# find the break point for the meta data
+			if (file_exists($fullFilePath)) {
+				$fileParts = explode("{endmeta}", file_get_contents($fullFilePath), 2);
+				
+				if (isset($fileParts[0]))  # does the template have meta data
+					$metaDataArray = parse_ini_string($fileParts[0]);
+				
+				if (isset($metaDataArray['linkText']))
+					$linkText = $metaDataArray['linkText'];
+				elseif (isset($metaDataArray['title']))
+					$linkText = $metaDataArray['title'];
+			}
+
+			if (!isset($linkText))
+				$linkText = self::ucwordss(str_replace('-',' ',$page), ["is", "to", "the", "for"]);				
+
 			if ($i+1 == $c) # last one
-			{
-				$fileParts = explode('.',$parts[$i]);
-
-				if ($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
-				{
-					$fullFilePath = $_SERVER["DOCUMENT_ROOT"].'/modules/'.$TAConfig->controlling_module.'/views'.$path.'.html'; 
-										
-					$lines = file($fullFilePath);
-
-					$j = 0;
-		
-					foreach($lines as $line) { 
-						if (strpos($line,'?>') !== false)
-							break;
-						
-						if (strpos($line,'#linkText:') !== false) {
-							$viewParts = explode(':',$line,2);
-							$pageLinkText = trim($viewParts[1]);
-						}
-
-						if ($j > 12) 
-							break;
-						$j++;
-					}
-				}
-
-				if (isset($pageLinkText))
-					$linkText = $pageLinkText;
-				else
-					$linkText = self::ucwordss(str_replace('-',' ',$fileParts[0]), ["is", "to", "the", "for"]);
-				
 				$str .= ' '.$sep.' '.$linkText;
-			}
 			else
-			{
-				$url = '';
-				$url .= '/'.$parts[$i];
-
-				if ($checkLinkText) # get the linkText meta item from the file for the page title rather than the filename
-				{
-					$fullFilePath = $_SERVER["DOCUMENT_ROOT"].'/modules/'.$TAConfig->controlling_module.'/views'.$url.'.html'; 
-					
-					$lines = file($fullFilePath);
-
-					$j = 0;
-		
-					foreach ($lines as $line)
-					{ 
-						if (strpos($line,'?>') !== false)
-							break;
-						
-						if (strpos($line,'#linkText:') !== false)
-						{
-							$viewParts = explode(':',$line,2);
-							$pageLinkText = trim($viewParts[1]);
-						}
-
-						if($j > 12) break;
-						$j++;
-					}
-				}
-
-				if (!empty($parts[$i]))
-				{
-					if (isset($pageLinkText))
-						$linkText = $pageLinkText;
-					else
-						$linkText = self::ucwordss(str_replace('-',' ',$parts[$i]), ["is", "to", "the", "for"]);
-
-					$str .= ' '.$sep.' <a href="'.$url.'">'.$linkText.'</a>';
-				}
-
-				unset($linkText, $pageLinkText);
-			}
-				
+				$str .= ' '.$sep.' <a href="'.$linkURL.'">'.$linkText.'</a>';
 		}
-		
+
 		return '<a href="/">Home</a>'.$str;
 	}
 	
