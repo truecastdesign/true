@@ -2,13 +2,37 @@
 namespace True;
 
 /**
- * @version 1.2.1
+ * @version 1.3.0
  */
 class SEO
 {
 	public function __construct()
 	{
 		
+	}
+
+	public function jsonLD(string $type, object $info)
+	{
+		switch (strtolower($type)) {
+			case 'recipe':
+				$Schema = new \True\schemaTypes\Recipe;
+			break;
+		}
+
+		if (!is_object($Schema))
+			throw new \Exception("Invalid schema type $type");
+
+		$Schema->set($info);
+		return $this->addHTML($Schema->get());
+	}
+
+	private function addHTML($schema)
+	{
+		$html = '<script type="application/ld+json">'."\n";
+		$html .= json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$html .= "\n".'</script>'."\n";
+
+		return $html;
 	}
 
 	/**
