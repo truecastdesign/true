@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.5
+ * @version 5.6.6
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.6.5";
+	static $version = "5.6.6";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -662,7 +662,17 @@ class PhpView
 				$str .= ' '.$sep.' <a href="'.$linkURL.'">'.$linkText.'</a>';
 		}
 
-		return '<a href="/">Home</a>'.$str;
+		$indexFileParts = explode("{endmeta}", file_get_contents(BP."/app/views/index.phtml"), 2);
+				
+		if (isset($indexFileParts[0]))  # does the template have meta data
+			$metaDataArray = parse_ini_string($indexFileParts[0]);
+		
+		if (isset($metaDataArray['linkText']))
+			$linkText = $metaDataArray['linkText'];
+		else
+			$linkText = 'Home';
+
+		return '<a href="/">'.$linkText.'</a>'.$str;
 	}
 	
 	/**
