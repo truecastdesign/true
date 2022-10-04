@@ -28,9 +28,10 @@ class Purchase
 {
 	public function generate($values)
 	{
-		$data = [
-			"currency" => "USD"
-		];
+		$data = ["currency" => "USD"];
+
+		if (isset($values['currency']) and !empty($values['currency']))
+			$data['currency'] = $values['currency'];
 
 		if (isset($values['total']) and !empty($values['total']))
 			$data['value'] = (float) ltrim($values['total'], "$");

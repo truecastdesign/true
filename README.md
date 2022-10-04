@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.12.0
+v2.13.1
 
 These classes form the basic functionality of True framework.
 
@@ -600,6 +600,100 @@ $schemaInfo = (object)[
 ];
 
 echo $SEO->schemaGraph($schemaInfo);
+```
+
+## Google Tag Manager GA4 Javascript code generator
+
+Use the below code and similar for different events
+
+```php
+$eventData = [
+	'orderNumber'=>1254875,
+	'total'=>'$25.80',
+	'source'=>'BatteryStuff',
+	'coupon'=>"ZJUE",
+	'shipping'=>2.80,
+	'tax'=>0.50,
+	'items'=>[
+		[
+			'partNumber'=>'rx8',
+			'name'=>'Battery Charger RX8',
+			'coupon'=>'ZJUE',
+			'discount'=>0.30,
+			'brand'=>"Chargers Unlimited",
+			'category'=>'Battery Chargers > 12 Volt > Single Bank > 5-10 Amps',
+			'variant'=>'With Cables',
+			'price'=>'$7.80',
+			'quantity'=>'1'
+		],
+		[
+			'partNumber'=>'rx9',
+			'name'=>'Battery Charger RX9',
+			'coupon'=>'JEN',
+			'brand'=>"Chargers Unlimited",
+			'category'=>'Battery Chargers > 12 Volt > Single Bank > 10-20 Amps',
+			'price'=>7.90,
+			'quantity'=>2
+		]
+	]
+];
+$GoogleTagManager = new True\GoogleTagManager;
+echo $GoogleTagManager->event('purchase', $eventData);
+```
+This will output the below JS code including script tags for you. The class does basic value validation and filtering. It auto adds in the currency as USD. If you need a different currency just pass it in with the key 'currency'.
+
+Current event support is: 
+
+view_item
+add_to_cart
+view_cart
+begin_checkout
+login
+purchase
+
+```HTML
+<script>
+gtag("event", "purchase", 
+{
+    "currency": "USD",
+    "value": 25.8,
+    "transaction_id": 1254875,
+    "affiliation": "BatteryStuff",
+    "coupon": "ZJUE",
+    "shipping": 2.8,
+    "tax": 0.5,
+    "items": [
+        {
+            "index": 0,
+            "item_name": "Battery Charger RX8",
+            "item_id": "rx8",
+            "coupon": "ZJUE",
+            "discount": 0.3,
+            "item_brand": "Chargers Unlimited",
+            "item_variant": "With Cables",
+            "price": 7.8,
+            "quantity": 1,
+            "item_category": "Battery Chargers",
+            "item_category2": "12 Volt",
+            "item_category3": "Single Bank",
+            "item_category4": "5-10 Amps"
+        },
+        {
+            "index": 1,
+            "item_name": "Battery Charger RX9",
+            "item_id": "rx9",
+            "coupon": "JEN",
+            "item_brand": "Chargers Unlimited",
+            "price": 7.9,
+            "quantity": 2,
+            "item_category": "Battery Chargers",
+            "item_category2": "12 Volt",
+            "item_category3": "Single Bank",
+            "item_category4": "10-20 Amps"
+        }
+    ]
+});
+</script>
 ```
 
 Usage

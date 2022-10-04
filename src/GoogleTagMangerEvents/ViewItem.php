@@ -16,9 +16,10 @@ class ViewItem
 {
 	public function generate($values)
 	{
-		$data = [
-			"currency" => "USD"
-		];
+		$data = ["currency" => "USD"];
+
+		if (isset($values['currency']) and !empty($values['currency']))
+			$data['currency'] = $values['currency'];
 
 		if (isset($values['price']) and !empty($values['price']))
 			$data['value'] = ltrim($values['price'], "$");
