@@ -22,7 +22,7 @@ class ViewItem
 			$data['currency'] = $values['currency'];
 
 		if (isset($values['price']) and !empty($values['price']))
-			$data['value'] = ltrim($values['price'], "$");
+			$data['value'] = (float) ltrim($values['price'], "$");
 
 		$items = [];
 		$product = [];
@@ -40,10 +40,10 @@ class ViewItem
 			$product['item_variant'] = $values['variant'];
 
 		if (isset($values['price']) and !empty($values['price']))
-			$product['price'] = ltrim($values['price'], "$");
+			$product['price'] = (float) ltrim($values['price'], "$");
 
 		if (isset($values['quantity']) and !empty($values['quantity']))
-			$product['quantity'] = $values['quantity'];
+			$product['quantity'] = (int) $values['quantity'];
 
 		$items[] = $product;
 

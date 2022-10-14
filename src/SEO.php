@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.0
+ * @version 1.3.1
  */
 class SEO
 {
@@ -11,11 +11,24 @@ class SEO
 		
 	}
 
-	public function jsonLD(string $type, object $info)
+	/**
+	 * Generate JSON+LD script
+	 *
+	 * @param string $type
+	 * @param array|object $info
+	 * @return void
+	 */
+	public function jsonLD(string $type, $info)
 	{
+		if (is_array($info))
+			$info = (object) $info;
+		
 		switch (strtolower($type)) {
 			case 'recipe':
 				$Schema = new \True\schemaTypes\Recipe;
+			break;
+			case 'article':
+				$Schema = new \True\schemaTypes\Article;
 			break;
 		}
 
