@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.1.1
+ * @version 1.1.2
  */
 class Router
 {
@@ -403,7 +403,7 @@ class Router
 	 *
 	 * @return void
 	 */
-	public function makeHttps(): void
+	public function makeHttps()
 	{
 		if (!array_key_exists('HTTPS', $_SERVER) and !strstr($_SERVER['HTTP_HOST'], '.test')) {
 			$location = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];

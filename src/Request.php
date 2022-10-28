@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.2
+ * @version v1.0.3
  * 
  * Available keys
  * method # GET,POST,etc
@@ -69,7 +69,7 @@ class Request
 		$this->url = (object)[];
 		$this->url->path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');		
 		$this->url->host = $_SERVER['HTTP_HOST'];
-		$this->url->protocol = $_SERVER['REQUEST_SCHEME'] ?? $this->https ? 'https':'http';
+		$this->url->protocol = ($this->https ? 'https':'http');
 		$this->url->full = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 		$this->url->protocolhost = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'];
 		$this->url->scheme = $this->url->protocol.'://';
@@ -79,7 +79,7 @@ class Request
 			$this->files = (object)[];
 			foreach ($_FILES as $name=>$file) {
 				
-				if (is_array($file['name'])) {					
+				if (is_array($file['name'])) {
 					for ($i=0; $i<count($file['name']); $i++) {
 						$newFile = [];
 						$newFile = [
@@ -104,11 +104,11 @@ class Request
 
 		$cleanedContentType = trim(explode(';', $this->contentType)[0]);		
 		
-		$this->post = (object) ($_POST ?? []);
-		$this->get = (object) ($_GET ?? []);
-		$this->put = (object) ($_PUT ?? []);
-		$this->patch = (object) ($_PATCH ?? []);
-		$this->delete = (object) ($_DELETE ?? []);
+		$this->post = (object) (isset($_POST) ? $_POST:[]);
+		$this->get = (object) (isset($_GET) ? $_GET:[]);
+		$this->put = (object) (isset($_PUT) ? $_PUT:[]);
+		$this->patch = (object) (isset($_PATCH) ? $_PATCH:[]);
+		$this->delete = (object) (isset($_DELETE) ? $_DELETE:[]);
 		
 		if (in_array($cleanedContentType, ['application/json'])) {
 			$requestBody = file_get_contents('php://input');

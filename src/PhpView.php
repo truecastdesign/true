@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.6.6
+ * @version 5.7.0
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.6.6";
+	static $version = "5.7.0";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -242,11 +242,35 @@ class PhpView
 		} else {
 			if (isset($this->vars['timezone'])) {
 				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)), new \DateTimeZone($this->vars['timezone']));
+				
 				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
 			} else {
 				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
 			}
+			$this->vars['modified'] = $modifiedDate->format("D, d M Y H:i:s")." GMT";
+			
 			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
+		}
+
+		if (isset($this->vars['created'])) {
+			if (isset($this->vars['timezone'])) {
+				$createdDate = new \DateTime($this->vars['created'], new \DateTimeZone($this->vars['timezone']));
+				$createdDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$createdDate = new \DateTime($this->vars['created']);
+			}		
+
+			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
+			header("Date: " . $this->vars['created']);
+		} else {
+			if (isset($this->vars['timezone'])) {
+				$createdDate = new \DateTime($this->getFileCreationDateTime($taView), new \DateTimeZone($this->vars['timezone']));
+				$createdDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$createdDate = new \DateTime($this->getFileCreationDateTime($taView));
+			}
+			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
+			header("Date: " . $this->vars['created']);
 		}
 
 		ob_start(); 
@@ -950,5 +974,23 @@ class PhpView
 			$out .= (!in_array($word, $exceptions)) ? strtoupper($word[0]) . substr($word, 1) . " " : $word . " ";
 		}
 		return rtrim($out);
+	}
+
+	/**
+	 * Get the true creation date of file.
+	 *
+	 * @param string $filePath pass full file path
+	 * @return string date in Y-m-d H:i:s format
+	 */
+	private function getFileCreationDateTime(string $filePath)
+	{
+		exec("stat $filePath", $output);
+		$parts = explode(" ",$output[0]);
+		
+		if (empty($parts[21]))
+			$dateStr = ltrim($parts[20],'"').' '.$parts[22].' '.$parts[23].' '.rtrim($parts[24],'"');
+		else
+			$dateStr = ltrim($parts[20],'"').' '.$parts[21].' '.$parts[22].' '.rtrim($parts[23],'"');
+		return date("Y-m-d H:i:s", strtotime($dateStr));
 	}
 }
