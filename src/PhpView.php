@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.7.0
+ * @version 5.7.1
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.7.0";
+	static $version = "5.7.1";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -261,7 +261,6 @@ class PhpView
 			}		
 
 			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
-			header("Date: " . $this->vars['created']);
 		} else {
 			if (isset($this->vars['timezone'])) {
 				$createdDate = new \DateTime($this->getFileCreationDateTime($taView), new \DateTimeZone($this->vars['timezone']));
@@ -270,7 +269,6 @@ class PhpView
 				$createdDate = new \DateTime($this->getFileCreationDateTime($taView));
 			}
 			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
-			header("Date: " . $this->vars['created']);
 		}
 
 		ob_start(); 
