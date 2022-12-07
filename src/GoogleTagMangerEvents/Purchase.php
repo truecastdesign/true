@@ -21,7 +21,10 @@ namespace True\GoogleTagMangerEvents;
  * category = String of category hierarchy: Apparel > Adult > Shirts > Short Sleeves
  * variant = Color, Size, etc
  * price = 1.00
+ * costOfGoodsSold = 1.00
  * quantity = 1
+ * 
+ * @version 1.0.2
  */
 
 class Purchase
@@ -86,6 +89,9 @@ class Purchase
 
 			if (isset($item['price']) and !empty($item['price']))
 				$product['price'] = (float) ltrim($item['price'], "$");
+
+			if (isset($item['costOfGoodsSold']) and !empty($item['costOfGoodsSold']))
+				$product['cost_of_goods_sold'] = (float) ltrim($item['costOfGoodsSold'], "$");
 
 			if (isset($item['quantity']) and !empty($item['quantity'])) {
 				if (!is_numeric($item['quantity']))

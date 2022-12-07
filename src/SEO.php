@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.1
+ * @version 1.3.2
  */
 class SEO
 {
@@ -107,13 +107,13 @@ class SEO
 			"@graph" => [
 				0=>[
 					"@type"=> "Organization",
-					"@id"=> $info->url."/#organization",
+					"@id"=> $info->url."#organization",
 					"name"=> $info->title,
 					"url"=> $info->url,
 					"sameAs"=> $sameAs,
 					"logo"=> [
 						"@type"=> "ImageObject",
-						"@id"=> $info->url."/#logo",
+						"@id"=> $info->url."#logo",
 						"inLanguage"=> "en-GB",
 						"url"=> $info->site_logo_url,
 						"width"=> $info->site_logo_width,
@@ -121,30 +121,30 @@ class SEO
 						"caption"=> $info->site_logo_caption
 					],
 					"image"=> [
-						"@id"=> $info->url."/#logo"
+						"@id"=> $info->url."#logo"
 					]
 				],
 				1=>[
 					"@type"=> "WebSite",
-					"@id"=> $info->url."/#website",
+					"@id"=> $info->url."#website",
 					"url"=> $info->url,
 					"name"=> $info->title,
 					"description"=> $info->description,
 					"publisher"=> [
-						"@id"=> $info->url."/#organization"
+						"@id"=> $info->url."#organization"
 					],
 					"inLanguage"=> "en-GB"
 				],
 				2=>[
 					"@type"=> "WebPage",
-					"@id"=> $info->url."/#webpage",
+					"@id"=> $info->url."#webpage",
 					"url"=> $info->url,
 					"name"=> $info->title,
 					"isPartOf"=> [
-						"@id"=> $info->url."/#website"
+						"@id"=> $info->url."#website"
 					],
 					"about"=> [
-						"@id"=> $info->url."/#organization"
+						"@id"=> $info->url."#organization"
 					],
 					"datePublished"=> $info->datePublished,
 					"dateModified"=> $info->dateModified,
