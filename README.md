@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.15.2
+v2.15.3
 
 These classes form the basic functionality of True framework.
 
@@ -442,6 +442,34 @@ $App->view->breadcrumbs // array of breadcrumbs with name and url
 // breadcrumb[] = "Top Parent Title|/parent"
 // breadcrumb[] = "Next Parent Title|/parent/other-parent"
 ```
+
+Output these in your template like the following.
+
+```html
+<?=$App->view->headHtml?>
+```
+
+#### Output CSS and JS to template
+
+The css and js view variables are special in that to output a compressed and combined version to your page, you use a special variable rather than $App->view->css like you would all the other variables.
+
+For CSS
+
+```html
+<?=$App->view->cssoutput?>
+```
+The css output should go in your head tag.
+
+For Javascript
+
+```html
+<?=$App->view->jsoutput?>
+```
+The JS output should go right before the closing body tag.
+
+There needs to be a cache folder in both of your CSS and JS folders.
+
+PHPView will put a compressed, versioned, combined file in /assets/css/cache and /assets/js/cache respectfully. Be sure those directories are there for it to work right. 
 
 #### Custom variables
 

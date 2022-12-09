@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.4
+ * @version 1.6.5
  * 
 $mail = new \True\Email('domain.com', 587, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
@@ -473,6 +473,15 @@ class Email
 	public function send()
 	{
 		$message = '';
+
+		if (count($this->to) == 0)
+			throw new \Exception("The to email and name are missing!");
+
+		if (count($this->from) == 0)
+			throw new \Exception("The from email and name are missing!");
+
+		if (empty($this->subject))
+			throw new \Exception("The email subject missing!");
 		
 		$this->socket = fsockopen(
 			$this->getServer(),
