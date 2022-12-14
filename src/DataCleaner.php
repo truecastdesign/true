@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.3.0
+ * @version 1.3.1
  */
 class DataCleaner
 {
@@ -309,7 +309,7 @@ class DataCleaner
 		 return $str;
 	}
 	
-	function charset_decode_utf_8($string)
+	public static function charset_decode_utf_8($string)
 	{ 
 		$string = str_replace("\n\r", "\n", $string);
 		$string = str_replace("\r", "\n", $string);
@@ -330,7 +330,7 @@ class DataCleaner
 		return $string; 
 	}
 	
-	function forMetaTags($str)
+	public static function forMetaTags($str)
 	{
 		$find = array('"',"'"," & ");
 		$replace = array('','',' &amp; ');
