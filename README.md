@@ -2,7 +2,7 @@ True - Base classes for True framework
 
 ![True Framework](https://raw.githubusercontent.com/truecastdesign/true/master/assets/TrueFramework.png "True Framework")
 
-v2.15.4
+v2.16.0
 
 These classes form the basic functionality of True framework.
 
@@ -441,6 +441,10 @@ $App->view->breadcrumbs // array of breadcrumbs with name and url
 // populate using meta area of view file like the following. Only on pages with parent pages. Home is not a parent page according to Google. Put them in decending order from parents down.
 // breadcrumb[] = "Top Parent Title|/parent"
 // breadcrumb[] = "Next Parent Title|/parent/other-parent"
+
+$App->view->created = "2022-12-01" // set the date the page was created. It can be outputted or used by calling $App->view->created. If you want a different date format, call $App->view->created("M d, Y") can pass the PHP date formatting string you want.
+
+$App->view->modified = "2022-12-01" // You can set the page or article modified date if you want full control of it. This variable will also be auto filled if not provided from the modified date of the view file. Just like the created variable, you can format it by calling $App->view->modified("M d, Y");
 ```
 
 Output these in your template like the following.

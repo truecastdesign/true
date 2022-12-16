@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.7.1
+ * @version 5.8.1
  */
 
 class PhpView
@@ -165,6 +165,22 @@ class PhpView
 		return isset($this->vars[$key]);
 	}
 
+	public function __call(string $name, array $args)
+	{	
+		switch ($name) {
+			case 'created':
+				if (!isset($this->vars['created']))
+					$this->vars['created'] = date("Y-m-d");
+				$DateTime = new \DateTime($this->vars['created']);
+				return $DateTime->format($args[0]);
+			break;
+			case 'modified':
+				$DateTime = new \DateTime($this->vars['modifiedRaw']);
+				return $DateTime->format($args[0]);
+			break;
+		}
+	}
+
 	/**
 	 * Render views. Use .phtml file
 	 * Format files with meta data at the top with {endmeta} before the html starts
@@ -230,46 +246,7 @@ class PhpView
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
 
-		if (isset($this->vars['modified'])) {
-			if (isset($this->vars['timezone'])) {
-				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
-				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$modifiedDate = new \DateTime($this->vars['modified']);
-			}		
-
-			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
-		} else {
-			if (isset($this->vars['timezone'])) {
-				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)), new \DateTimeZone($this->vars['timezone']));
-				
-				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
-			}
-			$this->vars['modified'] = $modifiedDate->format("D, d M Y H:i:s")." GMT";
-			
-			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
-		}
-
-		if (isset($this->vars['created'])) {
-			if (isset($this->vars['timezone'])) {
-				$createdDate = new \DateTime($this->vars['created'], new \DateTimeZone($this->vars['timezone']));
-				$createdDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$createdDate = new \DateTime($this->vars['created']);
-			}		
-
-			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
-		} else {
-			if (isset($this->vars['timezone'])) {
-				$createdDate = new \DateTime($this->getFileCreationDateTime($taView), new \DateTimeZone($this->vars['timezone']));
-				$createdDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$createdDate = new \DateTime($this->getFileCreationDateTime($taView));
-			}
-			$this->vars['created'] = $createdDate->format("D, d M Y H:i:s")." GMT";
-		}
+		
 
 		ob_start(); 
 			global $App;
@@ -297,6 +274,33 @@ class PhpView
 
 				$this->addVar($metaKey, $metaValue);
 			}
+		}
+
+		// List of time zones: https://www.w3schools.com/PHP/php_ref_timezones.asp
+		if (isset($this->vars['modified'])) {
+			
+			if (isset($this->vars['timezone'])) {
+				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
+				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$modifiedDate = new \DateTime($this->vars['modified']);
+			}		
+
+			$this->vars['modifiedRaw'] = $this->vars['modified'];
+			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
+		} else {
+			if (isset($this->vars['timezone'])) {
+				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)), new \DateTimeZone($this->vars['timezone']));
+				
+				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
+			} else {
+				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
+			}
+
+			$this->vars['modifiedRaw'] = date("Y-m-d H:i:s",filemtime($taView));
+			$this->vars['modified'] = $modifiedDate->format("D, d M Y H:i:s")." GMT";
+			
+			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
 		}
 
 		$this->processMetaData(); # just process global meta data	
@@ -972,23 +976,5 @@ class PhpView
 			$out .= (!in_array($word, $exceptions)) ? strtoupper($word[0]) . substr($word, 1) . " " : $word . " ";
 		}
 		return rtrim($out);
-	}
-
-	/**
-	 * Get the true creation date of file.
-	 *
-	 * @param string $filePath pass full file path
-	 * @return string date in Y-m-d H:i:s format
-	 */
-	private function getFileCreationDateTime(string $filePath)
-	{
-		exec("stat $filePath", $output);
-		$parts = explode(" ",$output[0]);
-		
-		if (empty($parts[21]))
-			$dateStr = ltrim($parts[20],'"').' '.$parts[22].' '.$parts[23].' '.rtrim($parts[24],'"');
-		else
-			$dateStr = ltrim($parts[20],'"').' '.$parts[21].' '.$parts[22].' '.rtrim($parts[23],'"');
-		return date("Y-m-d H:i:s", strtotime($dateStr));
 	}
 }
