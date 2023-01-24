@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.3
+ * @version 1.2.4
  */
 class AuthenticationJWT
 {
@@ -144,6 +144,9 @@ class AuthenticationJWT
 
 		$this->loggedIn = true;	
 		$this->userId = $this->user->getId();
+
+		// Reset login attempts
+		$this->loginAttempts->set(["lockout_time"=>0, "count"=>0]);
 
 		if (!is_numeric($this->userId))
 			throw new \Exception("User id not available.");

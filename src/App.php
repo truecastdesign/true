@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.5
+ * @version 1.11.6
  */
 class App
 {
@@ -109,10 +109,18 @@ class App
 			$file = BP.'/app/config/'.$file;
 	
 		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
-		if ($key != null)
-			return $config[$key];
-		else
-			return (object)$config;
+		$configOutput = (object)[];
+		// has section headings
+		if (is_array($config[key($config) ])) {
+			foreach($config as $section => $values) {
+				$configOutput->{$section} = (object)$values;
+			}
+		} else { // does not have sections
+			foreach($config as $key => $value) {
+				$configOutput->{$key} = $value;
+			}
+		}
+		return $configOutput;
 	}
 
 	/**
