@@ -2,15 +2,10 @@
 namespace True;
 
 /**
- * @version 1.3.2
+ * @version 1.3.3
  */
 class SEO
 {
-	public function __construct()
-	{
-		
-	}
-
 	/**
 	 * Generate JSON+LD script
 	 *
@@ -30,6 +25,12 @@ class SEO
 			case 'article':
 				$Schema = new \True\schemaTypes\Article;
 			break;
+			case 'website':
+				$Schema = new \True\schemaTypes\WebSite;
+			break;
+			case 'breadcrumbs':
+				$Schema = new \True\schemaTypes\BreadcrumbList;
+			break;
 		}
 
 		if (!is_object($Schema))
@@ -46,6 +47,53 @@ class SEO
 		$html .= "\n".'</script>'."\n";
 
 		return $html;
+	}
+
+	public function generateBreadcrumbs($lookupFile = null)
+	{
+		$path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
+
+		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
+		$protocol = ($https ? 'https':'http').'//';
+
+		$patternElements = explode('/', ltrim($path, '/'));
+		
+		end($patternElements);
+		$lastPath = current($patternElements);
+		
+		if (!strstr($lastPath, '.html'))
+			array_pop($patternElements);
+		
+		$lookup = (array) parse_ini_file($lookupFile);
+
+		$list = [];
+		$pathBuilt = '/';
+		foreach ($patternElements as $part) {
+			if (strstr($part, '.html'))
+				$pathBuilt .= $part;
+			else
+				$pathBuilt .= $part."/";
+
+			if (!empty($lookup[$pathBuilt]))
+				$title = $lookup[$pathBuilt];
+			else
+				$title = $this->formatURLPath($part);
+
+			if (!empty($title))
+				$list[$title] = $protocol.$_SERVER['HTTP_HOST'].$pathBuilt;
+
+		}
+		end($list);
+
+		$lastKey = key($list);
+		$list[$lastKey] = null;
+
+		return $list;
+	}
+
+	public function formatURLPath($part)
+	{
+		return ucwords(str_replace(['-','.html'],[' ',''],trim($part))); 
 	}
 
 	/**

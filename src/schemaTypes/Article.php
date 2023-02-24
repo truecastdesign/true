@@ -19,7 +19,7 @@ class Article
 	 * dateModified: yyyy-mm-dd
 	 * alternativeHeadline: A subtitle of the article or opening line.
 	 * image: An image of the item. This can be a URL or a fully described ImageObject. https://schema.org/ImageObject
-	 * ImageObject: ['contentUrl'=>'http', 'width'=>234, 'height'=>456, 'caption'=>'text', 'author'=>'Name', 'contentLocation'=>'City, State, Country', 'datePublished'=>'2012-01-01', 'description'=>'What the photo is about.', 'name'=>'Title of image']
+	 * ImageObject: ['type'=>'ImageObject', 'contentUrl'=>'http', 'width'=>234, 'height'=>456, 'caption'=>'text', 'author'=>'Name', 'contentLocation'=>'City, State, Country', 'datePublished'=>'2012-01-01', 'description'=>'What the photo is about.', 'name'=>'Title of image']
 	 * 
 	 * author: Organization ['type'=>'Organization', 'name'=>'Org Name', 'address'=>'123 Main St.', 'logo'=>'url', 'telephone'=>'541-', 'slogan'=>'text']  or Person ['type'=>'Person', 'name'=>'text', 'email'=>'text', 'image'=>'url'] objects
 	 * 

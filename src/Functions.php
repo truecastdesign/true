@@ -273,6 +273,17 @@ class Functions
 	}
 
 	/**
+	 * Convert and clean text from html
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	public function html2text(string $html)
+	{
+		return stripslashes(html_entity_decode(str_replace(["\r"],[''],trim(strip_tags($html)))));
+	}
+
+	/**
 		* Transforms txt in html
 		*
 		* @param string $txt 
