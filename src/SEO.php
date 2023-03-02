@@ -49,6 +49,13 @@ class SEO
 		return $html;
 	}
 
+	/**
+	 * generate an array of path and names for the BreadcrumbList schema
+	 *
+	 * @param string $lookupFile full file path to an ini file for custom page name lookups.
+	 * example: /contact.html = "Contact Us"
+	 * @return array ['Books'=>"https://example.com/books", "Science Fiction"=>"https://example.com/books/sciencefiction", "Award Winners"=>null]
+	 */
 	public function generateBreadcrumbs($lookupFile = null)
 	{
 		$path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
@@ -66,6 +73,12 @@ class SEO
 		
 		$lookup = (array) parse_ini_file($lookupFile);
 
+		// if homepage
+		if (!empty($lookup['/']))
+			$list = [$lookup['/']=>null];
+		else
+			$list = ['Home'=>null];
+	
 		$list = [];
 		$pathBuilt = '/';
 		foreach ($patternElements as $part) {
@@ -73,7 +86,7 @@ class SEO
 				$pathBuilt .= $part;
 			else
 				$pathBuilt .= $part."/";
-
+			
 			if (!empty($lookup[$pathBuilt]))
 				$title = $lookup[$pathBuilt];
 			else
