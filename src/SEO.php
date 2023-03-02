@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.3
+ * @version 1.3.4
  */
 class SEO
 {
@@ -53,7 +53,8 @@ class SEO
 	 * generate an array of path and names for the BreadcrumbList schema
 	 *
 	 * @param string $lookupFile full file path to an ini file for custom page name lookups.
-	 * example: /contact.html = "Contact Us"
+	 * example: / = "Company Name"
+	 * 			/contact.html = "Contact Us"
 	 * @return array ['Books'=>"https://example.com/books", "Science Fiction"=>"https://example.com/books/sciencefiction", "Award Winners"=>null]
 	 */
 	public function generateBreadcrumbs($lookupFile = null)
@@ -61,7 +62,7 @@ class SEO
 		$path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');
 
 		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
-		$protocol = ($https ? 'https':'http').'//';
+		$protocol = ($https ? 'https':'http').'://';
 
 		$patternElements = explode('/', ltrim($path, '/'));
 		
@@ -74,30 +75,22 @@ class SEO
 		$lookup = (array) parse_ini_file($lookupFile);
 
 		// if homepage
-		if (!empty($lookup['/']))
-			$list = [$lookup['/']=>null];
-		else
-			$list = ['Home'=>null];
-	
-		$list = [];
+		$homePath = ($path == '/')? null:$protocol.$_SERVER['HTTP_HOST'].'/';
+
+		$list = (!empty($lookup['/']))? [$lookup['/']=>$homePath]:['Home'=>$homePath];
+
 		$pathBuilt = '/';
 		foreach ($patternElements as $part) {
-			if (strstr($part, '.html'))
-				$pathBuilt .= $part;
-			else
-				$pathBuilt .= $part."/";
+			$pathBuilt .= (strstr($part, '.html'))? $part:$part."/";
 			
-			if (!empty($lookup[$pathBuilt]))
-				$title = $lookup[$pathBuilt];
-			else
-				$title = $this->formatURLPath($part);
+			$title = (!empty($lookup[$pathBuilt]))? $lookup[$pathBuilt]:$this->formatURLPath($part);
 
 			if (!empty($title))
 				$list[$title] = $protocol.$_SERVER['HTTP_HOST'].$pathBuilt;
 
 		}
-		end($list);
 
+		end($list);
 		$lastKey = key($list);
 		$list[$lastKey] = null;
 
