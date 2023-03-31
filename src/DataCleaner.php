@@ -378,12 +378,9 @@ class DataCleaner
 	
 	public static function xss($str)
 	{
-		if (is_array($str))
-		{
-			while (list($key) = each($str))
-			{
+		if (is_array($str)) {
+			foreach ($str as $key)
 				$str[$key] = self::xss_clean($str[$key]);
-			}
 
 			return $str;
 		}

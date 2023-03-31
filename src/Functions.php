@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.1
+ * @version 1.7.2
  */
 class Functions
 {
@@ -923,30 +923,22 @@ class Functions
 	public static function arraySort($array, $key, $direction='asc') 
 	{ 
 		# if $array is an array of objects
-		if(is_object(current($array)))
-		{
-			for($i=0; $i < sizeof($array); $i++) 
-			{ 
+		if (is_object(current($array)))
+			for ($i=0; $i < sizeof($array); $i++) 
 				$sort_values[$i] = $array[$i]->$key; 
-			} 
-		}
 		# if $array is an array of arrays
 		else
-		{
-			for($i=0; $i < sizeof($array); $i++) 
-			{ 
+			for ($i=0; $i < sizeof($array); $i++) 
 				$sort_values[$i] = $array[$i][$key]; 
-			} 
-		}
 		
 		asort($sort_values); 
 		reset($sort_values); 
 
-		while(list($arr_key, $arr_val) = each($sort_values)) 
-		{ 
+		foreach ($sort_values as $arr_key=>$arr_val) { 
 			$sorted_arr[] = $array[$arr_key]; 
 		}
-		if($direction == 'desc')
+
+		if ($direction == 'desc')
 			$sorted_arr = array_reverse($sorted_arr);
 		return $sorted_arr; 
 	} 
