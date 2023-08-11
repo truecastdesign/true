@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.4
+ * @version 1.3.6
  */
 class SEO
 {
@@ -25,8 +25,17 @@ class SEO
 			case 'article':
 				$Schema = new \True\schemaTypes\Article;
 			break;
+			case 'organization':
+				$Schema = new \True\schemaTypes\Organization;
+			break;
 			case 'website':
 				$Schema = new \True\schemaTypes\WebSite;
+			break;
+			case 'webpage':
+				$Schema = new \True\schemaTypes\WebPage;
+			break;
+			case 'blogpost':
+				$Schema = new \True\schemaTypes\BlogPost;
 			break;
 			case 'breadcrumbs':
 				$Schema = new \True\schemaTypes\BreadcrumbList;
@@ -43,7 +52,7 @@ class SEO
 	private function addHTML($schema)
 	{
 		$html = '<script type="application/ld+json">'."\n";
-		$html .= json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$html .= json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
 		$html .= "\n".'</script>'."\n";
 
 		return $html;
@@ -212,10 +221,6 @@ class SEO
 							]
 						]
 					]
-				],
-				3=>[
-					"@type"=>"BreadcrumbList",
-					"itemListElement"=>$itemListElements 
 				]
 				
 			],

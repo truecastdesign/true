@@ -5,7 +5,7 @@ namespace True\schemaTypes;
 /**
  * Schema for WebPage
  * 
- * @version 1.0.2
+ * @version 1.0.3
  */
 class WebPage
 {
@@ -15,12 +15,19 @@ class WebPage
 	 * Get values with an value object
 	 * 
 	 * url: https://www.domain.com
-	 * name: Website name
+	 * name: Title of the web page
 	 * description: A description of the site
 	 * 
-	 * searchAction: ['url'=>'https://umbraco.com/search/?q={search_term_string}', 'input'=>'required name=search_term_string']
+	 * datePublished: yyyy-mm-dd
+	 * dateModified: yyyy-mm-dd
 	 * 
-	 * inLanguage: en - language codes from the IETF BCP 47 standard https://en.wikipedia.org/wiki/IETF_language_tag
+	 * alternativeHeadline: A subtitle of the article or opening line.
+	 * 
+	 * primaryImageOfPage: An image of the item. This can be a URL or a fully described ImageObject. https://schema.org/ImageObject
+	 * ImageObject: ['type'=>'ImageObject', 'contentUrl'=>'http', 'width'=>234, 'height'=>456, 'caption'=>'text', 'author'=>'Name', 'contentLocation'=>'City, State, Country', 'datePublished'=>'2012-01-01', 'description'=>'What the photo is about.', 'name'=>'Title of image']
+	 * 
+	 * 
+	 * inLanguage: en - language codes from the IETF BCP 47 standard https://en.wikipedia.org/wiki/IETF_language_tag  English: en
 	 * audience: text example: Small businesses
 	 * author: Organization or Person
 	 * 
@@ -63,53 +70,6 @@ class WebPage
 					$data[$key] = $value;
 			}
 		}
-
-		
-			
-		if (isset($info->datePublished) and !empty($info->datePublished))
-			$data['datePublished'] = $info->datePublished;
-
-		if (isset($info->dateModified) and !empty($info->dateModified))
-			$data['dateModified'] = $info->dateModified;
-			
-		if (isset($info->alternativeHeadline) and !empty($info->alternativeHeadline))
-			$data['alternativeHeadline'] = $info->alternativeHeadline;
-
-		if (isset($info->image) and !empty($info->image))
-			$data['image'] = $info->image;
-
-		if (isset($info->author) and !empty($info->author))
-			$data['author'] = $info->author;
-			
-		if (isset($info->author) and !empty($info->author))
-			$data['author'] = $info->author;
-
-		if (isset($info->award) and !empty($info->award))
-			$data['award'] = $info->award;
-
-		if (isset($info->editor) and !empty($info->editor))
-			$data['editor'] = $info->editor;
-
-		if (isset($info->genre) and !empty($info->genre))
-			$data['genre'] = $info->genre;
-
-		if (isset($info->keywords) and !empty($info->keywords))
-			$data['keywords'] = $info->keywords;
-
-		if (isset($info->wordcount) and !empty($info->wordcount))
-			$data['wordcount'] = $info->wordcount;
-
-		if (isset($info->url) and !empty($info->url))
-			$data['url'] = $info->url;
-
-		if (isset($info->description) and !empty($info->description))
-			$data['description'] = $info->description;
-
-		if (isset($info->articleBody) and !empty($info->articleBody))
-			$data['articleBody'] = $info->articleBody;
-
-		if (isset($info->pageType) and !empty($info->pageType) and isset($info->url) and !empty($info->url))
-			$data['mainEntityOfPage'] = ['@type'=>$info->pageType, '@id'=>$info->url, 'url'=>$info->url];
 
 		$this->structure = $data;
 	}

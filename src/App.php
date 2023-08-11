@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.6
+ * @version 1.11.7
  */
 class App
 {
@@ -102,7 +102,7 @@ class App
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function getConfig(string $file, string $key = null)
+	public function getConfig(string $file, string $returnKey = null)
 	{
 		// default to BP./app/config/ dir
 		if (substr($file, 0, 1 ) != "/")
@@ -110,6 +110,10 @@ class App
 	
 		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
 		$configOutput = (object)[];
+
+		if (!is_null($returnKey) and !empty($returnKey))
+			return $config[$returnKey];
+
 		// has section headings
 		if (is_array($config[key($config) ])) {
 			foreach($config as $section => $values) {
@@ -120,6 +124,7 @@ class App
 				$configOutput->{$key} = $value;
 			}
 		}
+
 		return $configOutput;
 	}
 

@@ -24,6 +24,7 @@ namespace True\schemaTypes;
  * priceValidUntil: 2023-01-01
  * seller: Macs R Us
  * url: https://www.example.com/products/RUOi83
+ * shippingDetails: 
  * 
  * reviews: array
  * 	ratingValue:3
@@ -124,6 +125,9 @@ class Product
 
 			if (isset($info->url) and !empty($info->url))
 				$data['offers']["url"] = $url->url;
+				
+			if (isset($info->shippingDetails) and !empty($info->shippingDetails))
+				$data['offers']["shippingDetails"] = $url->url;
 		}
 
 		if (isset($info->reviews) and is_array($info->reviews) and count($info->reviews) > 0) {

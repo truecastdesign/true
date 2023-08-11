@@ -614,6 +614,8 @@ foreach ($Parser as $row) {
 
 Use this method of the SEO class to output LD+JSON schema.org meta data.
 
+### Global site schema
+
 ```php
 $schemaInfo = (object)[
 	"base_url"=>$App->config->site->url,
@@ -626,12 +628,18 @@ $schemaInfo = (object)[
 	"site_logo_caption"=>$App->config->site->site_logo_caption, 
 	"datePublished"=>$App->view->datePublished, 
 	"dateModified"=>$App->view->dateModified, 
-	"social_media"=>$App->config->social_media,
-	"breadcrumbs"=>$App->view->breadcrumbs,
-	"
+	"social_media"=>$App->config->social_media
 ];
 
 echo $SEO->schemaGraph($schemaInfo);
+```
+
+### Specific page schemas
+
+#### Breadcrumbs
+
+```php
+echo $SEO->
 ```
 
 ## Google Tag Manager GA4 Javascript code generator
