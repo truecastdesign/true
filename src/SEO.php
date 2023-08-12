@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.6
+ * @version 1.3.7
  */
 class SEO
 {
@@ -39,6 +39,12 @@ class SEO
 			break;
 			case 'breadcrumbs':
 				$Schema = new \True\schemaTypes\BreadcrumbList;
+			break;
+			case 'store':
+				$Schema = new \True\schemaTypes\Store;
+			break;
+			case 'homeandconstructionbusiness':
+				$Schema = new \True\schemaTypes\HomeAndConstructionBusiness;
 			break;
 		}
 
