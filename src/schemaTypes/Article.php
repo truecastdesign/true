@@ -5,7 +5,7 @@ namespace True\schemaTypes;
 /**
  * Schema for articles
  * 
- * @version 1.0.2
+ * @version 1.0.3
  */
 class Article
 {
@@ -13,6 +13,19 @@ class Article
 
 	/**
 	 * Get values with an value object
+	 * 
+	 * Google Approved Set
+	 * 
+	 * author: ['@type'=>'Organization', 'name'=>'Org Name', 'url'=>'url'] or Person ['@type'=>'Person', 'name'=>'text', 'url'=>'url', 'jobTitle'=>'']
+	 * 
+	 * datePublished: yyyy-mm-dd
+	 * dateModified: yyyy-mm-dd
+	 * 
+	 * headline: ''
+	 * 
+	 * image: 'url' or ['url1', 'url2']
+	 * 
+	 * All
 	 * 
 	 * title: The title of the article
 	 * dateCreated: yyyy-mm-dd
