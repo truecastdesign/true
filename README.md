@@ -33,6 +33,11 @@ AddHandler application/x-httpd-php .html .phtml .php
 </IfModule>
 ```
 
+## Table of Contents
+[Nonce Generator](./docs/Nonce.md)
+
+## Files Setup
+
 ### /public_html/index.php
 
 ```php
@@ -732,6 +737,16 @@ gtag("event", "purchase",
     ]
 });
 </script>
+```
+
+# TESTING PHPUNIT
+
+Tests are located in the tests folder.
+
+List of tests and how to run them.
+
+```shell
+% phpunit tests/NonceTest.php
 ```
 
 Usage
