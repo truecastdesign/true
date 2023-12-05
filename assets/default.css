@@ -13,6 +13,9 @@ b, strong {font-weight:700;}
 em {font-style:italic}
 .dn {display:none !important;}
 
+button, [type="button"], [type="reset"], [type="submit"], [type="image"], [type="checkbox"], [type="radio"], summary {cursor: pointer;}
+
+
 .imgLeft {margin:0 15px 5px 0; float:left;}
 .imgRight {margin:0 0 5px 15px; float:right;}
 .imgFullWidth {width:100%}
