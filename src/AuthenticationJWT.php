@@ -8,13 +8,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.4
+ * @version 1.2.5
  */
 class AuthenticationJWT
 {
 	private $loggedIn = false;
 	private $userId = null;
 	private $fullName = null;
+	private $email = null;
 	private $user = null;
 	private $loginAttempts = null;
 	private $JWT = null;
@@ -44,7 +45,7 @@ class AuthenticationJWT
 			'pemkeyPassword'=>null, 
 			'encryptionPasswordFile'=>null, 
 			'cookie'=>'authjwt', 
-			'ttl'=>time()+60*60*24*30, 
+			'ttl'=>60*60*24*30, 
 			'https'=>true, 
 			'httpOnly'=>true
 		];
@@ -154,7 +155,7 @@ class AuthenticationJWT
 		$this->getUserInfo();
 		
 		$jwtToken = $this->JWT->encode($this->userId, $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
-
+		
 		$this->setCookie($jwtToken);	 
 
 		return true;
@@ -162,7 +163,7 @@ class AuthenticationJWT
 
 	public function logout(): void
 	{
-		$this->setCookie('', time() - 3600);
+		$this->setCookie('', -3600);
 	}
 
 	/**
@@ -187,7 +188,7 @@ class AuthenticationJWT
 		$this->userId = $payload;
 		$this->getUserInfo();
 
-		setcookie($this->config->cookie, $jwtToken, intval($this->config->ttl), '/', $_SERVER['HTTP_HOST'], $this->config->https, $this->config->httpOnly);
+		$this->setCookie($jwtToken);
 
 		return true;
 	}
@@ -261,10 +262,10 @@ class AuthenticationJWT
 	}
 	
 	private function setCookie(string $jwtToken, $time=null): void
-	{
+	{  
 		if (is_null($time)) 
 			$time = $this->config->ttl;
-
-		setcookie($this->config->cookie, $jwtToken, intval($time), '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
+	
+		setcookie($this->config->cookie, $jwtToken, intval(time()+$time), '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
 	}
 }

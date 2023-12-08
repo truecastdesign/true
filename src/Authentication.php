@@ -403,4 +403,3 @@ class Authentication
 		return ($mtime);
 	}
 }
-?>
