@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.8.2
+ * @version 5.8.3
  */
 
 class PhpView
@@ -191,6 +191,7 @@ class PhpView
 	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"  -> access using $_js
 	 * cache=false # use for pages you don't want the browser to cache
 	 * headHtml="<script type="module" src="path/to/file.js"></script>" -> access using $_headHTML
+	 * indexing = Off # use to turn off page indexing with noindex meta tag
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
@@ -246,7 +247,7 @@ class PhpView
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
 
-		
+		$this->vars['headHtml'] = '';
 
 		ob_start(); 
 			global $App;
@@ -275,6 +276,9 @@ class PhpView
 				$this->addVar($metaKey, $metaValue);
 			}
 		}
+		
+		if (array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
+			$this->vars['headHtml'] .= "\n".'<meta name="robots" content="noindex">'."\n";
 
 		// List of time zones: https://www.w3schools.com/PHP/php_ref_timezones.asp
 		if (isset($this->vars['modified'])) {
