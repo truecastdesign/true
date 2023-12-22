@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.8.3
+ * @version 5.8.4
  */
 
 class PhpView
@@ -195,11 +195,12 @@ class PhpView
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
-	 * @param Bool $fullPath - DEPRACATED (auto detected now) true if path to file name is from server root
+	 * @param Array $config - ['noPartials'=>true]
+	 * noPartials is used to disable the {partial:file.phtml} string replacement incase is causes problems with your code.
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function render(string $taView, array $variables = [], bool $fullPath = false)
+	public function render(string $taView, array $variables = [], $config = [])
 	{
 		$outputFiles = [];
 		$searchFiles = [];
@@ -316,24 +317,28 @@ class PhpView
 		}
 
 		# insert template into page if needed
-		preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
-		
-		if (is_array($outputArray[1])) {
-			foreach ($outputArray[1] as $partial)
-			{
-				ob_start();
-					extract($this->vars['variables']);
-					extract($variables);
-					extract($this->metaData);
-					if (substr($partial, 0, 1) == '/')
-						$fullPartialPath = BP.$partial;
-					else
-						$fullPartialPath = BP.'/app/views/_partials/'.$partial;
-
-					if (!include($fullPartialPath)) 
-						throw new \Exception("Included partial not found: ".$fullPartialPath);
-				$replaceTags[] = ob_get_clean();
-				$searchTags[] = "{partial:".$partial."}";
+		if (!isset($config['noPartials'])) {
+			preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
+			
+			if (is_array($outputArray[1])) {
+				foreach ($outputArray[1] as $partial)
+				{
+					ob_start();
+						extract($this->vars['variables']);
+						extract($variables);
+						extract($this->metaData);
+						if (!include(BP.'/app/views/_partials/'.$partial)) 
+							throw new \Exception("Included partial not found: ".BP.'/app/views/_partials/'.$partial);
+					$replaceTags[] = ob_get_clean();
+					$searchTags[] = "{partial:".$partial."}";
+				}
+			}
+			
+			if (is_array($outputArray[0])) {
+				foreach ($outputArray[0] as $tag) {
+					$replaceTags[] = '';
+					$searchTags[] = $tag;
+				}
 			}
 		}
 		
