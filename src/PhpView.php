@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.8.6
+ * @version 5.8.8
  */
 
 class PhpView
@@ -278,7 +278,7 @@ class PhpView
 			}
 		}
 		
-		if (array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
+		if (is_array($metaDataArray) and array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
 			$this->vars['headHtml'] .= "\n".'<meta name="robots" content="noindex">'."\n";
 
 		// List of time zones: https://www.w3schools.com/PHP/php_ref_timezones.asp
