@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.8.4
+ * @version 5.8.6
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.8.2";
+	static $version = "5.8.6";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -195,12 +195,12 @@ class PhpView
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
-	 * @param Array $config - ['noPartials'=>true]
+	 * @param Array $renderConfig - ['noPartials'=>true]
 	 * noPartials is used to disable the {partial:file.phtml} string replacement incase is causes problems with your code.
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
-	public function render(string $taView, array $variables = [], $config = [])
+	public function render(string $taView, array $variables = [], $renderConfig = [])
 	{
 		$outputFiles = [];
 		$searchFiles = [];
@@ -315,9 +315,9 @@ class PhpView
 			$this->vars['status'] = null;
 			$this->render($this->vars['base_path'].$this->vars['404'], $variables);
 		}
-
+		
 		# insert template into page if needed
-		if (!isset($config['noPartials'])) {
+		if (is_array($renderConfig) and !isset($renderConfig['noPartials'])) {
 			preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
 			
 			if (is_array($outputArray[1])) {
