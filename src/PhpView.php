@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.8.8
+ * @version 5.9.0
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.8.6";
+	static $version = "5.9.0";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -375,12 +375,15 @@ class PhpView
 			$this->metaData['_html'] = '';
 
 		$this->vars['html'] = $this->metaData['_html'];
-		
+
+		$this->vars['html'] = $this->moveStyleTags($this->vars['html']);
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
 		extract($variables);
 		global $App;
+
+		$App->view->headHtml = $App->view->headHtml ."\n\n".$this->vars['styles'];
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
@@ -648,7 +651,43 @@ class PhpView
 			return md5($content);
 	}
 	
-	
+	public function moveStyleTags($html)
+	{
+		if (empty(trim($html)))
+			return $html;
+
+		$dom = new \DOMDocument();
+		@$dom->loadHTML($html);
+
+		// Find all style tags
+		$styleTags = $dom->getElementsByTagName('style');
+
+		// Array to hold style contents
+		$stylesArray = [];
+
+		// Iterate over style tags and extract the content
+		foreach ($styleTags as $styleTag) {
+			$stylesArray[] = $dom->saveHTML($styleTag);
+			$styleTag->parentNode->removeChild($styleTag);
+		}
+
+		// Remove the style tags from the document
+		// while ($styleTag = $dom->getElementsByTagName("style")[0]) {
+		// 	$styleTag->parentNode->removeChild($styleTag);
+		// }
+
+		$body = $dom->getElementsByTagName('body')->item(0);
+
+		// Save the HTML content back to a variable without the style tags
+		$htmlContentWithoutStyles = $dom->saveHTML($body);
+
+		$this->vars['styles'] = implode("\n\n", $stylesArray);
+
+		// remove the body tags
+		$cleanedHTML = str_replace(['<body>','</body>'], '', $htmlContentWithoutStyles);
+
+		return $cleanedHTML;
+	}
 	
 	/**
 	 * create bread crumbs for site

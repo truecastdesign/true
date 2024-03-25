@@ -24,8 +24,11 @@ namespace True\schemaTypes;
  * priceValidUntil: 2023-01-01
  * seller: Macs R Us
  * url: https://www.example.com/products/RUOi83
- * shippingDetails: 
- * 
+ * shippingDetails: url or array
+ * 	rate: 7.50
+ * 	rateCurrency:USD
+ * 	shippingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+ * 	cutoffTime: "20:00:00Z" // UTC timezone
  * reviews: array
  * 	ratingValue:3
  *		bestRating:5
@@ -53,6 +56,14 @@ class Product
 		'preorder'=>"http://schema.org/PreOrder",
 		'presale'=>"http://schema.org/PreSale",
 		'soldout'=>"http://schema.org/SoldOut"
+	];
+
+	private $daysOfWeek = [
+		'Mon'=>'https://schema.org/Monday',
+		'Tue'=>'https://schema.org/Tuesday',
+		'Wed'=>'https://schema.org/Wednesday',
+		'Thu'=>'https://schema.org/Thursday',
+		'Fri'=>'https://schema.org/Friday'
 	];
 
 	public function set(object $info)
@@ -125,8 +136,30 @@ class Product
 
 			if (isset($info->url) and !empty($info->url))
 				$data['offers']["url"] = $url->url;
+
+			/*
+			rate: 7.50
+			* 	rateCurrency:USD
+			* 	shippingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+			* 	cutoffTime: "20:00:00Z" // UTC timezone
+			*/
 				
-			if (isset($info->shippingDetails) and !empty($info->shippingDetails))
+			if (isset($info->shippingDetails) and is_object($info->shippingDetails)) {
+				$data['offers']["shippingDetails"]['@type'] = 'OfferShippingDetails';
+				if (isset($info->shippingDetails->rate))
+					$data['offers']["shippingDetails"]['shippingRate'] = ['@type'=>'MonetaryAmount', 'value'=>$info->shippingDetails->rate, 'currency'=>(isset($info->shippingDetails->rateCurrency)? $info->shippingDetails->rateCurrency:'USD')];
+				if (isset($info->shippingDetails->shippingDays) or isset($info->shippingDetails->cutoffTime)) {
+					$data['offers']["shippingDetails"]['deliveryTime'] = ['@type'=>'ShippingDeliveryTime'];
+
+					if (isset($info->shippingDetails->shippingDays))
+						$data['offers']["shippingDetails"]['deliveryTime']['businessDays'] = ['@type'=>'OpeningHoursSpecification', 'dayOfWeek'=>array_map(function($day) {
+							return $this->daysOfWeek[$day];
+						}, $info->shippingDetails->shippingDays)];
+
+					if (isset($info->shippingDetails->cutoffTime))
+						$data['offers']["shippingDetails"]['cutoffTime'] = $info->shippingDetails->cutoffTime;
+				}
+			} elseif (isset($info->shippingDetails) and !empty($info->shippingDetails))
 				$data['offers']["shippingDetails"] = $url->url;
 		}
 
