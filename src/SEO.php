@@ -46,6 +46,9 @@ class SEO
 			case 'homeandconstructionbusiness':
 				$Schema = new \True\schemaTypes\HomeAndConstructionBusiness;
 			break;
+			case 'product':
+				$Schema = new \True\schemaTypes\Product;
+			break;
 		}
 
 		if (!is_object($Schema))
