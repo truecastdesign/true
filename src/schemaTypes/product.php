@@ -33,10 +33,14 @@ namespace True\schemaTypes;
  * 	ratingValue:3
  *		bestRating:5
  * 	worstRating:1
+ * 	author:"A Name"
+ * 	datePublished: "2024-01-01"
+ * 	name: "Great review title"
+ * 	reviewBody: "The review body"
  * 
  * https://jsonld.com/product/
  */
-class Product
+class Products
 {
 	private $structure = [];
 	private $conditions = [
@@ -135,7 +139,7 @@ class Product
 				$data['offers']["seller"] = ['@type'=>'Organization', 'name'=>$info->seller];
 
 			if (isset($info->url) and !empty($info->url))
-				$data['offers']["url"] = $url->url;
+				$data['offers']["url"] = $info->url;
 
 			/*
 			rate: 7.50
@@ -144,23 +148,25 @@ class Product
 			* 	cutoffTime: "20:00:00Z" // UTC timezone
 			*/
 				
-			if (isset($info->shippingDetails) and is_object($info->shippingDetails)) {
+			if (isset($info->shippingDetails) and is_array($info->shippingDetails)) {
 				$data['offers']["shippingDetails"]['@type'] = 'OfferShippingDetails';
-				if (isset($info->shippingDetails->rate))
-					$data['offers']["shippingDetails"]['shippingRate'] = ['@type'=>'MonetaryAmount', 'value'=>$info->shippingDetails->rate, 'currency'=>(isset($info->shippingDetails->rateCurrency)? $info->shippingDetails->rateCurrency:'USD')];
-				if (isset($info->shippingDetails->shippingDays) or isset($info->shippingDetails->cutoffTime)) {
+				
+				if (isset($info->shippingDetails['rate']))
+					$data['offers']["shippingDetails"]['shippingRate'] = ['@type'=>'MonetaryAmount', 'value'=>$info->shippingDetails['rate'], 'currency'=>(isset($info->shippingDetails['rateCurrency'])? $info->shippingDetails['rateCurrency']:'USD')];
+				
+				if (isset($info->shippingDetails['shippingDays']) or isset($info->shippingDetails['cutoffTime'])) {
 					$data['offers']["shippingDetails"]['deliveryTime'] = ['@type'=>'ShippingDeliveryTime'];
 
-					if (isset($info->shippingDetails->shippingDays))
+					if (isset($info->shippingDetails['shippingDays']))
 						$data['offers']["shippingDetails"]['deliveryTime']['businessDays'] = ['@type'=>'OpeningHoursSpecification', 'dayOfWeek'=>array_map(function($day) {
 							return $this->daysOfWeek[$day];
-						}, $info->shippingDetails->shippingDays)];
+						}, $info->shippingDetails['shippingDays'])];
 
-					if (isset($info->shippingDetails->cutoffTime))
-						$data['offers']["shippingDetails"]['cutoffTime'] = $info->shippingDetails->cutoffTime;
+					if (isset($info->shippingDetails['cutoffTime']))
+						$data['offers']["shippingDetails"]['deliveryTime']['cutoffTime'] = $info->shippingDetails['cutoffTime'];
 				}
 			} elseif (isset($info->shippingDetails) and !empty($info->shippingDetails))
-				$data['offers']["shippingDetails"] = $url->url;
+				$data['offers']["shippingDetails"] = $info->url;
 		}
 
 		if (isset($info->reviews) and is_array($info->reviews) and count($info->reviews) > 0) {
@@ -171,34 +177,34 @@ class Product
 
 				$reviewItem['@type'] = "Review";
 
-				if (isset($review->ratingValue) and !empty($review->ratingValue)) {
+				if (isset($review['ratingValue']) and !empty($review['ratingValue'])) {
 					$reviewItem['reviewRating'] = ["@type"=>"Rating"];
 					
-					$reviewItem['reviewRating']['ratingValue'] = $review->ratingValue;
+					$reviewItem['reviewRating']['ratingValue'] = $review['ratingValue'];
 
-					if (isset($review->bestRating) and !empty($review->bestRating))
-						$reviewItem['reviewRating']['bestRating'] = $review->bestRating;
+					if (isset($review['bestRating']) and !empty($review['bestRating']))
+						$reviewItem['reviewRating']['bestRating'] = $review['bestRating'];
 
-					if (isset($review->worstRating) and !empty($review->worstRating))
-						$reviewItem['reviewRating']['worstRating'] = $review->worstRating;
+					if (isset($review['worstRating']) and !empty($review['worstRating']))
+						$reviewItem['reviewRating']['worstRating'] = $review['worstRating'];
 				}
 
 				$reviewItem['author'] = [
-					"@type"=>"Person", "name"=>(empty($review->author)? 'Anonymous':htmlspecialchars(trim($review->author)))
+					"@type"=>"Person", "name"=>(empty($review['author'])? 'Anonymous':htmlspecialchars(trim($review['author'])))
 				];
 
-				if (isset($review->datePublished) and !empty($review->datePublished))
-					$reviewItem['datePublished'] = $review->datePublished;
+				if (isset($review['datePublished']) and !empty($review['datePublished']))
+					$reviewItem['datePublished'] = $review['datePublished'];
 
-				if (isset($review->name) and !empty($review->name))
-					$reviewItem['name'] = htmlspecialchars(str_replace('"','',$review->name));
+				if (isset($review['name']) and !empty($review['name']))
+					$reviewItem['name'] = htmlspecialchars(str_replace('"','',$review['name']));
 
-				if (isset($review->reviewBody) and !empty($review->reviewBody))
-					$reviewItem['reviewBody'] = htmlspecialchars(trim($review->reviewBody), ENT_QUOTES, 'UTF-8');
+				if (isset($review['reviewBody']) and !empty($review['reviewBody']))
+					$reviewItem['reviewBody'] = htmlspecialchars(trim($review['reviewBody']), ENT_QUOTES, 'UTF-8');
 
 				$data['review'][] = $reviewItem;
 			}
-
+		}
 		$this->structure = $data;
 	}
 

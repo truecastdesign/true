@@ -639,11 +639,27 @@ echo $SEO->schemaGraph($schemaInfo);
 
 ### Specific page schemas
 
-#### Breadcrumbs
-
 ```php
-echo $SEO->
+<?=$SEO->jsonLD('article', [
+	'datePublished'=>'2024-01-01',
+	'headline':"The great article"
+]);?>
 ```
+
+Full list of available schemas
+
+recipe
+article
+organization
+website
+webpage
+blogpost
+breadcrumbs
+store
+homeandconstructionbusiness
+product
+
+See the files in /vendor/truecastdesign/true/src/schemaTypes for individual documentation of which array keys and values to pass for each one. 
 
 ## Google Tag Manager GA4 Javascript code generator
 

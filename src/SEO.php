@@ -47,7 +47,7 @@ class SEO
 				$Schema = new \True\schemaTypes\HomeAndConstructionBusiness;
 			break;
 			case 'product':
-				$Schema = new \True\schemaTypes\Product;
+				$Schema = new \True\schemaTypes\Products;
 			break;
 		}
 
