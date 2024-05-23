@@ -656,6 +656,9 @@ class PhpView
 		if (empty(trim($html)))
 			return $html;
 
+		// Suppress DOMDocument warnings
+		libxml_use_internal_errors(true);
+		
 		$dom = new \DOMDocument();
 		@$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
