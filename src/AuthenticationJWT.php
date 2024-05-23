@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.5
+ * @version 1.2.6
  */
 class AuthenticationJWT
 {
@@ -216,7 +216,7 @@ class AuthenticationJWT
 		
 		try {
 			$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
-
+			
 			if (!is_numeric($payload->userId))
 				return false;
 			
@@ -258,13 +258,13 @@ class AuthenticationJWT
 	 */
 	public function getUserInfo()
 	{
-		$info = $this->user->get($this->userId);
+		$info = $this->user->get($this->userId, ['type'=>'array']);
 		
 		$this->fullName = $info['first_name'].' '.$info['last_name'];
 		
 		$this->email = $info['email'];
 
-		return (object) $info[0];
+		return (object) $info;
 	}
 
 	/**
