@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.3
+ * @version v1.0.4
  * 
  * Available keys
  * method # GET,POST,etc
