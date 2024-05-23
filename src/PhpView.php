@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.0
+ * @version 5.9.1
  */
 
 class PhpView
@@ -657,7 +657,7 @@ class PhpView
 			return $html;
 
 		$dom = new \DOMDocument();
-		@$dom->loadHTML($html);
+		@$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
 		// Find all style tags
 		$styleTags = $dom->getElementsByTagName('style');
