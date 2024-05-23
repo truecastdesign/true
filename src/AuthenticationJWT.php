@@ -143,22 +143,57 @@ class AuthenticationJWT
 			throw new \Exception("Account not found.");
 		}
 
-		$this->loggedIn = true;	
 		$this->userId = $this->user->getId();
 
-		// Reset login attempts
-		$this->loginAttempts->set(["lockout_time"=>0, "count"=>0]);
-
-		if (!is_numeric($this->userId))
-			throw new \Exception("User id not available.");
-
-		$this->getUserInfo();
+		$userInfo = $this->getUserInfo();
 		
-		$jwtToken = $this->JWT->encode($this->userId, $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
-		
-		$this->setCookie($jwtToken);	 
+		if ($userInfo->google2FAAuth == 'on') {
+			$partialToken = $this->JWT->encode([
+				'userId' => $userInfo->id,
+				'status' => '2fa_pending'
+			], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
+	
+			$this->setCookie($partialToken); // Set a cookie with the partial JWT
+			return false; // Indicate that 2FA is needed
+		}
+	
+		$fullToken = $this->JWT->encode([
+			'userId' => $userInfo->id,
+			'status' => 'authenticated'
+		], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
+	
+		$this->loginAttempts->set(["lockout_time"=>0, "count"=>0]); // Reset login attempts after successful login
+
+		$this->setCookie($fullToken); // Set a cookie with the full JWT
 
 		return true;
+	}
+
+	public function verifyGoogleAuth2FA(string $twoFACode, int $userId, object $GoogleAuthenticator): bool
+	{
+		$userInfo = (object) $this->user->get($userId, ['fields'=>'google2FAAuthSecret']);
+		$checkResult = $GoogleAuthenticator->verifyCode($userInfo->google2FAAuthSecret, $twoFACode, 2);
+
+		if ($checkResult) {
+			// Generate a new JWT for fully authenticated session
+			$fullToken = $this->JWT->encode([
+				'userId' => $userId,
+				'status' => 'authenticated'
+			], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
+
+			$this->setCookie($fullToken);
+			return true;
+		}
+		
+		return false;
+	}
+
+	/**
+	 * When your checking googleAuth2fAStep() and want to return to login form
+	 */
+	public function cancel2FA()
+	{
+		setcookie($this->config->cookie, '', -3600, '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);	
 	}
 
 	public function logout(): void
@@ -174,32 +209,62 @@ class AuthenticationJWT
 	 */
 	public function isLoggedIn(): bool
 	{
-		$jwtToken = $_COOKIE[$this->config->cookie];
+		$jwtToken = $_COOKIE[$this->config->cookie] ?? '';
 		
 		if (empty($jwtToken))
 			return false;
 		
-		$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
-		
-		if (!is_numeric($payload))
-			return false;
+		try {
+			$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
 
-		$this->loggedIn = true;
-		$this->userId = $payload;
-		$this->getUserInfo();
+			if (!is_numeric($payload->userId))
+				return false;
+			
+			$this->userId = $payload->userId;
+			
+			$userInfo = $this->getUserInfo();
 
-		$this->setCookie($jwtToken);
+			if ($userInfo->google2FAAuth == 'on')
+				if ($payload->status != 'authenticated')
+					return false;		
 
-		return true;
+			$this->setCookie($jwtToken);
+
+			return true;
+		} catch (\Exception $ex) {
+			throw new \Exception("User is not logged in. ".$ex->getMessage());
+		}
 	}
 
-	public function getUserInfo(): void
+	function googleAuth2fAStep(): bool 
+	{
+		$jwtToken = $_COOKIE[$this->config->cookie] ?? '';
+		
+		if (empty($jwtToken))
+			return false;
+
+		try {
+			$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
+
+			return ($payload->status == '2fa_pending')? true:false;
+			
+		} catch (\Exception $ex) {
+			
+		}
+	}
+
+	/**
+	 * @return object full user info
+	 */
+	public function getUserInfo()
 	{
 		$info = $this->user->get($this->userId);
 		
 		$this->fullName = $info['first_name'].' '.$info['last_name'];
 		
 		$this->email = $info['email'];
+
+		return (object) $info[0];
 	}
 
 	/**
@@ -210,12 +275,10 @@ class AuthenticationJWT
 	 */
 	public function id(): ?int
 	{
-		if ($this->loggedIn) {
+		if (is_numeric($this->userId))
 			return $this->userId;
-		} else {
-			trigger_error("User is not logged in or username not set.",512);
-			return false;
-		} 
+		else 
+			throw new \Exception("User is not logged in or username not set.");
 	}
 
 	/**
@@ -254,6 +317,31 @@ class AuthenticationJWT
 	public function email(): string
 	{
 		return $this->email;
+	}
+
+	public function getTokenPayload()
+	{
+		$jwtToken = $_COOKIE[$this->config->cookie] ?? '';
+		if (empty($jwtToken)) {
+			return null;
+		}
+
+		try {
+			$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
+			return $payload;
+		} catch (\Exception $e) {
+			return null;
+		}
+	}
+
+	public function updateToken(array $additionalClaims = []): void
+	{
+		$payload = $this->JWT->decode($_COOKIE[$this->config->cookie], $this->config->publicKeyFile, [$this->config->alg]);
+
+		$newPayload = array_merge((array) $payload, $additionalClaims);
+		$fullToken = $this->JWT->encode($newPayload, $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
+
+		$this->setCookie($fullToken);
 	}
 
 	private function getDomain(): string

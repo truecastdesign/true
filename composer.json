@@ -4,7 +4,7 @@
   "description": "This library provides the base classes for running the True framework.",
   "keywords": ["framework","php","micro","micro-framework"],
   "license": "MIT",
-  "version": "v2.20.3",
+  "version": "v2.21.0",
 
   "authors": [
   {

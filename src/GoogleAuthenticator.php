@@ -2,116 +2,51 @@
 
 namespace True;
 
+/**
+ * Google Authenticator 2FA class
+ * 
+ * @version 1.2.0
+ */
 class GoogleAuthenticator
 {
 	var $codeLength = 6;
 	
 	/**
-	 * Generates a URL that is used to show a QR code.
+	 * Create a new secret.
+	 * 16 characters, randomly chosen from the allowed base32 characters.
 	 *
-	 * Account names may not contain a double colon (:). Valid account name
-	 * examples:
-	 *  - "John.Doe@gmail.com"
-	 *  - "John Doe"
-	 *  - "John_Doe_976"
-	 *
-	 * The Issuer may not contain a double colon (:). The issuer is recommended
-	 * to pass along. If used, it will also be appended before the accountName.
-	 *
-	 * The previous examples with the issuer "Acme inc" would result in label:
-	 *  - "Acme inc:John.Doe@gmail.com"
-	 *  - "Acme inc:John Doe"
-	 *  - "Acme inc:John_Doe_976"
-	 *
-	 * The contents of the label, issuer and secret will be encoded to generate
-	 * a valid URL.
-	 *
-	 * @param string      $accountName The account name to show and identify
-	 * @param string      $secret      The secret is the generated secret unique to that user
-	 * @param string|null $issuer      Where you log in to
-	 * @param int         $size        Image size in pixels, 200 will make it 200x200
+	 * @param int $secretLength
 	 *
 	 * @return string
 	 */
-	public static function generateQRCode(string $accountName, string $secret, string $issuer = null, int $size = 200): string
+	public function createSecret($secretLength = 16)
 	{
-		if (empty($accountName)) {
-			throw new \Exception("The account name can't be empty!");
-		}
+		$validChars = $this->getBase32LookupTable();
+
+		// Valid secret lengths are 80 to 640 bits
+		if ($secretLength < 16 || $secretLength > 128)
+			throw new \Exception('Bad secret length');
 		
-		if (false !== strpos($accountName, ':')) {
-			throw new \Exception("The account name can't contain a colon!");
+		$secret = '';
+		$rnd = false;
+		if (function_exists('random_bytes')) {
+			$rnd = random_bytes($secretLength);
+		} elseif (function_exists('mcrypt_create_iv')) {
+			$rnd = mcrypt_create_iv($secretLength, MCRYPT_DEV_URANDOM);
+		} elseif (function_exists('openssl_random_pseudo_bytes')) {
+			$rnd = openssl_random_pseudo_bytes($secretLength, $cryptoStrong);
+			if (!$cryptoStrong)
+				$rnd = false;
 		}
-
-		if (empty($secret)) {
-			throw new \Exception("Invalid Secret!");
-		}
-
-		$otpauthString = 'otpauth://totp/%s?secret=%s';
-
-		if (null !== $issuer) {
-			if (empty($issuer) || false !== strpos($issuer, ':')) {
-				throw new \Exception("Invalid issuer $issuer!");
+		if ($rnd !== false) {
+			for ($i = 0; $i < $secretLength; ++$i) {
+				$secret .= $validChars[ord($rnd[$i]) & 31];
 			}
+		} else 
+			throw new \Exception('No source of secure random');
+		
 
-			// use both the issuer parameter and label prefix as recommended by Google for BC reasons
-			$accountName = $issuer.':'.$accountName;
-			$otpauthString .= '&issuer=%s';
-		}
-
-		$otpauthString = rawurlencode(sprintf($otpauthString, $accountName, $secret, $issuer));
-
-		return sprintf(
-			'https://chart.googleapis.com/chart?chs=%1$dx%1$d&chld=M|0&cht=qr&chl=%2$s',
-			$size,
-			$otpauthString
-		);
-	}
-	
-	/**
-	* @param string $secret
-	* @param string $code
-	*/
-	public function checkCode($secret, $code): bool
-	{
-		$result = 0;
-		$now = time();
-
-		// current period
-		$result += hash_equals($this->getCode($secret, $now), $code);
-
-		// previous period, happens if the user was slow to enter or it just crossed over
-		$result += hash_equals($this->getCode($secret, $now - 30), $code);
-
-		// next period, happens if the user is not completely synced and possibly a few seconds ahead
-		$result += hash_equals($this->getCode($secret, $now+30), $code);
-
-		return $result > 0;
-	}
-
-	public function setOTPCookie($username, $secret): void
-	{
-		$time = floor(time() / (3600 * 24)); // get day number
-		//about using the user agent: It's easy to fake it, but it increases the barrier for stealing and reusing cookies nevertheless
-		// and it doesn't do any harm (except that it's invalid after a browser upgrade, but that may be even intented)
-		$cookie = $time.':'.hash_hmac('sha1', $username.':'.$time.':'.$_SERVER['HTTP_USER_AGENT'], $secret);
-		setcookie('otp', $cookie, time() + (30 * 24 * 3600), null, null, null, true);
-	}
-
-	public function hasValidOTPCookie($username, $secret)
-	{
-		// 0 = tomorrow it is invalid
-		$daysUntilInvalid = 0;
-		$time = (string) floor((time() / (3600 * 24))); // get day number
-		if (isset($_COOKIE['otp'])) {
-			list($otpday, $hash) = explode(':', $_COOKIE['otp']);
-
-			if ($otpday >= $time - $daysUntilInvalid && $hash == hash_hmac('sha1', $username.':'.$otpday.':'.$_SERVER['HTTP_USER_AGENT'], $secret)) {
-					return true;
-			}
-		}
-
-		return false;
+		return $secret;
 	}
 
 	/**
@@ -122,10 +57,11 @@ class GoogleAuthenticator
 	 *
 	 * @return string
 	 */
-	private function getCode($secret, $timeSlice = null)
+	public function getCode($secret, $timeSlice = null)
 	{
-		if ($timeSlice === null) 
+		if ($timeSlice === null) {
 			$timeSlice = floor(time() / 30);
+		}
 
 		$secretkey = $this->base32Decode($secret);
 
@@ -150,22 +86,88 @@ class GoogleAuthenticator
 	}
 
 	/**
-		* Generate a encryption key or token
-		*
-		* @param int $length
-		* @return string
-		* @author Daniel Baldwin
-		**/
-	public static function genSecret($length = 64)
+	 * Get QR Code URL for image, from google charts.
+	 *
+	 * @param string $name
+	 * @param string $secret
+	 * @param string $title
+	 * @param array  $params
+	 *
+	 * @return string
+	 */
+	public function getQRCode($name, $secret, $title = null, $params = array())
 	{
-		return substr(bin2hex(openssl_random_pseudo_bytes($length)), 0, $length-1);
+		$width = !empty($params['width']) && (int) $params['width'] > 0 ? (int) $params['width'] : 200;
+		$height = !empty($params['height']) && (int) $params['height'] > 0 ? (int) $params['height'] : 200;
+		$level = !empty($params['level']) && array_search($params['level'], array('L', 'M', 'Q', 'H')) !== false ? $params['level'] : 'M';
+
+		$urlencoded = urlencode('otpauth://totp/'.$name.'?secret='.$secret.'');
+
+		if (isset($title))
+			$urlencoded .= urlencode('&issuer='.urlencode($title));
+
+
+		return "https://api.qrserver.com/v1/create-qr-code/?data=$urlencoded&size={$width}x{$height}&ecc=$level";
 	}
 
-	private function base32Decode($secret)
+	/**
+	 * Check if the code is correct. This will accept codes starting from $discrepancy*30sec ago to $discrepancy*30sec from now.
+	 *
+	 * @param string   $secret
+	 * @param string   $code
+	 * @param int      $discrepancy      This is the allowed time drift in 30 second units (8 means 4 minutes before or after)
+	 * @param int|null $currentTimeSlice time slice if we want use other that time()
+	 *
+	 * @return bool
+	 */
+	public function verifyCode($secret, $code, $discrepancy = 1, $currentTimeSlice = null)
 	{
-		if (empty($secret)) return '';
+		if ($currentTimeSlice === null) {
+			$currentTimeSlice = floor(time() / 30);
+		}
 
-		$base32chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X','Y', 'Z', '2', '3', '4', '5', '6', '7', '=',];
+		if (strlen($code) != 6) {
+			return false;
+		}
+
+		for ($i = -$discrepancy; $i <= $discrepancy; ++$i) {
+			$calculatedCode = $this->getCode($secret, $currentTimeSlice + $i);
+			if ($this->timingSafeEquals($calculatedCode, $code)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Set the length of the code. Should be 6 or greater.
+	 *
+	 * @param int $length
+	 *
+	 * @return GoogleAuthenticator
+	 */
+	public function setCodeLength($length)
+	{
+		$this->codeLength = $length;
+
+		return $this;
+	}
+
+	/**
+	 * Decodes base32.
+	 *
+	 * @param $secret
+	 *
+	 * @return bool|string
+	 */
+	function base32Decode($secret)
+	{
+		if (empty($secret)) {
+			return '';
+		}
+
+		$base32chars = $this->getBase32LookupTable();
 		$base32charsFlipped = array_flip($base32chars);
 
 		$paddingCharCount = substr_count($secret, $base32chars[32]);
@@ -174,15 +176,19 @@ class GoogleAuthenticator
 			return false;
 		}
 		for ($i = 0; $i < 4; ++$i) {
-			if ($paddingCharCount == $allowedValues[$i] && substr($secret, -($allowedValues[$i])) != str_repeat($base32chars[32], $allowedValues[$i])) 
+			if ($paddingCharCount == $allowedValues[$i] &&
+				substr($secret, -($allowedValues[$i])) != str_repeat($base32chars[32], $allowedValues[$i])) {
 				return false;
+			}
 		}
-		$secret = str_split(str_replace('=', '', $secret));
+		$secret = str_replace('=', '', $secret);
+		$secret = str_split($secret);
 		$binaryString = '';
 		for ($i = 0; $i < count($secret); $i = $i + 8) {
 			$x = '';
-			if (!in_array($secret[$i], $base32chars)) 
+			if (!in_array($secret[$i], $base32chars)) {
 				return false;
+			}
 			for ($j = 0; $j < 8; ++$j) {
 				$x .= str_pad(base_convert(@$base32charsFlipped[@$secret[$i + $j]], 10, 2), 5, '0', STR_PAD_LEFT);
 			}
@@ -191,6 +197,53 @@ class GoogleAuthenticator
 				$binaryString .= (($y = chr(base_convert($eightBits[$z], 2, 10))) || ord($y) == 48) ? $y : '';
 			}
 		}
+
 		return $binaryString;
+	}
+
+	/**
+	 * Get array with all 32 characters for decoding from/encoding to base32.
+	 *
+	 * @return array
+	 */
+	function getBase32LookupTable()
+	{
+		return array(
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', //  7
+			'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', // 15
+			'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', // 23
+			'Y', 'Z', '2', '3', '4', '5', '6', '7', // 31
+			'=',  // padding char
+		);
+	}
+
+	/**
+	 * A timing safe equals comparison
+	 *
+	 * @param string $safeString The internal (safe) value to be checked
+	 * @param string $userString The user submitted (unsafe) value
+	 *
+	 * @return bool True if the two strings are identical
+	 */
+	function timingSafeEquals($safeString, $userString)
+	{
+		if (function_exists('hash_equals')) {
+			return hash_equals($safeString, $userString);
+		}
+		$safeLen = strlen($safeString);
+		$userLen = strlen($userString);
+
+		if ($userLen != $safeLen) {
+			return false;
+		}
+
+		$result = 0;
+
+		for ($i = 0; $i < $userLen; ++$i) {
+			$result |= (ord($safeString[$i]) ^ ord($userString[$i]));
+		}
+
+		// They are only identical strings if $result is exactly 0...
+		return $result === 0;
 	}
 }
