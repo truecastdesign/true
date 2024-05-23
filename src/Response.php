@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.0.3
+ * @version 1.0.4
  * $response = new True\Response;
  * $response = new True\Response(['cacheJson','cacheHTML']); if you want all json or html responses to be cached pass cacheJson, cacheHTML, or both as array values. 
  * $response('{"result":"success"}', 'json', 200, ["Cache-Control: no-cache"]);
@@ -36,7 +36,7 @@ class Response
 			break;
 			case 'json':
 				header("Content-Type: application/json");
-				if (is_array($body)) {
+				if (is_array($body) || is_object($body)) {
 					$body = json_encode($body);
 				}
 			break;

@@ -53,6 +53,7 @@ class Request
 	var $put;
 	var $patch;
 	var $all;
+	var $route;
 
 	public function __construct()
 	{
