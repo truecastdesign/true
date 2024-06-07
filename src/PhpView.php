@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.1
+ * @version 5.9.3
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.9.0";
+	static $version = "5.9.3";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -483,7 +483,8 @@ class PhpView
 		
 		foreach($list as $value)
 		{
-			$value = trim($value);
+			if (isset($value))
+				$value = trim($value);
 
 			if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
 			{
@@ -656,7 +657,7 @@ class PhpView
 	
 	public function moveStyleTags($html)
 	{
-		if (empty(trim($html)))
+		if (isset($html) and empty(trim($html)))
 			return $html;
 
 		// Suppress DOMDocument warnings
