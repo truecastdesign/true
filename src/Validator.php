@@ -31,7 +31,7 @@ namespace True;
 /**
  * Value Validator
  * 
- * @version 1.0.0
+ * @version 1.0.1
  */
 class Validator
 {
@@ -165,7 +165,7 @@ class Validator
 	# XSS Clean	
 	function validate_clean($str)
 	{
-		return utf8_encode(htmlspecialchars_decode(html_entity_decode(stripslashes($str))));
+		return htmlspecialchars_decode(html_entity_decode(stripslashes($str)));
 	}
 	
 	# Match one field to another

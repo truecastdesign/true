@@ -61,6 +61,9 @@ class PhpView
 
 		# global variables for layout template
 		$this->vars['variables'] = (isset($args['variables'])? $args['variables']:[]);
+
+		# styles
+		$this->vars['styles'] = '';
 	}
 
 	/**
@@ -342,7 +345,7 @@ class PhpView
 			}
 		}
 		
-		if (is_array($outputArray[0])) {
+		if (isset($outputArray) and is_array($outputArray[0])) {
 			foreach ($outputArray[0] as $tag) {
 				$replaceTags[] = '';
 				$searchTags[] = $tag;
