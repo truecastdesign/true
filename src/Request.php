@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.4
+ * @version v1.0.5
  * 
  * Available keys
  * method # GET,POST,etc
@@ -103,7 +103,10 @@ class Request
 			}
 		}
 
-		$cleanedContentType = trim(explode(';', $this->contentType)[0]);		
+		$contentType = explode(';', $this->contentType);
+		
+		if (is_array($contentType) && isset($contentType[0]))
+			$cleanedContentType = trim($contentType[0]);		
 		
 		$this->post = (object) (isset($_POST) ? $_POST:[]);
 		$this->get = (object) (isset($_GET) ? $_GET:[]);

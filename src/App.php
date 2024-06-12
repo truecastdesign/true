@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.7
+ * @version 1.11.8
  */
 class App
 {
@@ -240,39 +240,39 @@ class App
 	{
 		$debugError = $errStr . ': FILE:' . $errFile . ' LINE:' . $errLine;
 
-		// $GLOBALS['errorUserError'] = trim($GLOBALS['errorUserError']);
-
-		$GLOBALS['errorUserWarning'] = str_replace(['<ul>', '</ul>'], '', $GLOBALS['errorUserWarning']);
-
-		// $GLOBALS['errorUserNotice'] = trim($GLOBALS['errorUserNotice']);
+		$lb = '<br>';
 
 		switch ($errNo) {
-		case E_WARNING: // 2
-			if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? '<br /><br />' . $debugError : $debugError;
+			case E_WARNING: // 2
+				if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb.$lb. $debugError : $debugError;
 			break;
 
-		case E_NOTICE: // 8
-			if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? '<br />' . $debugError : $debugError;
+			case E_NOTICE: // 8
+				if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb. $debugError : $debugError;
 			break;
 
-		case E_USER_ERROR: // 256
-			$GLOBALS['errorUserError'].= !empty($GLOBALS['errorUserError']) ? '<br />' . $errStr : $errStr;
+			case E_USER_ERROR: // 256
+				$GLOBALS['errorUserError'].= !empty($GLOBALS['errorUserError']) ? $lb. $errStr.$debugError : $errStr.$debugError;
 			break;
 
-		case E_USER_WARNING: // 512
-			$GLOBALS['errorUserWarning'].= !empty($GLOBALS['errorUserWarning']) ? '<br />' . $errStr : $errStr;
+			case E_USER_WARNING: // 512
+				$GLOBALS['errorUserWarning'].= !empty($GLOBALS['errorUserWarning']) ? $lb. $errStr : $errStr;
 			break;
 
-		case E_USER_NOTICE: // 1024
-			$GLOBALS['errorUserNotice'].= !empty($GLOBALS['errorUserNotice']) ? '<br />' . $errStr : $errStr;
+			case E_USER_NOTICE: // 1024
+				$GLOBALS['errorUserNotice'].= !empty($GLOBALS['errorUserNotice']) ? $lb. $errStr : $errStr;
 			break;
 
-		case E_USER_DEPRECATED: // 16384 - use this error level for errors you don't want the user to see bug for debugging only!
-			$GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? '<br /><br />' . $debugError : $debugError;
+			case E_USER_DEPRECATED: // 16384 - use this error level for errors you don't want the user to see bug for debugging only!
+				$GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb.$lb. $debugError : $debugError;
 			break;
 
-		default:
-			if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? '<br />' . $errStr : $errStr;
+			case E_DEPRECATED: // 8192
+				$GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb.$lb. $debugError : $debugError;
+			break;
+
+			default:
+				if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb.$errNo.' '.$errStr.$debugError : $errStr.$debugError;
 		}
 	}
 
@@ -286,31 +286,41 @@ class App
 	public function displayErrors($params = [])
 	{
 		extract($params);
-		if (!isset($noticeBox))
-			$noticeBox = 'displayNoticeBox';
-
-		if (!isset($debugError))
-			$debugError = 'displayDebugError';
-
-		if (!isset($userError))
-			$userError = 'displayUserError';
-
-		if (!isset($userWarning))
-			$userWarning = 'displayUserWarning';
-
-		if (!isset($userNotice))
-			$userNotice = 'displayUserNotice';
-		  
-		echo (empty($GLOBALS['errorUserNotice'])? '':'<div id="'.$noticeBox.'"><div id="'.$userNotice.'"><div>'.$GLOBALS['errorUserNotice'].'</div><button id="displayUserCloseButton"></button></div></div>');
-
-		echo (empty($GLOBALS['errorUserWarning'])? '':'<div id="'.$noticeBox.'"><div id="'.$userWarning.'"><div>'.$GLOBALS['errorUserWarning'].'</div><button id="displayUserCloseButton"></button></div></div>');
-
-		echo (empty($GLOBALS['errorUserError'])? '':'<div id="'.$noticeBox.'"><div id="'.$userError.'"><div>'.$GLOBALS['errorUserError'].'</div><button id="displayUserCloseButton"></button></div></div>');
-
-		echo (empty($GLOBALS['pageErrors'])? '':'<div id="'.$noticeBox.'"><div id="'.$debugError.'"><div>'.$GLOBALS['pageErrors'].'</div><button id="displayUserCloseButton"></button></div></div>');
-		
-		if (!empty($GLOBALS['pageErrors']) or !empty($GLOBALS['errorUserError']) or !empty($GLOBALS['errorUserWarning']) or !empty($GLOBALS['errorUserNotice']) ) {
-			echo "<script>document.querySelector('#displayUserCloseButton').onclick = function() {document.querySelector('#{$noticeBox}').parentNode.removeChild(document.querySelector('#{$noticeBox}'))}</script>";
+	
+		$noticeBox = $params['noticeBox'] ?? 'displayNoticeBox';
+		$debugError = $params['debugError'] ?? 'displayDebugError';
+		$userError = $params['userError'] ?? 'displayUserError';
+		$userWarning = $params['userWarning'] ?? 'displayUserWarning';
+		$userNotice = $params['userNotice'] ?? 'displayUserNotice';
+	
+		$errors = [
+			'userNotice' => $GLOBALS['errorUserNotice'] ?? '',
+			'userWarning' => $GLOBALS['errorUserWarning'] ?? '',
+			'userError' => $GLOBALS['errorUserError'] ?? '',
+			'pageErrors' => $GLOBALS['pageErrors'] ?? ''
+		];
+	
+		$displayClasses = [
+			'userNotice' => $userNotice,
+			'userWarning' => $userWarning,
+			'userError' => $userError,
+			'pageErrors' => $debugError
+		];
+	
+		foreach ($errors as $key => $message) {
+			if (!empty($message)) {
+				echo '<div id="' . $noticeBox . '"><div id="' . $displayClasses[$key] . '"><div>' . $message . '</div><button id="displayUserCloseButton"></button></div></div>';
+			}
+		}
+	
+		if (!empty($errors['pageErrors']) || !empty($errors['userError']) || !empty($errors['userWarning']) || !empty($errors['userNotice'])) {
+			echo "<script>
+				document.querySelectorAll('#displayUserCloseButton').forEach(button => {
+					button.onclick = function() {
+						this.closest('#{$noticeBox}').remove();
+					}
+				});
+			</script>";
 		}
 	}
 
