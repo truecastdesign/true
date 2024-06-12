@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.3
+ * @version 5.9.4
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.9.3";
+	static $version = "5.9.4";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -657,7 +657,7 @@ class PhpView
 	
 	public function moveStyleTags($html)
 	{
-		if (isset($html) and empty(trim($html)))
+		if (isset($html) and empty($html))
 			return $html;
 
 		// Suppress DOMDocument warnings
