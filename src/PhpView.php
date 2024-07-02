@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.4
+ * @version 5.9.6
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.9.4";
+	static $version = "5.9.5";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -229,7 +229,7 @@ class PhpView
 
 		if (empty($taView) or $taView == '.phtml')
 			$taView = 'index.phtml';
-
+		
 		$fullPath = ($taView[0] == '/')? true:false;
 
 		header('X-Frame-Options: SAMEORIGIN');
@@ -281,7 +281,7 @@ class PhpView
 			}
 		}
 		
-		if (is_array($metaDataArray) and array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
+		if (isset($metaDataArray) && is_array($metaDataArray) and array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
 			$this->vars['headHtml'] .= "\n".'<meta name="robots" content="noindex">'."\n";
 
 		// List of time zones: https://www.w3schools.com/PHP/php_ref_timezones.asp
@@ -379,17 +379,20 @@ class PhpView
 
 		$this->vars['html'] = $this->metaData['_html'];
 
-		$this->vars['html'] = $this->moveStyleTags($this->vars['html']);
+		$stylesHTML = $this->moveStyleTags($this->vars['html']);
+
+		$this->vars['html'] = $stylesHTML->html;
 
 		extract($this->metaData);
 		extract($this->vars['variables']);
 		extract($variables);
 		global $App;
 
-		$App->view->headHtml = $App->view->headHtml ."\n\n".$this->vars['styles'];
+		$App->view->headHtml = $App->view->headHtml ."\n".$this->vars['styles']."\n<style>".$stylesHTML->styles."</style>\n\n";
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
+			
 			die();
 		}	
 		else {
@@ -655,45 +658,38 @@ class PhpView
 			return md5($content);
 	}
 	
-	public function moveStyleTags($html)
-	{
-		if (isset($html) and empty($html))
-			return $html;
-
+	function moveStyleTags($html) {
+		if (empty($html)) {
+			return ['styles' => '', 'html' => $html];
+		}
+	
 		// Suppress DOMDocument warnings
 		libxml_use_internal_errors(true);
-		
+	
+		// Create a new DOMDocument instance
 		$dom = new \DOMDocument();
-		@$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-		// Find all style tags
-		$styleTags = $dom->getElementsByTagName('style');
-
-		// Array to hold style contents
+		@$dom->loadHTML('<html><body>' . $html . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+	
+		// Collect all style tags in an array
 		$stylesArray = [];
-
-		// Iterate over style tags and extract the content
-		foreach ($styleTags as $styleTag) {
-			$stylesArray[] = $dom->saveHTML($styleTag);
+		$styleTags = $dom->getElementsByTagName('style');
+		while ($styleTags->length > 0) {
+			$styleTag = $styleTags->item(0);
+			$stylesArray[] = $styleTag->nodeValue;
 			$styleTag->parentNode->removeChild($styleTag);
 		}
-
-		// Remove the style tags from the document
-		// while ($styleTag = $dom->getElementsByTagName("style")[0]) {
-		// 	$styleTag->parentNode->removeChild($styleTag);
-		// }
-
-		$body = $dom->getElementsByTagName('body')->item(0);
-
+	
 		// Save the HTML content back to a variable without the style tags
+		$body = $dom->getElementsByTagName('body')->item(0);
 		$htmlContentWithoutStyles = $dom->saveHTML($body);
-
-		$this->vars['styles'] = implode("\n\n", $stylesArray);
-
-		// remove the body tags
-		$cleanedHTML = str_replace(['<body>','</body>'], '', $htmlContentWithoutStyles);
-
-		return $cleanedHTML;
+	
+		// Remove the enclosing <body> tags
+		$cleanedHTML = str_replace(['<body>', '</body>'], '', $htmlContentWithoutStyles);
+	
+		return (object)[
+			'styles' => implode("\n\n", $stylesArray),
+			'html' => $cleanedHTML
+		];
 	}
 	
 	/**
