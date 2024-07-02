@@ -8,7 +8,7 @@ $App = new \True\App;
 
 $config = $App->getConfig('queue-database.ini');
 
-$pdo = new PDO('sqlite:'.$config->database);
+$pdo = new PDO('sqlite:'.BP.$config->database);
 
 try {
 	$stmt = $pdo->query("SELECT * FROM tasks WHERE status = 'pending'");
