@@ -21,12 +21,14 @@ try {
 
 		$taskData = json_decode($task['task_data']);
 
-		$taskFile = BP.'/app/tasks/'.$task['task_name'];
+		if (strpos($task['task_name'], '/') === 0)
+			$taskFile = $task['task_name'];
+		else
+			$taskFile = BP.'/app/tasks/'.$task['task_name'];
 
 		try {
-			if (file_exists($taskFile)) {
+			if (file_exists($taskFile))
 				require $taskFile;
-			}
 			else
 				error_log(PHP_EOL."Task script not found: " . $taskFile, 3, BP.'/php-error.log');
 

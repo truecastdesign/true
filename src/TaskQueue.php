@@ -1,10 +1,16 @@
 <?php
 namespace True;
 
+/**
+ * Task Queue
+ * 
+ * @author Daniel Baldwin <danielbaldwin@gmail.com>
+ * @version 1.1.3
+ */
 class TaskQueue {
 	private $pdo;
 
-	var $logFile = BP.'/logs/queueworker.log';
+	var $logFile = BP.'/php-error.log';
 	var $worker = BP.'/vendor/truecastdesign/true/workers/queue.php';
 
 	public function __construct($databaseFile) {
@@ -16,9 +22,6 @@ class TaskQueue {
 			throw new \Exception("Connection failed: " . $e->getMessage());
 		}
 
-		if (!is_dir(BP.'/logs'))
-			mkdir(BP.'/logs', 0755, true); // Create the directory if it doesn't exist
-		
 		if (!file_exists($this->logFile))
 			touch($this->logFile);
 
