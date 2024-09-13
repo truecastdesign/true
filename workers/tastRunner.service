@@ -1,0 +1,10 @@
+[Unit]
+Description=Run PHP script every 2 seconds
+
+[Service]
+ExecStart=/usr/local/bin/ea-php56 /home/username/vendor/truecastdesign/true/cron/taskRunner.php
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

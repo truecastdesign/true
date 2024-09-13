@@ -1,35 +1,31 @@
 # Task Queue
 > This library class allows you to add a PHP script as a task that will be run in the background.
 
-
 ## How to use
 
-init.php
+init.php - put the following code in your init.php file.
+
+If your task scripts need access to any objects, you can use the passObjects method to pass an array of key=>instance pares. The object will be accessible with the key name.
+
+You can change the path to the database if needed and it will automatically be created the first time the script runs.
 
 ```php
-try {
-	$App->taskqueue = new True\TaskQueue(BP.$App->getConfig('queue-database.ini')->database);
-} catch (Exception $e) {
-	trigger_error($e->getMessage(), 256);
-}
+$App->TaskQueue = new True\TaskQueue(BP.'/data/tasks.sqlite');
+
+$App->TaskQueue->passObjects(['App'=>$App]);
 ```
+
+In a controller file, add the following to run a script in the background.
 
 You can call the AddTask method on the TaskQueue instance which inserts a task into the queue and then runs it in the background. The default behavior is if you pass it just a file name it will look for that script in the BP.'/app/tasks/' directory. If you pass it a root relative path, meaning it starts with a /, then it will use what you pass it to find the script. 
 
 create a script in app/tasks for example app/tasks/task.php
 
-The array of key/values will be available to that script in a value object $taskData.
-
-Access the values like $taskData->var1. So don't use dashes in your keys or you won't be able to access it.
-
-Page controller file located in the app/controllers directory.
+The array of key/values will be available to that script as extracted variables.
 
 ```php
 try {
-	$App->taskqueue->addTask('task.php', [
-		'var1'=>'value',
-		'var2'=>'value'
-	]);
+	$App->TaskQueue->addTask('task.php', ['var1'=>1]);
 } catch (Exception $e) {
 	trigger_error($e->getMessage(), 256);
 }
@@ -63,4 +59,25 @@ try {
 } catch (Exception) {
 	error_log("Message could not be sent. Mailer Error: {$Mail->ErrorInfo}", 3, BP.'/php-error.log');
 }
+```
+
+You want to setup the task runner script to run about every 2-5 sec. Crontab only allows you to run a script every 1 min at the lowest. The best method is to use a System Service.
+
+In this libraries workers folder you will find a taskRunner.service file. Save this to /etc/systemd/system/taskRunner.service You will want to modify the file and PHP exec paths for your environment. 
+
+You will need to be logged into your server as root. 
+
+cd into /etc/systemd/system is you are not already.
+
+Run these commands
+
+```shell
+systemctl daemon-reload
+systemctl enable --now tastRunner.service
+```
+
+Another method that is an option if you don't have root access is to use the watch command to run your script. Login to your server with ssh and run this command changing your file paths as needed.
+
+```shell
+nohup watch -n 2 /usr/local/bin/ea-php56 /home/username/vendor/truecastdesign/true/workers/taskRunner.php > /home/username/logs/taskqueue.log 2>&1 &
 ```
