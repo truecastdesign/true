@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.6
+ * @version 5.9.7
  */
 
 class PhpView
@@ -658,18 +658,27 @@ class PhpView
 			return md5($content);
 	}
 	
-	function moveStyleTags($html) {
+	function moveStyleTags($html) 
+	{
 		if (empty($html)) {
 			return ['styles' => '', 'html' => $html];
 		}
-	
+
 		// Suppress DOMDocument warnings
 		libxml_use_internal_errors(true);
-	
+
+		// Use placeholders for script tags to prevent DOMDocument from altering them
+		$scriptPlaceholder = '###SCRIPT###';
+		$scripts = [];
+		$htmlWithoutScripts = preg_replace_callback('/<script\b[^>]*>([\s\S]*?)<\/script>/i', function ($matches) use (&$scripts, $scriptPlaceholder) {
+			$scripts[] = $matches[0];
+			return $scriptPlaceholder . count($scripts) - 1;
+		}, $html);
+
 		// Create a new DOMDocument instance
 		$dom = new \DOMDocument();
-		@$dom->loadHTML('<html><body>' . $html . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-	
+		@$dom->loadHTML('<html><body>' . $htmlWithoutScripts . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
 		// Collect all style tags in an array
 		$stylesArray = [];
 		$styleTags = $dom->getElementsByTagName('style');
@@ -678,14 +687,19 @@ class PhpView
 			$stylesArray[] = $styleTag->nodeValue;
 			$styleTag->parentNode->removeChild($styleTag);
 		}
-	
+
 		// Save the HTML content back to a variable without the style tags
 		$body = $dom->getElementsByTagName('body')->item(0);
 		$htmlContentWithoutStyles = $dom->saveHTML($body);
-	
+
 		// Remove the enclosing <body> tags
 		$cleanedHTML = str_replace(['<body>', '</body>'], '', $htmlContentWithoutStyles);
-	
+
+		// Restore the script tags that were temporarily removed
+		foreach ($scripts as $index => $scriptTag) {
+			$cleanedHTML = str_replace($scriptPlaceholder . $index, $scriptTag, $cleanedHTML);
+		}
+
 		return (object)[
 			'styles' => implode("\n\n", $stylesArray),
 			'html' => $cleanedHTML
