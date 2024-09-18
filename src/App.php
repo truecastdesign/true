@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.8
+ * @version 1.11.9
  */
 class App
 {
@@ -285,20 +285,20 @@ class App
 	  **/
 	public function displayErrors($params = [])
 	{
-		extract($params);
-	
-		$noticeBox = $params['noticeBox'] ?? 'displayNoticeBox';
-		$debugError = $params['debugError'] ?? 'displayDebugError';
-		$userError = $params['userError'] ?? 'displayUserError';
-		$userWarning = $params['userWarning'] ?? 'displayUserWarning';
-		$userNotice = $params['userNotice'] ?? 'displayUserNotice';
-	
+		$noticeBox = isset($params['noticeBox']) ? $params['noticeBox'] : 'displayNoticeBox';
+		$debugError = isset($params['debugError']) ? $params['debugError'] : 'displayDebugError';
+		$userError = isset($params['userError']) ? $params['userError'] : 'displayUserError';
+		$userWarning = isset($params['userWarning']) ? $params['userWarning'] : 'displayUserWarning';
+		$userNotice = isset($params['userNotice']) ? $params['userNotice'] : 'displayUserNotice';
+
 		$errors = [
-			'userNotice' => $GLOBALS['errorUserNotice'] ?? '',
-			'userWarning' => $GLOBALS['errorUserWarning'] ?? '',
-			'userError' => $GLOBALS['errorUserError'] ?? '',
-			'pageErrors' => $GLOBALS['pageErrors'] ?? ''
+			'userNotice' => isset($GLOBALS['errorUserNotice']) ? $GLOBALS['errorUserNotice'] : '',
+			'userWarning' => isset($GLOBALS['errorUserWarning']) ? $GLOBALS['errorUserWarning'] : '',
+			'userError' => isset($GLOBALS['errorUserError']) ? $GLOBALS['errorUserError'] : '',
+			'pageErrors' => isset($GLOBALS['pageErrors']) ? $GLOBALS['pageErrors'] : ''
 		];
+
+		extract($params);
 	
 		$displayClasses = [
 			'userNotice' => $userNotice,
