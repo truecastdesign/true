@@ -65,15 +65,56 @@ You want to setup the task runner script to run about every 2-5 sec. Crontab onl
 
 In this libraries workers folder you will find a taskRunner.service file. Save this to /etc/systemd/system/taskRunner.service You will want to modify the file and PHP exec paths for your environment. 
 
+```service
+ExecStart=/usr/local/bin/ea-php56 /home/username/vendor/truecastdesign/true/cron/taskRunner.php
+```
+
 You will need to be logged into your server as root. 
 
-cd into /etc/systemd/system is you are not already.
+cd into /etc/systemd/system if you are not already.
 
 Run these commands
 
 ```shell
 systemctl daemon-reload
-systemctl enable --now tastRunner.service
+systemctl enable --now taskRunner.service
+```
+
+To check if your service is still running:
+
+```shell
+systemctl status taskRunner.service
+```
+
+This is how you stop and disable the service from running.
+
+```shell
+systemctl stop taskRunner.service
+systemctl disable taskRunner.service
+```
+
+If you just stop the service and not disabled it, you can start it up again with this command.
+
+```shell
+systemctl restart taskRunner.service
+```
+
+If you make a change to the taskRunner.service after you set it up, run:
+
+```shell
+systemctl daemon-reload
+```
+
+Look in this dir for service links
+
+```shell
+/etc/systemd/system/multi-user.target.wants
+```
+
+To debug your task script, run this in the terminal editing for your version of PHP and the correct path to the taskRunner.php file.
+
+```shell
+/usr/local/bin/ea-php82 /home/username/vendor/truecastdesign/true/workers/taskRunner.php
 ```
 
 Another method that is an option if you don't have root access is to use the watch command to run your script. Login to your server with ssh and run this command changing your file paths as needed.

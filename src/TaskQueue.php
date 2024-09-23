@@ -5,7 +5,7 @@ namespace True;
  * Task Queue
  * 
  * @author Daniel Baldwin <danielbaldwin@gmail.com>
- * @version 1.1.4
+ * @version 1.2.4
  */
 class TaskQueue 
 {
@@ -34,14 +34,15 @@ class TaskQueue
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			script TEXT,
 			variables TEXT,
+			created DATETIME,
 			status VARCHAR (15)
 		)");
 	}
 
 	public function addTask($script, $variables) 
 	{
-		$stmt = $this->pdo->prepare("INSERT INTO tasks (script, variables, status) VALUES (?, ?, ?)");
-		$stmt->execute([$script, json_encode($variables), 'pending']);
+		$stmt = $this->pdo->prepare("INSERT INTO tasks (script, variables, status, created) VALUES (?, ?, ?, ?)");
+		$stmt->execute([$script, json_encode($variables), 'pending', date("Y-m-d H:i:s")]);
 	}
 
 	/**
@@ -111,6 +112,19 @@ class TaskQueue
 				error_log(PHP_EOL.$e->getMessage(), 3, BP.'/php-error.log');
 			}
 		}
+	}
+
+	/**
+	 * Get an array of current tasks in the database and their info
+	 * 
+	 * @return [0=>['id'=>1, 'script'=>'filename.php', 'variables'=>'["var":"value"]', 'status'=>'pending', 'created'=>'2024-01-01 11:25:41']]
+	 */
+	public function getTaskList()
+	{
+		$stmt = $this->pdo->query("SELECT * FROM tasks");
+		$tasks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+		return $tasks;
 	}
 
 	public function resetAllTasksToPending()

@@ -2,7 +2,7 @@
 Description=Run PHP script every 2 seconds
 
 [Service]
-ExecStart=/usr/local/bin/ea-php56 /home/username/vendor/truecastdesign/true/cron/taskRunner.php
+ExecStart=/usr/local/bin/ea-php82 /home/username/vendor/truecastdesign/true/workers/taskRunner.php
 Restart=always
 RestartSec=2
 
