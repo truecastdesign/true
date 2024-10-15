@@ -34,6 +34,8 @@ AddHandler application/x-httpd-php .html .phtml .php
 ```
 
 ## Table of Contents
+[App](./docs/App.md)
+
 [Routing](./docs/Routes.md)
 
 [Authentication](./docs/Auth.md)

@@ -8,13 +8,17 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.11.9
+ * @version 1.12.0
  */
 class App
 {
 	private $container = [];
 	private $debug = false;
 	private $classes = [];
+	private $filesList = [];
+	private $configUpdateMode = false;
+	private $configUpdatePath = [];
+
 	/**
 	 * Create new application
 	 *
@@ -23,16 +27,19 @@ class App
 	public function __construct($files = null)
 	{
 		$this->container['config'] = (object)[];
-		
-		if (is_string($files)) {
+		$this->container['configUpdate'] = (object)[];
+
+		if (!is_null($files))
 			$this->load($files);
-		}
 		
 		$GLOBALS['pageErrors'] = '';
 		$GLOBALS['errorUserError'] = '';
 		$GLOBALS['errorUserWarning'] = '';
 		$GLOBALS['errorUserNotice'] = '';
-		if (!isset($GLOBALS['debug'])) $GLOBALS['debug'] = false;
+		
+		if (!isset($GLOBALS['debug'])) 
+			$GLOBALS['debug'] = false;
+		
 		set_error_handler(array(
 			$this,
 			'errorHandler'
@@ -68,8 +75,8 @@ class App
 
 			// convert file into array
 			if (file_exists($file)) {
-				$config = parse_ini_file($file, true);
-
+				$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
+		
 				// if it has sections, remove the config_title array that gets created
 				// $configTitle = $config['config_title'];
 				// unset($config['config_title']);
@@ -82,15 +89,18 @@ class App
 				// has section headings
 				if (is_array($config[key($config) ])) {
 					foreach($config as $section => $values) {
+						$this->filesList[$section] = $file;
 						$this->container['config']->{$section} = (object)$values;
+						$this->container['configUpdate']->{$section} = (object)$values;
 					}
 				} else { // does not have sections
 					foreach($config as $key => $value) {
 						$this->container['config']->{$key} = $value;
+						$this->container['configUpdate']->{$key} = $value;
 					}
 				}
 			}
-		}
+		} 
 	}
 
 	/**
@@ -140,7 +150,7 @@ class App
 	 *
 	 */
 	public function __get($key)
-	{
+	{ 
 		if (array_key_exists($key, $this->container))
 			return $this->container[$key];
 	}
@@ -196,31 +206,98 @@ class App
 	{
 		$out = '';
 		foreach ($data as $k => $v) {
-			if (is_array($v)) {
-					//subsection case
-					//merge all the sections into one array...
-					$sec = array_merge((array) $parent, (array) $k);
-					//add section information to the output
-					$out .= (empty($out)? '':PHP_EOL).'[' . join('.', $sec) . ']' . PHP_EOL;
-					//recursively traverse deeper
-					$out .= $this->writeConfigRec($v, $sec);
-			}
+			
+			if (is_array($v) && $this->isNumericArray($v)) {
+            // Handle array elements like rateRequestType[] = "LIST"
+            foreach ($v as $arrayValue) {
+               $out .= $k . '[] = "' . $arrayValue . '"' . PHP_EOL;
+            }
+       	} elseif (is_array($v)) {
+            // Handle associative arrays (subsections)
+            $sec = array_merge((array)$parent, (array)$k);
+            $out .= (empty($out) ? '' : PHP_EOL) . '[' . join('.', $sec) . ']' . PHP_EOL;
+            $out .= $this->writeConfigRec($v, $sec);
+       	}
 			else {
 					//plain key->value case
 					if ($v === false)
 						$value = 'Off';
 					elseif ($v === true)
 						$value = 'On';
+					elseif (is_float($v))
+						$value = $this->formatFloat($v);
 					elseif (is_numeric($v))
 						$value = $v;
-					else
+					elseif (is_string($v))
 						$value = '"'.$v.'"';
+					else
+						$value = '';
 					
 					$out .= $k.' = '.$value.PHP_EOL;
 			}
 		}
 		return $out;
 	}
+
+	/**
+	 * Helper function to check if array is a numerically indexed array
+	 */
+	private function isNumericArray(array $array): bool
+	{
+		return array_keys($array) === range(0, count($array) - 1);
+	}
+
+	/**
+	 * Helper function to detect precision and format the float accordingly
+	 */
+	private function formatFloat(float $number): string
+	{
+		$decimalPart = fmod($number, 1);
+		$decimalPlaces = strlen($decimalPart) - 2;
+		
+		return sprintf("%.{$decimalPlaces}F", $number);
+	}
+
+	/**
+     * Update a config value in the .ini file. Does not touch the key values already there.
+     *
+     * @param string $sectionOrFile - The section in the ini file, file path and name or just the filename if it is in app/config.
+     * @param string $key - The key to update or add.
+     * @param mixed $value - The value to set.
+     * @return void
+     */
+   public function configUpdate($sectionOrFile, $key, $value)
+   {
+		// Check if the input is a filename or a section
+    	if (substr($sectionOrFile, -4) === '.ini') {
+      	$file = $sectionOrFile;
+			
+			if (substr($file, 0, 1 ) != "/")
+				$file = BP.'/app/config/'.$file;
+		}
+		else {
+			if (!isset($this->filesList[$sectionOrFile]))
+				throw new \Exception("Section '$sectionOrFile' not found in loaded config files.");
+
+			$file = $this->filesList[$sectionOrFile];
+		}
+
+		// Parse the ini file
+		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
+		
+		$section = key($config);
+		if (!isset($config[$section]))
+			$config[$section] = [];
+
+		// Update the key/value
+		$config[$section][$key] = $value;
+
+		// Update in-memory config Data
+		$this->container['config']->{$section}->{$key} = $value;
+
+		// Write back to the file
+		$this->writeConfig($file, $config);
+   }
 
 	/**
 	 *  set header location and exit.
