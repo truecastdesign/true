@@ -677,7 +677,8 @@ class PhpView
 
 		// Create a new DOMDocument instance
 		$dom = new \DOMDocument();
-		@$dom->loadHTML('<html><body>' . $htmlWithoutScripts . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+		
+		$dom->loadHTML(mb_convert_encoding('<html><body>' . $htmlWithoutScripts . '</body></html>', 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
 		// Collect all style tags in an array
 		$stylesArray = [];
@@ -699,7 +700,7 @@ class PhpView
 		foreach ($scripts as $index => $scriptTag) {
 			$cleanedHTML = str_replace($scriptPlaceholder . $index, $scriptTag, $cleanedHTML);
 		}
-
+		
 		return (object)[
 			'styles' => implode("\n\n", $stylesArray),
 			'html' => $cleanedHTML
