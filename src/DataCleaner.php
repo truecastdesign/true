@@ -5,69 +5,105 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.0
+ * @version 1.4.1
  */
 class DataCleaner
 {
 	public static function streetAddress($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^A-Za-z0-9\.\-\,\#\ \;\:\'\°\/]/", '', $str);
 	}
 	
 	# Deprecated
 	public static function intOnly($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 
 	public static function int($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 	
 	# Deprecated
 	public static function alphaOnly($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
 
 	public static function alpha($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z]/", '', $str);
 	}
 	
 	public static function alphaInt($str)
 	{
+		if (is_null($str))
+			return '';
+
 		return preg_replace("/[^a-zA-Z0-9]/", '', $str);
 	}
 	
 	public static function name($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z0-9\ \.\-\&\/\(\)\,\']/", '', $str); 
 	}
 	
 	public static function decimal($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^0-9\.\-]/", '', $str);
 	}
 	
 	public static function filePath($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z0-9\-]/", '', $str);
 	}
 	
 	public static function dbField($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z0-9\-\_\ ]/", '', $str);
 	}
 	
 	public static function creditCard($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^0-9]/", '', $str);
 	}
 
 	public static function postalCode($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace("/[^a-zA-Z0-9\-\ ]/", '', $str);
 	}
 	
@@ -104,6 +140,9 @@ class DataCleaner
 	# remove urls from string
 	public static function filterOutURLs($str) 
 	{
+		if (is_null($str))
+			return '';
+		
 		return preg_replace('/\b((https?|ftp|file|http):\/\/|www\.)[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]/i', ' ', $str);
 	}
 
@@ -191,6 +230,9 @@ class DataCleaner
 
 	public static function currency($str)
 	{
+		if (is_null($str))
+			return '';
+		
 		return '$'.number_format($str, 2, '.', ',');
 	}
 

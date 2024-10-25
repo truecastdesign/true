@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.7
+ * @version 5.9.8
  */
 
 class PhpView
@@ -388,7 +388,8 @@ class PhpView
 		extract($variables);
 		global $App;
 
-		$App->view->headHtml = $App->view->headHtml ."\n".$this->vars['styles']."\n<style>".$stylesHTML->styles."</style>\n\n";
+		if (!empty($stylesHTML->styles))
+			$App->view->headHtml = $App->view->headHtml ."\n".$this->vars['styles']."\n<style>".$stylesHTML->styles."</style>\n\n";
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
@@ -677,8 +678,14 @@ class PhpView
 
 		// Create a new DOMDocument instance
 		$dom = new \DOMDocument();
+
+		$map = [
+			0x80, 0xFF, 0, 0xFF  // Encode characters in the range 128-255.
+	  ];
 		
-		$dom->loadHTML(mb_convert_encoding('<html><body>' . $htmlWithoutScripts . '</body></html>', 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+		$dom->loadHTML('<html><body>' . mb_encode_numericentity($htmlWithoutScripts, $map, 'UTF-8') . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+		
 
 		// Collect all style tags in an array
 		$stylesArray = [];
