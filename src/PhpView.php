@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.8
+ * @version 5.9.9
  */
 
 class PhpView
@@ -390,6 +390,20 @@ class PhpView
 
 		if (!empty($stylesHTML->styles))
 			$App->view->headHtml = $App->view->headHtml ."\n".$this->vars['styles']."\n<style>".$stylesHTML->styles."</style>\n\n";
+
+		// generate an ETag
+		$etag1 = md5_file($this->vars['layout']);
+		$etag2 = md5($this->vars['html']);
+		$etag = md5($etag1.$etag2);
+
+		header("ETag: \"$etag\"");
+
+		// Step 3: Check if the ETag matches the client's request
+		if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === "\"$etag\"") {
+			// ETag matches; send a 304 Not Modified response
+			header("HTTP/1.1 304 Not Modified");
+			exit;
+		}
 		
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
