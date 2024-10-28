@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.0.5
+ * @version v1.1.0
  * 
  * Available keys
  * method # GET,POST,etc
@@ -122,6 +122,36 @@ class Request
 		}
 
 		$this->all = (object) array_merge((array) $this->get, (array) $this->post, (array) $this->put, (array) $this->patch, (array) $this->delete);
+	}
+
+	/**
+	 * Determine if the current path matches a pattern, using * as a wildcard.
+	 *
+	 * @param string $pattern The pattern to match against 
+	 * (e.g., 'about', 'products/*', etc.)
+	 * @return bool True if the pattern matches the current path, false otherwise.
+	 * 
+	 * Example:
+	 * <?=$App->request->is('path/')? 'active':''?>
+	 * <?=$App->request->is('pathtwo/*')? 'active':''?>
+	 */
+	public function is($pattern)
+	{
+		// Get the current path and trim only the trailing slashes
+		$currentPath = rtrim($this->url->path, '/');
+
+		// Ensure the pattern starts with a slash for consistency with the current path
+		if ($pattern[0] !== '/')
+			$pattern = '/' . $pattern;
+
+		// Escape special regex characters except the wildcard *
+		$escapedPattern = preg_quote($pattern, '/');
+		
+		// Convert wildcard * to regex equivalent (.*) for matching any character sequence
+		$regexPattern = '/^' . str_replace('\*', '.*', $escapedPattern) . '/';
+
+		// Match the current path against the regex pattern
+		return (bool) preg_match($regexPattern, $currentPath);
 	}
 
 	/**

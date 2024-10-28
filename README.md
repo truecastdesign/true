@@ -38,6 +38,8 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Routing](./docs/Routes.md)
 
+[Request](./docs/Request.md)
+
 [Authentication](./docs/Auth.md)
 
 [Task Queue](./docs/TaskQueue.md)

@@ -691,15 +691,9 @@ class PhpView
 		}, $html);
 
 		// Create a new DOMDocument instance
-		$dom = new \DOMDocument();
-
-		$map = [
-			0x80, 0xFF, 0, 0xFF  // Encode characters in the range 128-255.
-	  ];
+		$dom = new \DOMDocument('1.0', 'UTF-8');
 		
-		$dom->loadHTML('<html><body>' . mb_encode_numericentity($htmlWithoutScripts, $map, 'UTF-8') . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-		
+		$dom->loadHTML('<?xml encoding="UTF-8"><html><body>' . $htmlWithoutScripts . '</body></html>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
 		// Collect all style tags in an array
 		$stylesArray = [];
