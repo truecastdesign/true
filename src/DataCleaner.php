@@ -5,7 +5,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.4.1
+ * @version 1.4.2
  */
 class DataCleaner
 {
@@ -160,48 +160,40 @@ class DataCleaner
 	 * formats a phone number
 	 *
 	 * @param String $ph - the phone number to be formatted
-	 * @param int $type - the type of formatting be done. Type:1 555-555-5555|1-555-555-5555 ; Type:2 (555) 555-5555|1 (555) 555-5555
+	 * @param int $type - the type of formatting be done. 
+	 * Type:1 555-555-5555|1-555-555-5555 ; 
+	 * Type:2 (555) 555-5555|1 (555) 555-5555
+	 * Type:3  E.164 format +15555555555
 	 * @return void
 	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
 	public static function phoneFormat($ph, $type=1, $noCountryCode=false) 
 	{
-		if (strstr($ph, 'x')) {
+		if (strstr($ph, 'x'))
+			return $ph;
+
+		$onlynums = preg_replace('/[^0-9]/', '', $ph);
+
+		if (strlen($onlynums) == 10) {
+			$areacode = substr($onlynums, 0, 3);
+			$exch = substr($onlynums, 3, 3);
+			$num = substr($onlynums, 6, 4);
+		} elseif (strlen($onlynums) == 11) {
+			$countryCode = substr($onlynums, 0, 1);
+			$areacode = substr($onlynums, 1, 3);
+			$exch = substr($onlynums, 4, 3);
+			$num = substr($onlynums, 7, 4);
+		} else {
 			return $ph;
 		}
-
-		$onlynums = preg_replace('/[^0-9]/','',$ph);
-
-		if(strlen($onlynums)==10) 
-		{
-			$areacode = substr($onlynums, 0,3);
-			$exch = substr($onlynums,3,3);
-			$num = substr($onlynums,6,4);
-			
-		}
-		elseif(strlen($onlynums)==11) 
-		{
-			$countryCode = substr($onlynums, 0,1);
-			$areacode = substr($onlynums, 1,3);
-			$exch = substr($onlynums,4,3);
-			$num = substr($onlynums,7,4);
-			
-		}
-		else
-		{
-			return $ph;
-		}
-		
 		
 		switch($type)
 		{
 			case 1:
-			if(strlen($onlynums)==10)
-			{
+			if (strlen($onlynums)==10) {
 				return "$areacode-$exch-$num";
 			}
-			elseif(strlen($onlynums)==11) 
-			{
+			elseif (strlen($onlynums)==11) {
 				if ($noCountryCode) {
 					return "$areacode-$exch-$num";
 				} else {
@@ -211,21 +203,30 @@ class DataCleaner
 			break;
 
 			case 2:
-			if(strlen($onlynums)==10)
-			{
-				return "($areacode) $exch-$num";
-			}
-			elseif(strlen($onlynums)==11) 
-			{
-				if ($noCountryCode) {
+				if (strlen($onlynums)==10) {
 					return "($areacode) $exch-$num";
-				} else {
-					return "$countryCode ($areacode) $exch-$num";
+				} elseif (strlen($onlynums)==11) {
+					if ($noCountryCode) {
+						return "($areacode) $exch-$num";
+					} else {
+						return "$countryCode ($areacode) $exch-$num";
+					}
 				}
-			}
 			break;
-		}
-		
+
+			case 3:
+				// Check if the number starts with '00' or '+', indicating an international format
+				if (strpos($ph, '+') === 0 || strpos($ph, '00') === 0) {
+					// Assume the number includes the country code
+					return '+' . ltrim($onlynums, '0');
+				} elseif (strpos($ph, '1') === 0) {
+				    return '+'.$onlynums;
+				} else {
+					// Prepend the default country code (e.g., '1' for US)
+					return '+1'.$onlynums;
+				}
+			break;
+		}		
 	}
 
 	public static function currency($str)
