@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.1.2
+ * @version 1.1.3
  */
 class Router
 {
@@ -172,11 +172,30 @@ class Router
 			
 			// if not * found, than check to make sure pattern elements count and url elements count match
 
-			if (strstr($pattern, '*') === false) {
+			// check for the homepage
+			if ($requestUrl === '' and ($pattern === '/' or substr($pattern, 0, 2) === "/*"))
+				$this->match = true;
+			// if no wildcard
+			elseif (strstr($pattern, '*') === false) {
 				if (count($patternElements) != count($urlElements)) {
-					$this->match = false;
+					 $this->match = false;
 				}
-			}
+		  } else {
+				// Handle the wildcard cases
+				$wildcardPosition = array_search('*', array_map(function($el) {
+					 return strpos($el, '*') !== false ? '*' : $el;
+				}, $patternElements));
+				
+				// If a wildcard exists, check if there are segments after the wildcard position in the URL
+				if ($wildcardPosition !== false) {
+					 $remainingElements = array_slice($urlElements, $wildcardPosition);
+					 
+					 // Ensure that the remaining elements after the wildcard are not empty
+					 if (empty($remainingElements) || (count($remainingElements) === 1 && $remainingElements[0] === '')) {
+						  $this->match = false;
+					 }
+				}
+		  }
 
 			if ($this->match) {
 				foreach($patternElements as $patternElement) {
@@ -217,10 +236,10 @@ class Router
 					$request->route = (object)$routeParameters;
 				}
 			}
-
+			
 			// given pattern matches the request url
 			if ($this->match) {
-				# make $request object available whereever $App is available like in the view. Should not be used by controllers. Use the passed $request object where available.
+				# make $request object available wherever $App is available like in the view. Should not be used by controllers. Use the passed $request object where available.
 				
 				if (is_string($callable))
 					$this->includeController($callable, $request, $passedVars);
@@ -301,9 +320,15 @@ class Router
 	public function includeController($controller, $request, array $passedVars = [])
 	{
 		extract($passedVars, EXTR_REFS);
-
+		
 		global $App; 
-		include $this->controller($controller);
+
+		$fullControllerPath = $this->controller($controller);
+
+		if (file_exists($fullControllerPath))
+			include $fullControllerPath;
+		else
+			echo "Controller: $fullControllerPath was not found!";
 	}
 
 	/**
