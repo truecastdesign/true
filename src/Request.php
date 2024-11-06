@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.1.1
+ * @version v1.1.2
  * 
  * Available keys
  * method # GET,POST,etc
@@ -137,8 +137,17 @@ class Request
 	 */
 	public function is($pattern)
 	{
-		// Check if the current path starts with the base pattern
-		return strpos($this->url->path, str_replace('*', '', $pattern)) === 0;
+		// Special case for the root path "/"
+		if ($pattern === '/')
+			return $this->url->path === '/';
+		
+		$basePattern = str_replace('*', '', $pattern);
+
+		// If it’s a wildcard pattern, allow any sub-paths after the base pattern
+		if (substr($pattern, -1) === '*')
+			return strpos($this->url->path, $basePattern) === 0;
+		else
+			return $this->url->path === $basePattern;
 	}
 
 	/**
