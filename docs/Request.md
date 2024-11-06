@@ -94,12 +94,12 @@ echo $App->request->files->fileFieldName->mime; // Outputs: image/jpeg
 
 ## Checking the Current Path
 
-To determine if the current path matches a specific pattern or this and sub paths using * as a wildcard. The 'about/*' will return true for paths of /about and /about/staff
+To determine if the current path matches a specific pattern or this and sub paths using * as a wildcard. The '/about*' will return true for paths of /about and /about/staff
 
 ```html
 <ul class="nav">
-	<li><a href="/about" class="<?=$App->request->is('about/*')? 'active':''?>">About</a></li>
-	<li><a href="/contact" class="<?=$App->request->is('contact')? 'active':''?>">Contact</a></li>
+	<li><a href="/about" class="<?=$App->request->is('/about*')? 'active':''?>">About</a></li>
+	<li><a href="/contact" class="<?=$App->request->is('/contact')? 'active':''?>">Contact</a></li>
 </ul>
 ```
 
