@@ -7,14 +7,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.9
+ * @version 5.9.10
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.9.5";
+	static $version = "5.9.10";
 	
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -330,8 +330,14 @@ class PhpView
 						extract($this->vars['variables']);
 						extract($variables);
 						extract($this->metaData);
-						if (!include(BP.'/app/views/_partials/'.$partial)) 
-							throw new \Exception("Included partial not found: ".BP.'/app/views/_partials/'.$partial);
+						if (isset($partial[0]) && $partial[0] === '/') {
+							if (!include(BP.$partial)) 
+								throw new \Exception("Included partial not found: ".BP.$partial);
+						} else {
+							if (!include(BP.'/app/views/_partials/'.$partial)) 
+								throw new \Exception("Included partial not found: ".BP.'/app/views/_partials/'.$partial);
+						}
+											
 					$replaceTags[] = ob_get_clean();
 					$searchTags[] = "{partial:".$partial."}";
 				}
