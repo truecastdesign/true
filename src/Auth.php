@@ -11,12 +11,13 @@ namespace True;
 *
 * @package True Framework
 * @author Daniel Baldwin
-* @version 1.3.4
+* @version 1.4.0
 */
 class Auth
 {
 	var $bearerTokensFile = BP.'/app/data/auth-tokens';
 	var $loginTokensDb = BP.'/app/data/auth-login-tokens.db';
+	var $basicAuthDB = BP.'/app/data/basicAuthCredentials.db';
 	var $csrfSession = 'kkj43kj';
 	var $jwtSession = 'jk4k88d';
 	var $jwtPrivateKey = BP.'/app/config/jwt-key.ini';
@@ -24,7 +25,8 @@ class Auth
 	/**
 	 * bearerTokensFile : should include the base path to a text file
 	* loginTokensDb : should be a sqlite database with a 'auth' table with 'username', 'password', 'token', and 'user_id' fields
-	* @param array $params [bearerTokensFile, loginTokensDb]
+	* basicAuthDB : location and filename of the basic auth database if different than default.
+	* @param array $params [bearerTokensFile, loginTokensDb, basicAuthDB]
 	*/
 	public function __construct($params = null)
 	{
@@ -34,6 +36,10 @@ class Auth
 
 		if (isset($params['loginTokensDb'])) {
 			$this->loginTokensDb = $params['loginTokensDb'];
+		}
+
+		if (isset($params['basicAuthDB'])) {
+			$this->basicAuthDB = $params['basicAuthDB'];
 		}
 	}
 
@@ -341,6 +347,33 @@ class Auth
 						return true;		
 					break;
 
+					case 'basic':
+						$headers = $this->getallheaders();
+				  
+						if (isset($headers['Authorization'])) {
+							// Extract the Basic token
+							$token = str_replace('Basic ', '', $headers['Authorization']);
+				
+							// Decode the token
+							$decodedToken = base64_decode($token);
+							if (!$decodedToken) {
+								return false; // Invalid base64
+							}
+				
+							// Split the decoded token into username and password
+							list($username, $password) = explode(':', $decodedToken, 2);
+				
+							// Validate the username and password (replace with your own logic)
+							if ($this->validateBasicCredentials($username, $password)) {
+								return true; // Authentication successful
+							} else {
+								return false; // Authentication failed
+							}
+						} else {
+							return false; // No Authorization header
+						}
+				  	break;
+
 					default:
 						return false;
 			}
@@ -489,6 +522,147 @@ class Auth
 	}
 
 	/**
+	 * Create the database file for the Basic Authentication method
+	 */
+	public function createBasicAuthDB(): bool
+	{
+		$DB = new \PDO('sqlite:'.$this->basicAuthDB);
+
+		// Set PDO error mode to exception for better error handling
+		$DB->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+		// SQL statement to create the users table
+		$createTableSQL = "
+		CREATE TABLE IF NOT EXISTS users (
+			 id           INTEGER PRIMARY KEY AUTOINCREMENT,
+			 username     VARCHAR(255) NOT NULL UNIQUE,
+			 passwordHash VARCHAR(255) NOT NULL,
+			 created      DATETIME DEFAULT CURRENT_TIMESTAMP
+		);";
+  
+		// Execute the SQL statement to create the table
+		try {
+			 $DB->exec($createTableSQL);
+			 return true;
+		} catch (\PDOException $e) {
+			echo 'Failed to create Basic Auth database: ' . $e->getMessage();
+			return false;
+		}
+	}
+
+	/**
+	 * Add a new user to the Basic Auth database.
+	 *
+	 * This method adds a user with a hashed password to the Basic Auth database.
+	 * If the username already exists, the method will fail.
+	 *
+	 * @param string $username The username for the new user (must be unique).
+	 * @param string $password The plain-text password for the new user.
+	 * 
+	 * @return bool Returns true if the user was successfully added, or false on failure.
+	 */	
+	public function addBasicAuthUser(string $username, string $password): bool
+	{
+		try {
+			// Open the SQLite database connection
+			$DB = new \PDO('sqlite:' . $this->basicAuthDB);
+			$DB->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+			// Hash the password
+			$passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
+			$created = (new \DateTime('now', new \DateTimeZone('America/Los_Angeles')))->format('Y-m-d H:i:s');
+
+
+			// SQL statement to insert a new user
+			$insertSQL = "INSERT INTO users (username, passwordHash, created) VALUES (?, ?, ?)";
+
+			// Prepare and execute the statement with parameters
+			$stmt = $DB->prepare($insertSQL);
+
+			return $stmt->execute([$username, $passwordHash, $created]); // Returns true on success
+		} catch (\PDOException $e) {
+			// Log or handle the error
+			error_log('Failed to add user: ' . $e->getMessage());
+			return false; // Return false on failure
+		}
+	}
+
+	/**
+	 * Deletes a Basic Auth user from the database by their ID.
+	 *
+	 * @param int $id The ID of the user to delete.
+	 * @return bool Returns true if the user was successfully deleted, false otherwise.
+	 */
+	public function deleteBasicAuthUser(int $id) : bool {
+		try {
+			// Establish a connection to the database
+			$DB = new \PDO('sqlite:' . $this->basicAuthDB);
+			
+			// Prepare the SQL statement
+			$stmt = $DB->prepare("DELETE FROM users WHERE id=?");
+			
+			// Execute the statement with the ID as a parameter
+			return $stmt->execute([$id]);
+		} catch (\PDOException $e) {
+			// Log the error or handle it as necessary
+			error_log("Failed to delete user: " . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Updates a Basic Auth user's username and/or password.
+	 *
+	 * @param int $id The ID of the user to update.
+	 * @param string|null $username The new username (optional, null to keep unchanged).
+	 * @param string|null $password The new plaintext password (optional, null to keep unchanged).
+	 * @return bool Returns true if the user was successfully updated, false otherwise.
+	 */
+	public function updateBasicAuthUser(int $id, ?string $username = null, ?string $password = null): bool
+	{
+		try {
+			// Open the SQLite database connection
+			$DB = new \PDO('sqlite:' . $this->basicAuthDB);
+			$DB->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+			// Prepare the SQL statement dynamically based on provided parameters
+			$updates = [];
+			$params = [];
+
+			if (!is_null($username)) {
+				$updates[] = "username = ?";
+				$params[] = $username;
+			}
+
+			if (!is_null($password)) {
+				$updates[] = "passwordHash = ?";
+				$params[] = password_hash($password, PASSWORD_BCRYPT); // Hash the new password
+			}
+
+			// If no updates provided, return false
+			if (empty($updates)) {
+				return false;
+			}
+
+			// Add the ID as the last parameter
+			$params[] = $id;
+
+			// Construct the SQL query
+			$updateSQL = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
+
+			// Prepare and execute the statement
+			$stmt = $DB->prepare($updateSQL);
+			return $stmt->execute($params); // Returns true on success
+		} catch (\PDOException $e) {
+			// Log or handle the error
+			error_log('Failed to update user: ' . $e->getMessage());
+			return false; // Return false on failure
+		}
+	}
+
+
+	/**
 	 * create hash for password
 	*
 	* @param string $value password to hash
@@ -561,4 +735,51 @@ class Auth
 
 		return $headers;
 	}
+
+	/**
+	 * Validate a user's basic authentication credentials.
+	 *
+	 * @param string $username The username to validate.
+	 * @param string $password The password to validate.
+	 * @return bool True if the credentials are valid, false otherwise.
+	 */
+	function validateBasicCredentials($username, $password): bool
+	{
+		if (empty($username) || empty($password)) {
+			error_log("Validation failed: Missing username or password.");
+			return false;
+		}
+
+		try {
+			// Open SQLite database
+			$DB = new \PDO('sqlite:' . $this->basicAuthDB);
+			$DB->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+			// Prepare and execute SQL query
+			$dbRes = $DB->prepare("SELECT id, passwordHash FROM users WHERE username = ?");
+			$dbRes->execute([$username]);
+
+			$result = $dbRes->fetch(\PDO::FETCH_ASSOC);
+
+			if (!$result) {
+					error_log("Validation failed: Username '{$username}' not found.");
+					return false;
+			}
+
+			// Verify the password
+			$isValid = password_verify($password, $result['passwordHash']);
+			if ($isValid) {
+				error_log("Validation successful for username '{$username}'.");
+			} else {
+				error_log("Validation failed: Incorrect password for username '{$username}'.");
+			}
+
+			return $isValid;
+		} catch (\PDOException $ex) {
+			error_log("Database error during validation: " . $ex->getMessage());
+			return false;
+		}
+	}
+
+
 }

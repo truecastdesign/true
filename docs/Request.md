@@ -122,6 +122,66 @@ To access all request data (GET, POST, etc.) as a single collection:
 echo $App->request->all->key; // Attempts to get a value from GET, POST, PUT, PATCH, DELETE collectively
 ```
 
+## `is` Method
+
+### Description
+The `is` method determines if the current path matches a given pattern, using `*` as a wildcard. This is useful for checking whether the requested URL matches a specific path or set of paths.
+
+---
+
+### Parameters
+- **`$pattern`** (string): The pattern to match against the current path. Examples of patterns include:
+  - `'about'`: Matches exactly `/about`.
+  - `'products*'`: Matches `/products`, `/products/item`, `/products/item/details`, etc.
+  - `'/'`: Matches the root path `/`.
+
+---
+
+### Returns
+- **(bool)**: Returns `true` if the current path matches the given pattern; otherwise, returns `false`.
+
+---
+
+### Usage
+```php
+// Example usage in a PHP file:
+if ($App->request->is('/about')) {
+    echo "Active path is /about";
+}
+
+// Using a wildcard to match sub-paths
+if ($App->request->is('/products*')) {
+    echo "This is a products-related page";
+}
+
+// Checking for the root path
+if ($App->request->is('/')) {
+    echo "This is the homepage";
+}
+```
+
+### Behavior and Examples
+
+#### Exact Match:
+- **Pattern**: `/about`
+  - **Matches**: `/about`
+  - **Does NOT Match**: `/about-us`, `/about/us`
+
+---
+
+#### Wildcard Match:
+- **Pattern**: `/products*`
+  - **Matches**: `/products`, `/products/item`, `/products/category/item`
+  - **Does NOT Match**: `/product`, `/productsitem`
+
+---
+
+#### Root Path:
+- **Pattern**: `/`
+  - **Matches**: `/`
+  - **Does NOT Match**: `/home`, `/about`
+
+
 ## Summary
 
 The Request class is a powerful way to manage HTTP requests in your application, providing a clean and intuitive API for accessing headers, URL components, HTTP methods, and more. It also includes methods for handling file uploads and matching URL patterns using wildcards. This class can help you write clearer, more maintainable code when dealing with HTTP requests.

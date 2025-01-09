@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.2.6
+ * @version 1.3.0
  */
 class AuthenticationJWT
 {
@@ -20,6 +20,7 @@ class AuthenticationJWT
 	private $loginAttempts = null;
 	private $JWT = null;
 	private $config = null;
+	public $supportedAlgorithms;
 	
 	/**
 	 * Construct
@@ -33,6 +34,8 @@ class AuthenticationJWT
 	 */
 	public function __construct(object $userClass, object $loginAttemptClass, object $JWT, object $PasswordGenerator, object $App, array $config = [])
 	{
+		$this->supportedAlgorithms = $this->getSupportedAlgorithms();
+		
 		$this->user = $userClass;
 		$this->loginAttempts = $loginAttemptClass;
 		$this->JWT = $JWT;
@@ -101,7 +104,7 @@ class AuthenticationJWT
 
 			// save password to config file
 			$authConfig = $App->getConfig($this->config->encryptionPasswordFile);
-			$authConfig->pemkey_password = $password;
+			$authConfig->pemkeyPassword = $password;
 			$this->config->pemkeyPassword = $password;
 			$App->writeConfig($this->config->encryptionPasswordFile, (array)$authConfig);
 
@@ -146,6 +149,10 @@ class AuthenticationJWT
 		$this->userId = $this->user->getId();
 
 		$userInfo = $this->getUserInfo();
+
+		dump($this->config->privateKeyFile, '$this->config->privateKeyFile');
+		dump($this->config->pemkeyPassword, '$this->config->pemkeyPassword');
+		dump($this->config->alg, '$this->config->alg');
 		
 		if ($userInfo->google2FAAuth == 'on') {
 			$partialToken = $this->JWT->encode([
@@ -355,5 +362,24 @@ class AuthenticationJWT
 			$time = $this->config->ttl;
 	
 		setcookie($this->config->cookie, $jwtToken, intval(time()+$time), '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
+	}
+
+	// Dynamically fetch the list of supported algorithms
+	private function getSupportedAlgorithms(): array
+	{
+		$supportedAlgs = [];
+
+		// Check if OpenSSL supports RSA algorithms
+		if (function_exists('openssl_sign')) {
+			$supportedAlgs = array_merge($supportedAlgs, ['RS256', 'RS384', 'RS512']);
+		}
+
+		// Add HMAC algorithms from hash_algos()
+		$hashAlgos = hash_algos();
+		if (in_array('sha256', $hashAlgos)) $supportedAlgs[] = 'HS256';
+		if (in_array('sha384', $hashAlgos)) $supportedAlgs[] = 'HS384';
+		if (in_array('sha512', $hashAlgos)) $supportedAlgs[] = 'HS512';
+
+		return $supportedAlgs;
 	}
 }

@@ -44,11 +44,35 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Authentication](./docs/Auth.md)
 
+[Authentication JWT](./docs/AuthenticationJWT.md)
+
+[CSS Minify](./docs/CSSMini.md)
+
+[Email SMTP](./docs/Email.md)
+
+[File Uploads](./docs/File.md)
+
+[Miscellaneous Functions](./docs/Functions.md)
+
+[Google Authenticator](./docs/GoogleAuthenticator.md)
+
+[Google Tag Manager](./docs/GoogleTagManager.md)
+
+[HTTP Client](./docs/HttpClient.md)
+
+[Log Parser](./docs/LogParser.md)
+
+[Password Generator](./docs/PasswordGenerator.md)
+
+[SEO](./docs/SEO.md)
+
+[Template Filling](./docs/Templates.md)
+
+[Validator](./docs/Validator.md)
+
 [Task Queue](./docs/TaskQueue.md)
 
 [Nonce Generator](./docs/Nonce.md)
-
-
 
 ## Files Setup
 

@@ -42,4 +42,3 @@ class CSSMini
 	  return $file;
 	}
 }
-?>

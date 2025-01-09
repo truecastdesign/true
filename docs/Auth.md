@@ -41,3 +41,47 @@ if (is_numeric($userId)) {
 	echo json_encode(['result'=>'not logged in']);
 }
 ```
+
+## Basic Authentication Support
+
+### How It Works
+- The client sends an `Authorization` header with the format:
+  `Authorization: Basic <base64(username:password)>`
+- The server decodes the header and validates the credentials.
+
+### Configuration
+To enable Basic Authentication in the `Auth` class:
+1. Use the `authenticate` method with `type: basic`:
+```php
+$App->auth->authenticate(['type' => 'basic']);
+```
+
+2. Add your validation logic in the validateBasicCredentials method.
+
+### Example Usage
+
+#### Request
+
+```http
+GET /api/resource HTTP/1.1
+Authorization: Basic am9obmRvZTpwYXNzd29yZDEyMw==
+```
+
+#### Response (Success)
+
+```json
+{
+  "status": "success",
+  "message": "Authenticated"
+}
+```
+
+#### Response (Failure)
+
+```json
+{
+  "status": "error",
+  "message": "Unauthorized"
+}
+```
+
