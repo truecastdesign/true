@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.3.0
+ * @version 1.3.1
  */
 class AuthenticationJWT
 {
@@ -149,10 +149,6 @@ class AuthenticationJWT
 		$this->userId = $this->user->getId();
 
 		$userInfo = $this->getUserInfo();
-
-		dump($this->config->privateKeyFile, '$this->config->privateKeyFile');
-		dump($this->config->pemkeyPassword, '$this->config->pemkeyPassword');
-		dump($this->config->alg, '$this->config->alg');
 		
 		if ($userInfo->google2FAAuth == 'on') {
 			$partialToken = $this->JWT->encode([
