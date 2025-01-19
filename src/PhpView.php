@@ -7,7 +7,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.10
+ * @version 5.9.11
  */
 
 class PhpView
@@ -399,10 +399,11 @@ class PhpView
 
 		// generate an ETag
 		$etag1 = md5_file($this->vars['layout']);
-		$etag2 = md5($this->vars['html']);
-		$etag = md5($etag1.$etag2);
+		$etag2 = $this->vars['html']? md5($this->vars['html']):'';
+		$etag = $etag1.$etag2? md5($etag1.$etag2):'';
 
-		header("ETag: \"$etag\"");
+		if (!empty($etag))
+			header("ETag: \"$etag\"");
 
 		// Step 3: Check if the ETag matches the client's request
 		if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === "\"$etag\"") {

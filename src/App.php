@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.12.0
+ * @version 1.12.1
  */
 class App
 {
@@ -253,8 +253,11 @@ class App
 	private function formatFloat(float $number): string
 	{
 		$decimalPart = fmod($number, 1);
-		$decimalPlaces = strlen($decimalPart) - 2;
-		
+		if ($decimalPart == 0.0) {
+			return sprintf("%.0F", $number); // No decimals
+		}
+
+		$decimalPlaces = strlen(substr(strrchr((string) $number, '.'), 1));
 		return sprintf("%.{$decimalPlaces}F", $number);
 	}
 
