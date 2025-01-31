@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.1.2
+ * @version v1.3.1
  * 
  * Available keys
  * method # GET,POST,etc
@@ -148,6 +148,37 @@ class Request
 			return strpos($this->url->path, $basePattern) === 0;
 		else
 			return $this->url->path === $basePattern;
+	}
+
+	/**
+	 * Check if the request matches a specific method and contains a key with a specific value.
+	 *
+	 * @param string $method The HTTP method to check (e.g., 'POST', 'get').
+	 * @param string $key The key to look for in the request data.
+	 * @param mixed $value Optional. The value to check against. If not provided, only key existence is checked.
+	 * @return bool True if the method matches, the key exists, and optionally the value matches; false otherwise.
+	 */
+	public function has(string $method, string $key, $value = null): bool
+	{
+		$method = strtoupper($method);
+
+		// Check if the method matches the current request method
+		if ($this->method !== $method) {
+			return false;
+		}
+
+		// Check if the key exists in the corresponding request data
+		$data = $this->{strtolower($method)} ?? [];
+		if (!isset($data->$key)) {
+			return false;
+		}
+
+		// If a value is provided, check if the key matches the value
+		if ($value !== null) {
+			return $data->$key == $value;
+		}
+
+		return true;
 	}
 
 	/**

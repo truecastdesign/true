@@ -160,6 +160,36 @@ if ($App->request->is('/')) {
 }
 ```
 
+---
+
+## `has` Method
+
+### Description
+The `has` method checks if the request contains a specific key within a given HTTP method (GET, POST, PUT, etc.), and optionally checks for a specific value.
+
+### Parameters
+- **`$method`** (string): The HTTP method to check (e.g., `'POST'`, `'GET'`).
+- **`$key`** (string): The key to look for in the request data.
+- **`$value`** (mixed, optional): The expected value. If omitted, the method only checks for the existence of the key.
+
+### Returns
+- **(bool)**: Returns `true` if the request method matches and the key exists (and optionally, if the value matches); otherwise, returns `false`.
+
+### Usage
+```php
+// Check if a POST request contains 'username'
+if ($App->request->has('POST', 'username')) {
+    echo "Username is provided!";
+}
+
+// Check if a GET request contains 'id' with a specific value
+if ($App->request->has('GET', 'id', 123)) {
+    echo "ID is 123!";
+}
+```
+
+---
+
 ### Behavior and Examples
 
 #### Exact Match:
