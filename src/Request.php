@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.3.2
+ * @version v1.3.3
  * 
  * Available keys
  * method # GET,POST,etc
@@ -151,34 +151,38 @@ class Request
 	}
 
 	/**
-	 * Check if the request matches a specific method and contains a key with a specific value.
+	 * Check if the request matches a specific method and contains one or more keys with optional value checks.
 	 *
-	 * @param string $method The HTTP method to check (e.g., 'POST', 'get').
-	 * @param string $key The key to look for in the request data.
-	 * @param mixed $value Optional. The value to check against. If not provided, only key existence is checked.
-	 * @return bool True if the method matches, the key exists, and optionally the value matches; false otherwise.
+	 * @param string $method The HTTP method to check (e.g., 'POST', 'GET', 'PUT').
+	 * @param string|string[] $keys A single key or an array of keys to look for in the request data.
+	 * @param mixed $value Optional. The value to check against for the first key. If not provided, only key existence is checked.
+	 * @return bool True if the method matches, all keys exist, and optionally the value matches for the first key; false otherwise.
+	 *
+	 * Examples:
+	 * $App->request->has('POST', 'username'); // Checks if 'username' exists in POST data.
+	 * $App->request->has('GET', ['id', 'token']); // Checks if both 'id' and 'token' exist in GET data.
+	 * $App->request->has('PUT', 'status', 'active'); // Checks if 'status' exists in PUT data and equals 'active'.
 	 */
-	public function has(string $method, string $key, $value = null): bool
+	public function has(string $method, $keys, $value = null): bool
 	{
 		$method = strtolower($method);
-
-		// Allow GET checks even if the main request method is different
-		if ($method !== 'get' && $this->method !== strtoupper($method)) {
-			return false;
-		}
-
-		// Retrieve request data
 		$data = $this->$method ?? null;
 
-		// Ensure data is an object before checking property existence
-		if (!is_object($data) || !property_exists($data, $key)) {
+		// Allow GET checks even if the main request method is different
+		if ($method !== 'get' && $this->method !== strtoupper($method))
 			return false;
-		}
 
-		// If checking for a specific value
-		if ($value !== null) {
-			return $data->$key == $value;
-		}
+		// Ensure $keys is an array, even if a single string is passed
+		$keys = is_array($keys) ? $keys : [$keys];
+
+		// Loop through all provided keys
+		foreach ($keys as $key)
+			if (!is_object($data) || !property_exists($data, $key))
+				return false;
+
+		// If checking for a specific value, compare the first key only
+		if ($value !== null)
+			return $data->{$keys[0]} == $value;
 
 		return true;
 	}
