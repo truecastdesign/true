@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.3.1
+ * @version v1.3.2
  * 
  * Available keys
  * method # GET,POST,etc
@@ -160,20 +160,22 @@ class Request
 	 */
 	public function has(string $method, string $key, $value = null): bool
 	{
-		$method = strtoupper($method);
+		$method = strtolower($method);
 
-		// Check if the method matches the current request method
-		if ($this->method !== $method) {
+		// Allow GET checks even if the main request method is different
+		if ($method !== 'get' && $this->method !== strtoupper($method)) {
 			return false;
 		}
 
-		// Check if the key exists in the corresponding request data
-		$data = $this->{strtolower($method)} ?? [];
-		if (!isset($data->$key)) {
+		// Retrieve request data
+		$data = $this->$method ?? null;
+
+		// Ensure data is an object before checking property existence
+		if (!is_object($data) || !property_exists($data, $key)) {
 			return false;
 		}
 
-		// If a value is provided, check if the key matches the value
+		// If checking for a specific value
 		if ($value !== null) {
 			return $data->$key == $value;
 		}
