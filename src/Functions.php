@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.2
+ * @version 1.7.3
  */
 class Functions
 {
@@ -868,25 +868,27 @@ class Functions
 		# check to see if $records is an array of objects or arrays
 		if (is_object(current($records))) {
 			foreach ($records as $item) {
-				if (stripos($item->$field, strval($value)) !== false) {
+				if (isset($item->$field) && is_string($item->$field) && stripos($item->$field, strval($value)) !== false) {
 					$result[] = $item;
 				}
 			}
 		} else {
 			foreach ($records as $key => $item) {
-				if (stripos($item[$field], strval($value)) !== false) {
+				if (isset($item[$field]) && is_string($item[$field]) && stripos($item[$field], strval($value)) !== false) {
 					$result[] = (object) $item;
 				}
 			}
 		}
 		
 		if ($type == 'array') {
-			if (isset($result[0])) {
+			if (!empty($result)) {
 				return (object) $result[0];
 			}			
 		} elseif ($type == '2dim') {
 			return $result;
 		}
+		
+		return null; // Ensure function always returns something
 	}
 
 	/**
