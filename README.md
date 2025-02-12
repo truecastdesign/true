@@ -74,6 +74,8 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Nonce Generator](./docs/Nonce.md)
 
+[Caching](./docs/Caching.md)
+
 ## Files Setup
 
 ### /public_html/index.php
