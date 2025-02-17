@@ -108,17 +108,37 @@ class Request
 		if (is_array($contentType) && isset($contentType[0]))
 			$cleanedContentType = trim($contentType[0]);		
 		
-		$this->post = (object) (isset($_POST) ? $_POST:[]);
 		$this->get = (object) (isset($_GET) ? $_GET:[]);
-		$this->put = (object) (isset($_PUT) ? $_PUT:[]);
-		$this->patch = (object) (isset($_PATCH) ? $_PATCH:[]);
-		$this->delete = (object) (isset($_DELETE) ? $_DELETE:[]);
+
+		$requestBody = file_get_contents('php://input');
+
+		switch ($cleanedContentType) {
+			case 'application/json':
+			case 'application/ld+json':
+			case 'application/activity+json':
+				$decodedJson = json_decode($requestBody, true);
+				$this->$requestKey = $decodedJson !== '' ? $decodedJson : $requestBody;
+			break;
 		
-		if (in_array($cleanedContentType, ['application/json'])) {
-			$requestBody = file_get_contents('php://input');
-			$requestKey = strtolower($this->method);
-			if (!empty($requestBody)) 
-				$this->$requestKey = json_decode($requestBody);
+			case 'application/octet-stream':
+			case 'application/x-binary':
+			case 'text/plain':
+			case 'text/csv':
+			case 'text/xml':
+				$this->$requestKey = trim($requestBody);
+			break;
+		
+			case 'application/x-www-form-urlencoded':
+				parse_str($requestBody, $data);
+				$this->$requestKey = (object) $data;
+			break;
+		
+			case 'multipart/form-data':
+				$this->$requestKey = $_FILES; // Handle uploaded files
+			break;
+		
+			default:
+				$this->$requestKey = $requestBody; // Fallback for unknown content types
 		}
 
 		$this->all = (object) array_merge((array) $this->get, (array) $this->post, (array) $this->put, (array) $this->patch, (array) $this->delete);
