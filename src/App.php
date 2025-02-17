@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.12.1
+ * @version 1.12.2
  */
 class App
 {
