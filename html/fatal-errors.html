@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Application Error</title>
+	<style>
+	body {font-family: 'Arial', sans-serif;background-color: #1e1e2e;color: #ffffff;margin: 0;padding: 0}
+	.error-container{margin:0 auto;background-color: #282a36;padding: 20px;border-radius: 8px;box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3)}
+	.error-header{background: #44475a;padding: 15px;border-radius: 6px 6px 0 0;display: flex;align-items: center;justify-content: space-between}
+	.error-header h1{margin: 0;font-size: 20px;color: #ff5555}
+	.error-message{padding: 15px;background: #1e1e2e;color: #ff5555;font-size: 16px;border-left: 5px solid #ff5555;margin: 15px 0}
+	.error-details{background: #21222c;padding: 15px;border-radius: 4px;margin-top: 10px}
+	.error-details pre{background: #191a21;padding: 10px;border-radius: 4px;overflow: auto;font-size: 14px;color: #f8f8f2;border-left: 5px solid #6272a4}
+	.stack-trace{margin-top: 15px;background: #191a21;padding: 15px;border-radius: 4px;color: #f8f8f2;font-size: 14px;border-left: 5px solid #50fa7b}
+	.stack-trace pre{overflow: auto;}
+	</style>
+</head>
+<body>
+	<div class="error-container">
+		<div class="error-header">
+			<h1>Application Error</h1>
+		</div>
+		<div class="error-message">
+			<strong>Error:</strong> {message}
+		</div>
+		<div class="error-details">
+			<p><strong>File:</strong> {file} (Line: {linenumber})</p>
+			<pre>{code}</pre>
+		</div>
+		<div class="stack-trace">
+			<h3>Stack Trace:</h3>
+			<pre>{stacktrace}</pre>
+		</div>
+	</div>
+</body>
+</html>

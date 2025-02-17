@@ -91,7 +91,9 @@ require '../init.php';
 <?php
 define('BP', __DIR__);
 
-require 'vendor/autoload.php';
+require_once 'vendor/autoload.php';
+
+require_once BP.'/vendor/truecastdesign/true/src/Exceptions.php';
 
 $App = new True\App;
 $App->load('site.ini');

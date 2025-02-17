@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.3
+ * @version 1.7.4
  */
 class Functions
 {
@@ -82,62 +82,69 @@ class Functions
 	* @return object
 	* @author Daniel Baldwin
 	**/
-	public static function parseUrl($url, $extra=false)
+	public static function parseUrl($url, $extra = false)
 	{
-		$output = (object)['file'=>'', 'scheme'=>'', 'host'=>'', 'full_path'=>'', 'path'=>'', 'extension'=>'', 'filename'=>'', 'user'=>'', 'password'=>'', 'query'=>'', 'hash'=>''];
+		$output = (object)[
+			'file' => '', 'scheme' => '', 'host' => '', 'full_path' => '',
+			'path' => '', 'extension' => '', 'filename' => '', 'user' => '',
+			'password' => '', 'query' => '', 'hash' => ''
+		];
 
 		$file = basename($url); 
 		if (strstr($file, '.')) {
 			if (strstr($file, '#')) {
-				list($first, $last) = explode("#", $file);
+				list($first, ) = explode("#", $file);
 				$file = $first;
 			}
 			if (strstr($file, '?')) {
-				list($first, $last) = explode("?", $file);
+				list($first, ) = explode("?", $file);
 				$file = $first;
 			}
 
 			$output->file = $file;
 		}
-		
+
 		$parts = parse_url($url);
-		if (array_key_exists('scheme', $parts)) {
+
+		// Ensure $parts is an array before accessing keys
+		if (!is_array($parts)) {
+			error_log("Invalid URL passed to parseUrl: " . var_export($url, true));
+			return $output;
+		}
+
+		if (isset($parts['scheme'])) {
 			$output->scheme = $parts['scheme'];
 		}
-		if (array_key_exists('host', $parts)) {
+		if (isset($parts['host'])) {
 			$output->host = $parts['host'];
 		}
-		if (array_key_exists('path', $parts)) {
+		if (isset($parts['path'])) {
 			$output->full_path = $parts['path'];
 		}
-		
+
 		if (!empty($output->full_path)) {
 			$pathParts = pathinfo($output->full_path);
 			if (is_array($pathParts)) {
-				if (array_key_exists('dirname', $pathParts)) {
+				if (isset($pathParts['dirname'])) {
 					$output->path = $pathParts['dirname'];
 				}
-				if (array_key_exists('extension', $pathParts)) {
+				if (isset($pathParts['extension'])) {
 					$output->extension = $pathParts['extension'];
 				}
-				if (array_key_exists('filename', $pathParts)) {			
+				if (isset($pathParts['filename'])) {			
 					$output->filename = $pathParts['filename'];
 				}
 			}
 		}
-		
+
 		if ($extra) {
-			$output->port = $parts['port'];
-			if (array_key_exists('user', $parts))
-				$output->user = $parts['user'];
-			if (array_key_exists('pass', $parts))
-				$output->password = $parts['pass'];
-			if (array_key_exists('query', $parts))
-				$output->query = $parts['query'];
-			if (array_key_exists('fragment', $parts))
-				$output->hash = $parts['fragment'];
+			$output->port = $parts['port'] ?? null;
+			$output->user = $parts['user'] ?? '';
+			$output->password = $parts['pass'] ?? '';
+			$output->query = $parts['query'] ?? '';
+			$output->hash = $parts['fragment'] ?? '';
 		}
-	
+
 		return $output;
 	}
 
