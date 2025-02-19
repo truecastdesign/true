@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.2.3
+ * @version 1.2.4
  * 
  * Use:
  * 
@@ -43,6 +43,18 @@ class File
 	var $cropBottom = 0;
 	var $cropLeft = 0;
 
+	/**
+	 * Constructs a new instance for handling an uploaded file.
+	 *
+	 * This constructor initializes the file object with the provided file array (typically from the $_FILES superglobal)
+	 * and a given name. It determines whether the file was successfully uploaded (i.e. no error occurred), and if so,
+	 * it extracts and sets the file extension (in lowercase) and MIME type based on the temporary file.
+	 *
+	 * @param array  $file An associative array containing file upload data (e.g., ['name', 'tmp_name', 'error', etc.]).
+	 * @param mixed  $name A name associated with the file (can be used for further processing or labeling).
+	 *
+	 * @return void
+	 */
 	public function __construct($file, $name)
 	{
 		# check for multiple files on one field
@@ -59,12 +71,47 @@ class File
 		return $this->file[$value];
 	}
 
+	/**
+	 * Moves the uploaded file to the specified directory.
+	 *
+	 * This method ensures that the destination path is normalized to end with a 
+	 * slash and then attempts to copy the temporary file to the new location. 
+	 * If the copy operation fails, an exception is thrown.
+	 *
+	 * @param string $path The directory path where the file should be moved to. 
+	 *                     This can end with or without a trailing slash.
+	 * @param string $filename The name to save the file as in the destination directory.
+	 * @throws \Exception If the file cannot be moved to the specified location.
+	 */
 	public function move($path, $filename)
 	{
+		$path = rtrim($path, '/') . '/';
+		
 		if (!@copy($this->file['tmp_name'], $path.$filename))
 			throw new \Exception("The file could not be moved to the right folder!");
 	}
 
+	/**
+	 * Resizes and optionally crops the uploaded image.
+	 *
+	 * This method performs the following operations:
+	 * - Retrieves the source image dimensions using `getimagesize()`.
+	 * - Calculates the target dimensions based on provided width and height properties.
+	 *   If neither is provided, the source dimensions are used. If only one is provided,
+	 *   the other is computed to maintain the aspect ratio.
+	 * - Loads the image from its temporary location using the appropriate GD function,
+	 *   depending on the MIME type (supports JPEG, GIF, PNG, and WebP).
+	 * - Applies cropping offsets if any of the crop properties (`cropTop`, `cropRight`, 
+	 *   `cropBottom`, `cropLeft`) are set, adjusting both the source dimensions and target dimensions.
+	 * - Creates a new true color image and, for PNG and GIF files, preserves transparency.
+	 * - Resamples the source image into the target image using `imagecopyresampled()`.
+	 * - Saves the resized image back to the original temporary file location.
+	 * - Resets the crop and dimension properties to their default values after processing.
+	 *
+	 * @return void
+	 *
+	 * @throws \Exception If the image file type is unsupported or if the image cannot be processed.
+	 */
 	public function resize()
 	{
 		list($sourceXSize, $sourceYSize) = getimagesize($this->file['tmp_name']);
