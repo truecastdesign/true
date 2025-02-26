@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.7.4
+ * @version 1.8.0
  */
 class Functions
 {
@@ -708,17 +708,24 @@ class Functions
 	}
 
 	/**
-	 * conver time in seconds to a string, array or object
+	 * Converts a time difference between two Unix timestamps into a human-readable format.
 	 *
-	 * @param int $from
-	 * @param int $to
-	 * @param string $type
-	 * @return string, array, object '2 weeks 1 day 10 hours 5 minutes 22 seconds'
+	 * This method calculates the absolute difference between two Unix timestamps (`$from` and `$to`)
+	 * and returns the duration in a formatted string, an array, or an object.
+	 *
+	 * @param int $from The starting Unix timestamp.
+	 * @param int|null $to The ending Unix timestamp (defaults to the current time if null).
+	 * @param string $type The output format: 'string' (default), 'array', or 'object'.
+	 * @return string|array|object|int The formatted duration as:
+	 *   - A human-readable string (e.g., "2 years 3 days 5 hours").
+	 *   - An associative array with keys ('years', 'weeks', 'days', 'hours', 'minutes', 'seconds').
+	 *   - An object with the same structure as the array.
+	 *   - The raw seconds remaining if an invalid `$type` is given.
 	 */
 	public static function timeToStr($from, $to = null, $type = 'string')
 	{
 		$to = (is_null($to)? time():$to);	
-		$time = $from - $to;	
+		$time = abs($from - $to);	
 		
 		$years = floor($time / 31536000);
 		$time -= 31536000 * $years;
@@ -752,6 +759,63 @@ class Functions
 			case 'array': return $array; break;
 			case 'object': return (object)$array; break;
 			default: return $time;
+		}
+	}
+
+	/**
+	 * Converts a duration in seconds into a human-readable format.
+	 *
+	 * This function takes a total number of seconds and breaks it down into 
+	 * years, weeks, days, hours, minutes, and seconds. The result can be 
+	 * returned as a formatted string, an associative array, or an object.
+	 *
+	 * @param int $seconds The duration in seconds.
+	 * @param string $type The output format: 
+	 *   - 'string' (default) returns a human-readable string (e.g., "2 years 3 days 5 hours").
+	 *   - 'array' returns an associative array with keys ('years', 'weeks', 'days', 'hours', 'minutes', 'seconds').
+	 *   - 'object' returns an object with the same structure as the array.
+	 *   - Any other value returns the raw seconds.
+	 *
+	 * @return string|array|object|int The formatted duration based on the specified type.
+	 */
+	function secondsToStr(int $seconds, string $type = 'string')
+	{
+		// Ensure we are dealing with a positive duration
+		$seconds = abs($seconds);
+
+		$years = floor($seconds / 31536000);
+		$seconds %= 31536000;
+
+		$weeks = floor($seconds / 604800);
+		$seconds %= 604800;
+
+		$days = floor($seconds / 86400);
+		$seconds %= 86400;
+
+		$hours = floor($seconds / 3600);
+		$seconds %= 3600;
+
+		$minutes = floor($seconds / 60);
+		$seconds %= 60;
+
+		// Build readable string format
+		$parts = [];
+		if ($years) $parts[] = "$years year" . ($years > 1 ? 's' : '');
+		if ($weeks) $parts[] = "$weeks week" . ($weeks > 1 ? 's' : '');
+		if ($days) $parts[] = "$days day" . ($days > 1 ? 's' : '');
+		if ($hours) $parts[] = "$hours hour" . ($hours > 1 ? 's' : '');
+		if ($minutes) $parts[] = "$minutes minute" . ($minutes > 1 ? 's' : '');
+		if ($seconds || empty($parts)) $parts[] = "$seconds second" . ($seconds > 1 ? 's' : '');
+
+		$str = implode(' ', $parts);
+
+		$array = compact('years', 'weeks', 'days', 'hours', 'minutes', 'seconds');
+
+		switch ($type) {
+			case 'string': return $str;
+			case 'array': return $array;
+			case 'object': return (object) $array;
+			default: return $seconds;
 		}
 	}
 
