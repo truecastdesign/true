@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.8.0
+ * @version 1.8.1
  */
 class Functions
 {
@@ -767,57 +767,89 @@ class Functions
 	 *
 	 * This function takes a total number of seconds and breaks it down into 
 	 * years, weeks, days, hours, minutes, and seconds. The result can be 
-	 * returned as a formatted string, an associative array, or an object.
+	 * returned in different formats, including a full string, a short format, 
+	 * an associative array, or an object.
 	 *
 	 * @param int $seconds The duration in seconds.
 	 * @param string $type The output format: 
 	 *   - 'string' (default) returns a human-readable string (e.g., "2 years 3 days 5 hours").
+	 *   - 'short string' returns a compact format (e.g., "2y 3d 5h").
 	 *   - 'array' returns an associative array with keys ('years', 'weeks', 'days', 'hours', 'minutes', 'seconds').
 	 *   - 'object' returns an object with the same structure as the array.
 	 *   - Any other value returns the raw seconds.
 	 *
 	 * @return string|array|object|int The formatted duration based on the specified type.
+	 *   - If 'string' is selected, returns a full human-readable string with correct pluralization.
+	 *   - If 'short string' is selected, returns a compact representation using abbreviations.
+	 *   - If 'array' is selected, returns an associative array with time components.
+	 *   - If 'object' is selected, returns an object containing the same data as the array.
+	 *   - If an unrecognized type is provided, returns the raw seconds value.
 	 */
-	function secondsToStr(int $seconds, string $type = 'string')
+	public static function secondsToStr(int $seconds, string $type = 'string')
 	{
 		// Ensure we are dealing with a positive duration
 		$seconds = abs($seconds);
-
+	
 		$years = floor($seconds / 31536000);
 		$seconds %= 31536000;
-
+	
 		$weeks = floor($seconds / 604800);
 		$seconds %= 604800;
-
+	
 		$days = floor($seconds / 86400);
 		$seconds %= 86400;
-
+	
 		$hours = floor($seconds / 3600);
 		$seconds %= 3600;
-
+	
 		$minutes = floor($seconds / 60);
 		$seconds %= 60;
-
-		// Build readable string format
+	
+		// Build human-readable formats
 		$parts = [];
-		if ($years) $parts[] = "$years year" . ($years > 1 ? 's' : '');
-		if ($weeks) $parts[] = "$weeks week" . ($weeks > 1 ? 's' : '');
-		if ($days) $parts[] = "$days day" . ($days > 1 ? 's' : '');
-		if ($hours) $parts[] = "$hours hour" . ($hours > 1 ? 's' : '');
-		if ($minutes) $parts[] = "$minutes minute" . ($minutes > 1 ? 's' : '');
-		if ($seconds || empty($parts)) $parts[] = "$seconds second" . ($seconds > 1 ? 's' : '');
-
+		$shortParts = [];
+	
+		if ($years) {
+			$parts[] = "$years year" . ($years == 1 ? '' : 's');
+			$shortParts[] = "{$years}y";
+		}
+		if ($weeks) {
+			$parts[] = "$weeks week" . ($weeks == 1 ? '' : 's');
+			$shortParts[] = "{$weeks}w";
+		}
+		if ($days) {
+			$parts[] = "$days day" . ($days == 1 ? '' : 's');
+			$shortParts[] = "{$days}d";
+		}
+		if ($hours) {
+			$parts[] = "$hours hour" . ($hours == 1 ? '' : 's');
+			$shortParts[] = "{$hours}h";
+		}
+		if ($minutes) {
+			$parts[] = "$minutes minute" . ($minutes == 1 ? '' : 's');
+			$shortParts[] = "{$minutes}m";
+		}
+		// Always include seconds if it's the only unit or explicitly 0
+		if ($seconds || empty($parts)) {
+			$parts[] = "$seconds second" . ($seconds == 1 ? '' : 's');
+			$shortParts[] = "{$seconds}s";
+		}
+	
 		$str = implode(' ', $parts);
-
+		$shortStr = implode(' ', $shortParts);
+	
 		$array = compact('years', 'weeks', 'days', 'hours', 'minutes', 'seconds');
-
+	
+		// Return based on the requested format
 		switch ($type) {
 			case 'string': return $str;
+			case 'short string': return $shortStr;
 			case 'array': return $array;
 			case 'object': return (object) $array;
 			default: return $seconds;
 		}
 	}
+
 
 	/**
 	 * pass bytes and return file size with units

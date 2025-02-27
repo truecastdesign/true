@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.3.3
+ * @version v1.3.4
  * 
  * Available keys
  * method # GET,POST,etc
@@ -109,15 +109,16 @@ class Request
 			$cleanedContentType = trim($contentType[0]);		
 		
 		$this->get = (object) (isset($_GET) ? $_GET:[]);
-
+		
 		$requestBody = file_get_contents('php://input');
 
 		switch ($cleanedContentType) {
 			case 'application/json':
 			case 'application/ld+json':
 			case 'application/activity+json':
-				$decodedJson = json_decode($requestBody, true);
-				$this->$requestKey = $decodedJson !== '' ? $decodedJson : $requestBody;
+				$decodedJson = json_decode($requestBody);
+				if ($requestKey != 'get')
+					$this->$requestKey = $decodedJson !== '' ? $decodedJson : $requestBody;
 			break;
 		
 			case 'application/octet-stream':
@@ -125,20 +126,23 @@ class Request
 			case 'text/plain':
 			case 'text/csv':
 			case 'text/xml':
-				$this->$requestKey = trim($requestBody);
+			case 'text/html':
+				if ($requestKey != 'get')
+					$this->$requestKey = trim($requestBody);
 			break;
 		
 			case 'application/x-www-form-urlencoded':
 				parse_str($requestBody, $data);
-				$this->$requestKey = (object) $data;
+				if ($requestKey != 'get')
+					$this->$requestKey = (object) $data;
 			break;
 		
 			case 'multipart/form-data':
-				$this->$requestKey = $_FILES; // Handle uploaded files
+				$this->$requestKey = (object) array_merge($_GET, $_POST);
 			break;
 		
 			default:
-				$this->$requestKey = $requestBody; // Fallback for unknown content types
+				$this->$requestKey = (object) array_merge($_GET, $_POST); // Fallback for unknown content types
 		}
 
 		$this->all = (object) array_merge((array) $this->get, (array) $this->post, (array) $this->put, (array) $this->patch, (array) $this->delete);
