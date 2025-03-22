@@ -108,7 +108,6 @@ class Functions
 
 		// Ensure $parts is an array before accessing keys
 		if (!is_array($parts)) {
-			error_log("Invalid URL passed to parseUrl: " . var_export($url, true));
 			return $output;
 		}
 

@@ -132,7 +132,8 @@ class Products
 						"cutoffTime" => $info->shippingDetails['cutoffTime'] ?? null,
 						"handlingTime" => [
 							"@type" => "QuantitativeValue",
-							"value" => $info->shippingDetails['handlingTime'][0] ?? null,
+							"minValue"=>$info->shippingDetails['handlingTime'][0] ?? null,
+							"maxValue" => $info->shippingDetails['handlingTime'][1] ?? null,
 							"unitCode" => $info->shippingDetails['handlingTime'][2] ?? "d"
 						],
 						"transitTime" => [
@@ -143,6 +144,12 @@ class Products
 						]
 					]
 				];
+
+				if (is_null($data['offers']["shippingDetails"]["deliveryTime"]["handlingTime"]["minValue"]))
+					unset($data['offers']["shippingDetails"]["deliveryTime"]["handlingTime"]["minValue"]);
+
+				if (is_null($data['offers']["shippingDetails"]["deliveryTime"]["handlingTime"]["maxValue"]))
+					$data['offers']["shippingDetails"]["deliveryTime"]["handlingTime"]["maxValue"] = 1;
 			}
 		}
 
