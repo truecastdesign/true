@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.3.4
+ * @version v1.4.0
  * 
  * Available keys
  * method # GET,POST,etc
@@ -108,44 +108,45 @@ class Request
 		if (is_array($contentType) && isset($contentType[0]))
 			$cleanedContentType = trim($contentType[0]);		
 		
-		$this->get = (object) (isset($_GET) ? $_GET:[]);
-		
 		$requestBody = file_get_contents('php://input');
+
+		$this->get = new \True\RequestData;
+		$this->post = new \True\RequestData;
+		$this->put = new \True\RequestData;
+		$this->delete = new \True\RequestData;
+		$this->patch = new \True\RequestData;
+
+		if (isset($_GET))
+			foreach ($_GET as $k => $v) $this->get->$k = $v;
+
+		if (isset($_POST))
+			foreach ($_POST as $k => $v) $this->post->$k = $v;
 
 		switch ($cleanedContentType) {
 			case 'application/json':
 			case 'application/ld+json':
 			case 'application/activity+json':
-				$decodedJson = json_decode($requestBody);
-				if ($requestKey != 'get')
-					$this->$requestKey = $decodedJson !== '' ? $decodedJson : $requestBody;
+				$decodedJson = json_decode($requestBody, true);
+				if ($requestKey != 'get') {
+					$this->$requestKey = new \True\RequestData;
+					if (is_array($decodedJson)) {
+						foreach ($decodedJson as $k => $v)
+							$this->$requestKey->$k = $v;
+					}
+				}
 			break;
-		
-			case 'application/octet-stream':
-			case 'application/x-binary':
-			case 'text/plain':
-			case 'text/csv':
-			case 'text/xml':
-			case 'text/html':
-				if ($requestKey != 'get')
-					$this->$requestKey = trim($requestBody);
-			break;
-		
-			case 'application/x-www-form-urlencoded':
-				parse_str($requestBody, $data);
-				if ($requestKey != 'get')
-					$this->$requestKey = (object) $data;
-			break;
-		
-			case 'multipart/form-data':
-				$this->$requestKey = (object) array_merge($_GET, $_POST);
-			break;
-		
-			default:
-				$this->$requestKey = (object) array_merge($_GET, $_POST); // Fallback for unknown content types
 		}
 
-		$this->all = (object) array_merge((array) $this->get, (array) $this->post, (array) $this->put, (array) $this->patch, (array) $this->delete);
+		// Build $this->all using RequestData, not (object)
+		$this->all = new \True\RequestData;
+		foreach (array_merge(
+			(array) $this->get,
+			(array) $this->post,
+			(array) $this->put,
+			(array) $this->patch,
+			(array) $this->delete
+		) as $k => $v)
+			$this->all->$k = $v;
 	}
 
 	/**
@@ -175,17 +176,23 @@ class Request
 	}
 
 	/**
-	 * Check if the request matches a specific method and contains one or more keys with optional value checks.
+	 * Check if the request matches a specific method and contains one or more keys, 
+	 * with optional value or function-based checks.
 	 *
 	 * @param string $method The HTTP method to check (e.g., 'POST', 'GET', 'PUT').
 	 * @param string|string[] $keys A single key or an array of keys to look for in the request data.
-	 * @param mixed $value Optional. The value to check against for the first key. If not provided, only key existence is checked.
-	 * @return bool True if the method matches, all keys exist, and optionally the value matches for the first key; false otherwise.
+	 * @param mixed $value Optional. If a value is provided and is a callable (e.g., 'is_numeric', 'is_string', or a closure), 
+	 *   the function will be called with the value of the first key. 
+	 *   If a regular value is provided, a strict comparison is performed.
+	 *   If omitted, only key existence is checked.
+	 * @return bool True if the method matches, all keys exist, and (optionally) the value or function check passes for the first key; false otherwise.
 	 *
 	 * Examples:
 	 * $App->request->has('POST', 'username'); // Checks if 'username' exists in POST data.
 	 * $App->request->has('GET', ['id', 'token']); // Checks if both 'id' and 'token' exist in GET data.
 	 * $App->request->has('PUT', 'status', 'active'); // Checks if 'status' exists in PUT data and equals 'active'.
+	 * $App->request->has('GET', 'user_id', 'is_numeric'); // Checks if 'user_id' exists in GET and is numeric.
+	 * $App->request->has('GET', 'name', function($val) { return strlen($val) > 3; }); // Checks with a custom closure.
 	 */
 	public function has(string $method, $keys, $value = null): bool
 	{
@@ -205,8 +212,14 @@ class Request
 				return false;
 
 		// If checking for a specific value, compare the first key only
-		if ($value !== null)
-			return $data->{$keys[0]} == $value;
+		if ($value !== null) {
+			$actualValue = $data->{$keys[0]};
+			// If $value is a callable (function name, closure, etc), use it
+			if (is_callable($value))
+				return $value($actualValue);
+			// Otherwise, compare as before
+			return $actualValue == $value;
+		}
 
 		return true;
 	}

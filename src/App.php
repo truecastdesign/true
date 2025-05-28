@@ -112,7 +112,7 @@ class App
 	 * @author Daniel Baldwin
 	 *
 	 */
-	public function getConfig(string $file, string $returnKey = null)
+	public function getConfig(string $file, ?string $returnKey = null)
 	{
 		// default to BP./app/config/ dir
 		if (substr($file, 0, 1 ) != "/")

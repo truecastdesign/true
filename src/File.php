@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.2.4
+ * @version 1.2.6
  * 
  * Use:
  * 
@@ -116,7 +116,10 @@ class File
 	{
 		list($sourceXSize, $sourceYSize) = getimagesize($this->file['tmp_name']);
 
-		$sourceRatio = $sourceXSize / $sourceYSize;
+		if ($sourceXSize > 0 && $sourceYSize > 0)
+			$sourceRatio = $sourceXSize / $sourceYSize;
+		else
+			$sourceRatio = 1;
 
 		if (is_null($this->imageWidth) and is_null($this->imageHeight)) {
 			$this->imageHeight = $sourceYSize;
@@ -136,6 +139,7 @@ class File
 			case 'image/gif': $sourceImage = imagecreatefromgif($image); break;
 			case 'image/webp': $sourceImage = imagecreatefromwebp($image); break;
 			case 'image/png': $sourceImage = imagecreatefrompng($image); break;
+			case 'image/avif': $sourceImage = imagecreatefromavif($image); break;
 		}
 
 		$cropX = 0;
