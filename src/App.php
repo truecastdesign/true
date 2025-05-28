@@ -119,13 +119,18 @@ class App
 			$file = BP.'/app/config/'.$file;
 	
 		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
+
+		// Check if parsing was successful
+		if ($config === false)
+			throw new \Exception("Failed to parse config file: $file");
+
 		$configOutput = (object)[];
 
 		if (!is_null($returnKey) and !empty($returnKey))
 			return $config[$returnKey];
 
 		// has section headings
-		if (is_array($config[key($config) ])) {
+		if (is_array($config[key($config)])) {
 			foreach($config as $section => $values) {
 				$configOutput->{$section} = (object)$values;
 			}

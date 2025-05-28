@@ -40,7 +40,7 @@ namespace True\schemaTypes;
  * 
  * https://jsonld.com/product/
  * 
- * @version 1.2.1
+ * @version 1.2.2
  */
 class Products
 {
@@ -68,7 +68,9 @@ class Products
 		'Tue' => 'https://schema.org/Tuesday',
 		'Wed' => 'https://schema.org/Wednesday',
 		'Thu' => 'https://schema.org/Thursday',
-		'Fri' => 'https://schema.org/Friday'
+		'Fri' => 'https://schema.org/Friday',
+		'Sat' => 'https://schema.org/Saturday',
+		'Sun' => 'https://schema.org/Sunday'
 	];
 
 	public function set(object $info): void
@@ -163,10 +165,10 @@ class Products
 						"bestRating" => $review['bestRating'] ?? null,
 						"worstRating" => $review['worstRating'] ?? null
 					],
-					"author" => ["@type" => "Person", "name" => $review['author'] ?? "Anonymous"],
+					"author" => ["@type" => "Person", "name" => empty($review['author'])? "Anonymous":$review['author']],
 					"datePublished" => $review['datePublished'] ?? null,
-					"name" => htmlspecialchars(str_replace('"', '', $review['name'] ?? "")),
-					"reviewBody" => htmlspecialchars(trim($review['reviewBody'] ?? ""), ENT_QUOTES, 'UTF-8')
+					"name" => $this->filter($review['name']),
+"reviewBody" => $this->filter($review['reviewBody'])
 				];
 			}, $info->reviews);
 		}
@@ -177,5 +179,10 @@ class Products
 	public function get(): array
 	{
 		return $this->structure;
+	}
+
+	function filter($str)
+	{
+		return htmlspecialchars(str_replace(['"', "\r", "\n", "\t"], ['',' ',' ',' '], html_entity_decode($str ?? '')), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8');
 	}
 }
