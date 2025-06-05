@@ -5,41 +5,57 @@ namespace True;
 /**
  * Folder Management Object
  *
+ * Provides static utility methods for common directory management operations,
+ * including creation, deletion, copying, moving, and advanced listing (with wildcard support).
+ *
  * @package True
  * @author Daniel Baldwin
- * @version 1.0.0
+ * @version 1.1.0
  *
- * Use:
+ * ## Usage Examples
  *
- * To remove a directory:
+ * // Remove a directory (recursively deletes all contents)
  * \True\Folder::remove('/path/to/directory');
  *
- * To create a directory:
+ * // Create a directory (including parent directories if needed)
  * \True\Folder::create('/path/to/new/directory');
  *
- * To copy a directory:
+ * // Copy a directory and all of its contents to a new location
  * \True\Folder::copy('/source/directory', '/destination/directory');
  *
- * To list contents of a directory:
- * $contents = \True\Folder::listContents('/path/to/directory');
- * foreach ($contents as $item) {
- *     echo $item . "\n";
- * }
+ * // List all files and directories
+ * $all = \True\Folder::listContents('/path/to/dir');
  *
- * To check if a directory is empty:
+ * // List only .json files
+ * $json = \True\Folder::listContents('/path/to/dir/*.json');
+ *
+ * // List only .json and .txt files
+ * $jsonAndTxt = \True\Folder::listContents('/path/to/dir/*.{json,txt}');
+ *
+ * // List all subdirectories
+ * $dirs = \True\Folder::listContents('/path/to/dir/*');
+ *
+ * // Check if a directory is empty
  * if (\True\Folder::isEmpty('/path/to/directory')) {
  *     echo "The directory is empty.";
  * } else {
  *     echo "The directory contains files or subdirectories.";
  * }
  *
- * To create a unique directory:
+ * // Create a unique subdirectory with a prefix
  * $uniqueDir = \True\Folder::makeUnique('/base/path', 'prefix_');
- * echo $uniqueDir; // Outputs the full path of the new unique directory
+ * echo $uniqueDir; // Outputs full path of the new unique directory
  *
- * To move a directory:
+ * // Move (rename) a directory to a new location
  * \True\Folder::move('/source/directory', '/destination/directory');
  *
+ * @method static void    remove(string $dir)
+ * @method static bool    create(string $path, int $mode = 0755, bool $recursive = true)
+ * @method static void    copy(string $source, string $destination)
+ * @method static array   listContents(string $path, string $pattern = null)
+ * @method static bool    isEmpty(string $path)
+ * @method static string  makeUnique(string $path, string $prefix = '')
+ * @method static void    move(string $source, string $destination)
  */
 class Folder
 {
@@ -112,18 +128,36 @@ class Folder
 	}
 
 	/**
-	 * Lists all files and directories within the given path.
+	 * Lists files and directories within the given path, supporting wildcards.
 	 *
-	 * @param string $path The directory path to list contents from.
-	 * @return array An array of file and directory names in the path.
-	 * @throws \Exception If the path is not a directory.
+	 * @param string $pattern The directory path, or path with glob pattern (e.g., '/path/*.json' or '/path/*.{json,txt}').
+	 * @return array An array of file/directory names matching the pattern.
+	 * @throws \Exception If the base path is not a directory.
+	 *
+	 * Examples:
+	 *   \True\Folder::listContents('/path/to/dir');           // List all
+	 *   \True\Folder::listContents('/path/to/dir/*.json');    // Only .json
+	 *   \True\Folder::listContents('/path/to/dir/*.{json,txt}'); // Multiple types
 	 */
-	public static function listContents($path)
+	public static function listContents($pattern)
 	{
-		if (!is_dir($path)) {
-			throw new \Exception("The path '$path' is not a directory.");
+		// If just a directory, list all
+		if (is_dir($pattern)) {
+			$pattern = rtrim($pattern, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*';
 		}
-		return array_diff(scandir($path), array('..', '.'));
+
+		// Auto-apply GLOB_BRACE if pattern uses curly brace extension sets
+		$flags = 0;
+		if (strpos($pattern, '{') !== false && strpos($pattern, '}') !== false) {
+			$flags |= defined('GLOB_BRACE') ? GLOB_BRACE : 0;
+		}
+
+		$matches = glob($pattern, $flags);
+		if ($matches === false) {
+			throw new \Exception("Unable to read directory contents with pattern '$pattern'.");
+		}
+
+		return array_map('basename', $matches);
 	}
 
 	/**

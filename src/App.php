@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.12.2
+ * @version 1.12.3
  */
 class App
 {
@@ -275,37 +275,47 @@ class App
      * @return void
      */
    public function configUpdate($sectionOrFile, $key, $value)
-   {
-		// Check if the input is a filename or a section
-    	if (substr($sectionOrFile, -4) === '.ini') {
-      	$file = $sectionOrFile;
-			
-			if (substr($file, 0, 1 ) != "/")
-				$file = BP.'/app/config/'.$file;
-		}
-		else {
+	{
+		// Determine if the input is a filename or section name
+		if (substr($sectionOrFile, -4) === '.ini') {
+			$file = $sectionOrFile;
+			if (substr($file, 0, 1) != "/")
+				$file = BP . '/app/config/' . $file;
+		} else {
 			if (!isset($this->filesList[$sectionOrFile]))
 				throw new \Exception("Section '$sectionOrFile' not found in loaded config files.");
-
 			$file = $this->filesList[$sectionOrFile];
 		}
 
-		// Parse the ini file
+		// Parse INI with sections enabled
 		$config = parse_ini_file($file, true, INI_SCANNER_TYPED);
-		
-		$section = key($config);
-		if (!isset($config[$section]))
-			$config[$section] = [];
 
-		// Update the key/value
-		$config[$section][$key] = $value;
+		// Determine if this is a flat config file or sectioned
+		if (array_keys($config) === range(0, count($config) - 1)) {
+			// Indexed array – shouldn't happen, but fail-safe
+			throw new \Exception("Invalid INI file format.");
+		}
 
-		// Update in-memory config Data
-		$this->container['config']->{$section}->{$key} = $value;
+		if (isset($config[$key]) || array_key_exists($key, $config)) {
+			// Direct key in flat file
+			$config[$key] = $value;
+			$this->container['config']->{$key} = $value;
+		} else {
+			// Assume it's sectioned – grab first section
+			$section = key($config);
 
-		// Write back to the file
+			// Ensure it's an array (handle scalar edge case)
+			if (!is_array($config[$section])) $config[$section] = [];
+
+			$config[$section][$key] = $value;
+			if (!isset($this->container['config']->{$section}) || !is_object($this->container['config']->{$section}))
+				$this->container['config']->{$section} = (object)[];
+			$this->container['config']->{$section}->{$key} = $value;
+		}
+
+		// Save it back
 		$this->writeConfig($file, $config);
-   }
+	}
 
 	/**
 	 *  set header location and exit.
