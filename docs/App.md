@@ -94,27 +94,27 @@ So to redirect to another page, do this:
 $App->go('/path/page');
 ```
 
-# Errors
+# error
 
-App has error handling built into it.
+The App class also has a helper method for error reporting using `trigger_error`.
 
-Use the trigger_error function to add an error which will be displayed where you specify in your template.
-
-Examples
-
-Error
 ```php
-trigger_error("Error message!", 256);
+$App->error($message, $level = 'warning');
 ```
 
-Warning
-```php
-trigger_error("Error message!", 512);
-```
+- $message can be a string or an array of errors.
+- $level can be 'notice', 'warning', or 'error' (case-insensitive).
+- Internally uses `trigger_error()` with appropriate constants:
+  - `notice` → `E_USER_NOTICE`
+  - `warning` → `E_USER_WARNING`
+  - `error` → `E_USER_ERROR`
 
-Notice
+Examples:
+
 ```php
-trigger_error("Error message!", 1024);
+$App->error("This is a warning.");
+$App->error(["Field A is required.", "Field B must be numeric."], 'error');
+$App->error("This is just a notice.", 'notice');
 ```
 
 Display system errors to page nicely.

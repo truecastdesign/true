@@ -16,6 +16,7 @@ namespace True;
 # alpha_numeric_dash - a-z0-9_-
 # numeric
 # integer - whole numbers that are either nagative or positive
+# float - 1.00
 # natural - Natural number  (0,1,2,3, etc.)
 # natural_no_zero - Natural number  (1,2,3, etc.)
 # name - a-zA-Z0-9. -',&#()
@@ -31,7 +32,7 @@ namespace True;
 /**
  * Value Validator
  * 
- * @version 1.0.1
+ * @version 1.1.0
  */
 class Validator
 {
@@ -138,6 +139,7 @@ class Validator
 		$errors['alpha_numeric_dash'] = "The $fieldLabel field may only contain alpha-numeric characters, underscores, and dashes.";
 		$errors['numeric'] = "The $fieldLabel field must contain only numbers.";
 		$errors['integer'] = "The $fieldLabel field must contain an integer.";
+		$errors['float'] = "The $fieldLabel field must be a valid decimal number.";
 		$errors['natural'] = "The $fieldLabel field must contain only positive whole numbers.";
 		$errors['natural_no_zero'] = "The $fieldLabel field must contain a whole numbers greater than zero.";
 		$errors['base64'] = "The $fieldLabel field contains invalid characters.";
@@ -284,6 +286,12 @@ class Validator
 	function validate_integer($str)
 	{
 		return (bool)preg_match( '/^[\-+]?[0-9]+$/', $str);
+	}
+
+	# Float - must be a valid float (with optional decimal point)
+	function validate_float($str)
+	{
+		return filter_var($str, FILTER_VALIDATE_FLOAT) !== false;
 	}
 
 	# Is a Natural number  (0,1,2,3, etc.)

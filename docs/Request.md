@@ -211,6 +211,38 @@ if ($App->request->has('GET', 'id', 123)) {
   - **Matches**: `/`
   - **Does NOT Match**: `/home`, `/about`
 
+## Request Data Filters (Sanitization & Formatting)
+
+In addition to basic access via:
+```php
+$value = $App->request->post->fieldName;
+```
+You can now sanitize or format incoming values directly with built-in filters:
+
+### Example Usage
+
+```php
+// Returns a sanitized integer from POST
+$businessId = $App->request->post->int('businessId');
+
+// Returns only letters from a GET key
+$code = $App->request->get->alpha('code');
+
+// Removes unwanted characters from a name
+$name = $App->request->post->name('fullName');
+
+// Formats a monetary value
+$amount = $App->request->post->formatCurrency('donation');
+
+// Sanitizes a string for safe output
+$bio = $App->request->post->escape('bio');
+```
+
+### Available Filter Methods
+
+Each method accepts a field name (e.g., 'amount') and returns the cleaned value, or null if not present.
+
+
 
 ## Summary
 

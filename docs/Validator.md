@@ -67,8 +67,8 @@ The `Validator` class supports the following validation rules:
 
 | Rule               | Description                                           |
 |--------------------|-------------------------------------------------------|
-| `required`         | Ensures the field is not empty.                      |
-| `clean`            | Removes potential XSS threats.                       |
+| `required`         | Ensures the field is not empty.                       |
+| `clean`            | Removes potential XSS threats.                        |
 | `matches[value]`   | Checks if the field matches a given value.            |
 | `in[value1,value2]`| Checks if the field matches any value in a list.      |
 | `depends[field=value]` | Ensures a field is required based on another field's value. |
@@ -79,6 +79,7 @@ The `Validator` class supports the following validation rules:
 | `alpha_numeric_dash` | Allows alphanumeric characters, underscores, and dashes. |
 | `numeric`          | Allows only numeric values.                           |
 | `integer`          | Ensures the field contains an integer.                |
+| `float`            | Ensures the field contains a float.                   |
 | `natural`          | Ensures the field contains a natural number.          |
 | `natural_no_zero`  | Ensures the field contains a natural number greater than zero. |
 | `name`             | Allows a valid person's name with special characters. |
