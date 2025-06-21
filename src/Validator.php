@@ -16,7 +16,6 @@ namespace True;
 # alpha_numeric_dash - a-z0-9_-
 # numeric
 # integer - whole numbers that are either nagative or positive
-# float - 1.00
 # natural - Natural number  (0,1,2,3, etc.)
 # natural_no_zero - Natural number  (1,2,3, etc.)
 # name - a-zA-Z0-9. -',&#()
@@ -32,7 +31,7 @@ namespace True;
 /**
  * Value Validator
  * 
- * @version 1.1.0
+ * @version 1.1.1
  */
 class Validator
 {
@@ -88,13 +87,15 @@ class Validator
 			}
 
 			# check if there was an error, if there was than if no custom error is set provide it
-			if ($result === false) { # invalid
-				if (!isset($errorMsg)) # no custom error
-				   $this->errors[] = $this->errorMsgs($rule, $field, $param);
-				else # custom error
-					$this->errors[] = $errorMsg; 
+			if ($result === false) {
+				if (!isset($this->errors[$field])) $this->errors[$field] = [];
 
-				$this->valid = false; # mark the form as not valid		
+				if ($errorMsg)
+					$this->errors[$field][] = $errorMsg;
+				else
+					$this->errors[$field][] = $this->errorMsgs($rule, $field, $param);
+
+				$this->valid = false;
 			} elseif($result === true)
 				$this->values[$field] = $data;
 			
@@ -154,8 +155,57 @@ class Validator
 	# get the field errors
 	public function errors(): array
 	{
-		return $this->errors;	
-	}	
+		$combined = [];
+
+		foreach ($this->errors as $field => $messages) {
+			$messages = array_unique($messages); // Remove exact duplicates first
+
+			// If only one error, return it as-is
+			if (count($messages) === 1) {
+				$combined[] = $messages[0];
+				continue;
+			}
+
+			// Try to intelligently combine required + type checks
+			$required = null;
+			$type = null;
+			$other = [];
+
+			foreach ($messages as $msg) {
+				if (stripos($msg, 'is required') !== false) {
+					$required = $msg;
+				} elseif (stripos($msg, 'must contain') !== false || stripos($msg, 'must be') !== false) {
+					$type = $msg;
+				} else {
+					$other[] = $msg;
+				}
+			}
+
+			if ($required && $type) {
+				// Merge required + type
+				preg_match('/^The (.+?) field/i', $required, $match);
+				$label = $match[1] ?? 'Field';
+
+				if (str_contains($type, 'integer')) {
+					$combined[] = "The $label field is required and must contain an integer.";
+				} elseif (str_contains($type, 'decimal') || str_contains($type, 'amount') || str_contains($type, 'valid')) {
+					$combined[] = "The $label field is required and must be a valid amount.";
+				} else {
+					$combined[] = "The $label field is required and must be valid.";
+				}
+
+				// Append any other non-standard errors
+				foreach ($other as $extra)
+					if (!in_array($extra, $combined)) $combined[] = $extra;
+			} else {
+				// Fallback: just combine all unique messages
+				foreach ($messages as $msg)
+					if (!in_array($msg, $combined)) $combined[] = $msg;
+			}
+		}
+
+		return $combined;
+	}
 	
 	# Required
 	function validate_required($str)
