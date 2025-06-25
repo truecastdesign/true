@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.12.3
+ * @version 1.13.0
  */
 class App
 {
@@ -328,6 +328,40 @@ class App
 	{
 		header("Location: " . $filename);
 		exit;
+	}
+
+	/**
+	 * Trigger a PHP error with a given severity level.
+	 *
+	 * Accepts a string or an array of error messages and triggers a user-level error
+	 * using PHP's trigger_error(). Severity can be 'notice', 'warning', or 'error'.
+	 *
+	 * @param string|array $message  The error message(s) to report. Arrays will be joined with newlines.
+	 * @param string       $level    The severity level: 'notice', 'warning', or 'error'. Default is 'warning'.
+	 *
+	 * @return void
+	 */
+	public function error($message, $level = 'warning')
+	{
+		// Normalize message to a string
+		if (is_array($message)) 
+			$message = implode("<br>", $message);
+
+		// Map string level to PHP error constant
+		switch (strtolower($level)) {
+			case 'notice':
+				$phpLevel = E_USER_NOTICE;
+				break;
+			case 'error':
+				$phpLevel = E_USER_ERROR;
+				break;
+			case 'warning':
+			default:
+				$phpLevel = E_USER_WARNING;
+				break;
+		}
+
+		trigger_error($message, $phpLevel);
 	}
 
 	// trigger_error("Error Message", E_USER_WARNING);
