@@ -2,16 +2,48 @@
 namespace True;
 
 /**
- * @version 1.2
+ * @version 1.3
  */
 #[\AllowDynamicProperties]
 class RequestData {
-	public function __get($name) {
+	private $rawBody;
+
+	public function __construct($rawBody = '')
+	{
+		$this->rawBody = $rawBody;
+	}	
+
+	public function __get($name)
+	{
 		return property_exists($this, $name) ? $this->$name : null;
 	}
 
-	public function __set($name, $value) {
-		$this->$name = $value;
+	public function __set($name, $value)
+	{
+		// Sanitize property name to remove null bytes and invalid characters
+		$sanitizedName = preg_replace('/[^a-zA-Z0-9_]/', '', $name);
+		if ($sanitizedName && strpos($sanitizedName, "\0") === false) {
+			$this->$sanitizedName = $value;
+		}
+	}
+
+	public function object()
+	{
+		$vars = get_object_vars($this);
+		unset($vars['rawBody']); // Exclude rawBody from the output
+		return (object) $vars;
+	}
+
+	public function array()
+	{
+		$vars = get_object_vars($this);
+		unset($vars['rawBody']); // Exclude rawBody from the output
+		return (array) $vars;
+	}
+
+	public function raw()
+	{
+		return $this->rawBody;
 	}
 
 	public function int(string $key): ?int {

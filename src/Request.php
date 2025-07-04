@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.4.0
+ * @version v1.5.0
  * 
  * Available keys
  * method # GET,POST,etc
@@ -57,103 +57,151 @@ class Request
 
 	public function __construct()
 	{
-		$requestKey = strtolower($_SERVER['REQUEST_METHOD']);
-		$this->method = $_SERVER['REQUEST_METHOD'];
-		$this->ip = $_SERVER['REMOTE_ADDR'];
-		$this->status = http_response_code();
-		$this->contentType = isset($_SERVER['CONTENT_TYPE']) ? strtok($_SERVER['CONTENT_TYPE'], ';'):'text/html';
-		$this->userAgent = $_SERVER['HTTP_USER_AGENT'];		
-		$this->referrer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER']:'';	
+		$this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+		$requestKey = strtolower($this->method);
+		$this->ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+		$this->status = http_response_code() ?: 200;
+		$this->contentType = isset($_SERVER['CONTENT_TYPE']) ? strtok($_SERVER['CONTENT_TYPE'], ';') : 'text/html';
+		$this->userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+		$this->referrer = $_SERVER['HTTP_REFERER'] ?? '';
 		$this->headers = (object) $this->getallheaders();
-		$this->https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
+		$this->https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true : false) : false;
 
 		$this->url = (object)[];
-		$this->url->path = strtok(filter_var($_SERVER["REQUEST_URI"], FILTER_SANITIZE_URL), '?');		
-		$this->url->host = $_SERVER['HTTP_HOST'];
-		$this->url->protocol = ($this->https ? 'https':'http');
-		$this->url->full = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		$this->url->protocolhost = $this->url->protocol.'://'.$_SERVER['HTTP_HOST'];
-		$this->url->scheme = $this->url->protocol.'://';
-		$this->url->domain = strtok(str_replace('www.','',$_SERVER['HTTP_HOST']),':');
+		$this->url->path = strtok(filter_var($_SERVER["REQUEST_URI"] ?? '/', FILTER_SANITIZE_URL), '?') ?: '/';
+		$this->url->host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+		$this->url->protocol = ($this->https ? 'https' : 'http');
+		$this->url->full = $this->url->protocol . '://' . ($this->url->host) . ($_SERVER['REQUEST_URI'] ?? '/');
+		$this->url->protocolhost = $this->url->protocol . '://' . $this->url->host;
+		$this->url->scheme = $this->url->protocol . '://';
+		$this->url->domain = strtok(str_replace('www.', '', $this->url->host), ':') ?: 'localhost';
 
-		if (isset($_FILES)) {
-			$this->files = (object)[];
-			foreach ($_FILES as $name=>$file) {
-				
-				if (is_array($file['name'])) {
-					for ($i=0; $i<count($file['name']); $i++) {
-						$newFile = [];
-						$newFile = [
-							'name'=>$file['name'][$i],
-							'uploaded'=>($file['error'][$i]==0? true:false),
-							'type'=>$file['type'][$i],
-							'tmp_name'=>$file['tmp_name'][$i],
-							'size'=>$file['size'][$i]
-						];
-
-						if ($newFile['uploaded'] and !empty($newFile['tmp_name'])) {
-							$newFile['ext'] = strtolower(pathinfo($newFile['name'], PATHINFO_EXTENSION));
-							$newFile['mime'] = mime_content_type($newFile['tmp_name']);
+		// Initialize files
+		$this->files = (object)[];
+		if (isset($_FILES) && is_array($_FILES)) {
+				foreach ($_FILES as $name => $file) {
+					if (is_array($file['name'])) {
+						for ($i = 0; $i < count($file['name']); $i++) {
+								$newFile = [
+									'name' => $file['name'][$i] ?? '',
+									'uploaded' => isset($file['error'][$i]) && $file['error'][$i] == 0,
+									'type' => $file['type'][$i] ?? '',
+									'tmp_name' => $file['tmp_name'][$i] ?? '',
+									'size' => $file['size'][$i] ?? 0
+								];
+								if ($newFile['uploaded'] && !empty($newFile['tmp_name'])) {
+									$newFile['ext'] = strtolower(pathinfo($newFile['name'], PATHINFO_EXTENSION) ?: '');
+									$newFile['mime'] = mime_content_type($newFile['tmp_name']) ?: '';
+								}
+								$this->files->{$name}[$i] = new \True\File($newFile, $newFile['name']);
 						}
-						$this->files->{$name}[$i] = new \True\File($newFile, $newFile['name']);
+					} else {
+						$newFile = [
+								'name' => $file['name'] ?? '',
+								'uploaded' => isset($file['error']) && $file['error'] == 0,
+								'type' => $file['type'] ?? '',
+								'tmp_name' => $file['tmp_name'] ?? '',
+								'size' => $file['size'] ?? 0
+						];
+						if ($newFile['uploaded'] && !empty($newFile['tmp_name'])) {
+								$newFile['ext'] = strtolower(pathinfo($newFile['name'], PATHINFO_EXTENSION) ?: '');
+								$newFile['mime'] = mime_content_type($newFile['tmp_name']) ?: '';
+						}
+						$this->files->{$name} = new \True\File($newFile, $name);
 					}
-					
-				} else
-					$this->files->{$name} = new \True\File($file, $name);
-			}
+				}
 		}
 
 		$contentType = explode(';', $this->contentType);
-		
-		if (is_array($contentType) && isset($contentType[0]))
-			$cleanedContentType = trim($contentType[0]);		
-		
-		$requestBody = file_get_contents('php://input');
+		$cleanedContentType = trim($contentType[0] ?? 'text/html');
+		$requestBody = file_get_contents('php://input') ?: '';
 
-		$this->get = new \True\RequestData;
-		$this->post = new \True\RequestData;
-		$this->put = new \True\RequestData;
-		$this->delete = new \True\RequestData;
-		$this->patch = new \True\RequestData;
+		$this->get = new \True\RequestData($requestBody);
+		$this->post = new \True\RequestData($requestBody);
+		$this->put = new \True\RequestData($requestBody);
+		$this->delete = new \True\RequestData($requestBody);
+		$this->patch = new \True\RequestData($requestBody);
 
-		if (isset($_GET))
-			foreach ($_GET as $k => $v) $this->get->$k = $v;
+		// Populate GET data
+		if (isset($_GET) && is_array($_GET)) {
+			foreach ($_GET as $k => $v) {
+				$this->get->$k = $v;
+			}
+		}
 
-		if (isset($_POST))
-			foreach ($_POST as $k => $v) $this->post->$k = $v;
+		// Populate POST data (handles application/x-www-form-urlencoded and multipart/form-data)
+		if (isset($_POST) && is_array($_POST)) {
+			foreach ($_POST as $k => $v) {
+				$this->post->$k = $v;
+			}
+		}
 
+		// Handle all content types
 		switch ($cleanedContentType) {
 			case 'application/json':
 			case 'application/ld+json':
 			case 'application/activity+json':
 				$decodedJson = json_decode($requestBody, true);
-				if ($requestKey != 'get') {
-					$this->$requestKey = new \True\RequestData;
-					if (is_array($decodedJson)) {
-						foreach ($decodedJson as $k => $v)
+				if (json_last_error() === JSON_ERROR_NONE && is_array($decodedJson)) {
+					$this->$requestKey = new \True\RequestData($requestBody);
+					foreach ($decodedJson as $k => $v) {
 							$this->$requestKey->$k = $v;
 					}
 				}
-			break;
+				break;
+			case 'application/x-www-form-urlencoded':
+				parse_str($requestBody, $formData);
+				if (is_array($formData)) {
+					$this->$requestKey = new \True\RequestData($requestBody);
+					foreach ($formData as $k => $v) {
+							$this->$requestKey->$k = $v;
+					}
+				}
+				break;
+			case 'multipart/form-data':
+				// Already handled by $_POST and $_FILES
+				break;
+			case 'text/xml':
+			case 'application/xml':
+				$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
+				if ($xml) {
+					$this->$requestKey = new \True\RequestData($requestBody);
+					$array = json_decode(json_encode((array)$xml), true);
+					foreach ($array as $k => $v) {
+							$this->$requestKey->$k = $v;
+					}
+				}
+				break;
+			case 'application/octet-stream':
+				$this->$requestKey = new \True\RequestData($requestBody);
+				$this->$requestKey->raw = $requestBody;
+				break;
+			default:
+				$this->$requestKey = new \True\RequestData($requestBody);
+				$this->$requestKey->raw = $requestBody;
+				break;
 		}
 
-		// Build $this->all using RequestData, not (object)
-		$this->all = new \True\RequestData;
-		foreach (array_merge(
+		// Build $this->all using RequestData
+		$this->all = new \True\RequestData($requestBody);
+		$dataSources = [
 			(array) $this->get,
 			(array) $this->post,
 			(array) $this->put,
 			(array) $this->patch,
 			(array) $this->delete
-		) as $k => $v)
-			$this->all->$k = $v;
+		];
+		foreach ($dataSources as $source) {
+			foreach ($source as $k => $v) {
+				$this->all->$k = $v;
+			}
+		}
 	}
 
 	/**
 	 * Determine if the current path matches a pattern, using * as a wildcard.
 	 *
-	 * @param string $pattern The pattern to match against 
-	 * (e.g., 'about', 'products*', etc.)
+	 * @param string $pattern The pattern to match against (e.g., 'about', 'products*', etc.)
 	 * @return bool True if the pattern matches the current path, false otherwise.
 	 * 
 	 * Example: matches: /path  /pathtwo  /pathtwo/paththree
@@ -162,13 +210,11 @@ class Request
 	 */
 	public function is($pattern)
 	{
-		// Special case for the root path "/"
 		if ($pattern === '/')
 			return $this->url->path === '/';
 		
 		$basePattern = str_replace('*', '', $pattern);
 
-		// If it’s a wildcard pattern, allow any sub-paths after the base pattern
 		if (substr($pattern, -1) === '*')
 			return strpos($this->url->path, $basePattern) === 0;
 		else
@@ -176,7 +222,7 @@ class Request
 	}
 
 	/**
-	 * Check if the request matches a specific method and contains one or more keys, 
+	 * Check if the request matches a specific method and contains one or more keys,
 	 * with optional value or function-based checks.
 	 *
 	 * @param string $method The HTTP method to check (e.g., 'POST', 'GET', 'PUT').
@@ -199,33 +245,27 @@ class Request
 		$method = strtolower($method);
 		$data = $this->$method ?? null;
 
-		// Allow GET checks even if the main request method is different
 		if ($method !== 'get' && $this->method !== strtoupper($method))
 			return false;
 
-		// Ensure $keys is an array, even if a single string is passed
 		$keys = is_array($keys) ? $keys : [$keys];
 
-		// Loop through all provided keys
 		foreach ($keys as $key)
 			if (!is_object($data) || !property_exists($data, $key))
 				return false;
 
-		// If checking for a specific value, compare the first key only
 		if ($value !== null) {
 			$actualValue = $data->{$keys[0]};
-			// If $value is a callable (function name, closure, etc), use it
 			if (is_callable($value))
 				return $value($actualValue);
-			// Otherwise, compare as before
-			return $actualValue == $value;
+			return $actualValue === $value;
 		}
 
 		return true;
 	}
 
 	/**
-	* Get all HTTP header key/values as an associative array for the current request.
+	 * Get all HTTP header key/values as an associative array for the current request.
 	* Written by ralouphie - https://github.com/ralouphie
 	*
 	* A replacement for apache_request_headers()
@@ -236,24 +276,24 @@ class Request
 	*/
 	protected function getallheaders()
 	{
-		$headers = array();
-		$copy_server = array(
+		$headers = [];
+		$copy_server = [
 			'CONTENT_TYPE'   => 'Content-Type',
 			'CONTENT_LENGTH' => 'Content-Length',
 			'CONTENT_MD5'    => 'Content-Md5',
-		);
+		];
 		foreach ($_SERVER as $key => $value) {
 			if (substr($key, 0, 5) === 'HTTP_') {
-				 $key = substr($key, 5);
-				 if (!isset($copy_server[$key]) || !isset($_SERVER[$key])) {
-					  $key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
-					  $headers[$key] = $value;
-				 }
+				$key = substr($key, 5);
+				if (!isset($copy_server[$key]) || !isset($_SERVER[$key])) {
+					$key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
+					$headers[$key] = $value;
+				}
 			} elseif (isset($copy_server[$key])) {
-				 $headers[$copy_server[$key]] = $value;
+				$headers[$copy_server[$key]] = $value;
 			}
 		}
-		if (!isset($headers['Authorization']) and isset($_SERVER['Authorization'])) {
+		if (!isset($headers['Authorization']) && isset($_SERVER['Authorization'])) {
 			$headers['Authorization'] = $_SERVER['Authorization'];
 		}
 		return $headers;

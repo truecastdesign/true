@@ -73,6 +73,24 @@ echo $App->request->get->key;
 
 // Accessing POST parameters
 echo $App->request->post->key;
+
+// Accessing PUT parameters
+echo $App->request->put->key;
+
+// Accessing DELETE parameters
+echo $App->request->delete->key;
+
+// Accessing PATCH parameters
+echo $App->request->patch->key;
+
+// Raw body output
+echo $App->request->patch->raw();
+
+// array output
+echo $App->request->post->array();
+
+// object output
+echo $App->request->post->object();
 ```
 
 ## Handling Files
@@ -219,7 +237,7 @@ $value = $App->request->post->fieldName;
 ```
 You can now sanitize or format incoming values directly with built-in filters:
 
-### Example Usage
+### Available Filter Methods
 
 ```php
 // Returns a sanitized integer from POST
@@ -228,20 +246,81 @@ $businessId = $App->request->post->int('businessId');
 // Returns only letters from a GET key
 $code = $App->request->get->alpha('code');
 
+// Returns only alphanumeric characters
+$username = $App->request->post->alphaInt('username');
+
 // Removes unwanted characters from a name
 $name = $App->request->post->name('fullName');
+
+// Returns sanitized decimal number
+$price = $App->request->post->decimal('price');
+
+// Returns sanitized file path string
+$filePath = $App->request->post->filePath('filePath');
+
+// Returns a sanitized database field name
+$dbField = $App->request->post->dbField('field');
+
+// Returns sanitized credit card number (digits only)
+$cardNumber = $App->request->post->creditCard('cardNumber');
+
+// Returns sanitized postal code
+$postalCode = $App->request->post->postalCode('zip');
+
+// Returns sanitized email address
+$email = $App->request->post->email('email');
+
+// Returns sanitized URL
+$url = $App->request->post->url('website');
+
+// Returns sanitized IP address
+$ipAddress = $App->request->post->ip('ip');
+
+// Returns sanitized floating-point number
+$weight = $App->request->post->float('weight');
+
+// Returns sanitized datetime string
+$eventDate = $App->request->post->dateTime('eventDate');
 
 // Formats a monetary value
 $amount = $App->request->post->formatCurrency('donation');
 
-// Sanitizes a string for safe output
-$bio = $App->request->post->escape('bio');
+// Formats a datetime value
+$formattedDate = $App->request->post->formatDateTime('eventDate', 'M d, Y');
+
+// Converts a string to title case
+$properName = $App->request->post->titleCase('fullName');
+
+// Sanitizes a string for safe meta tag use
+$metaDescription = $App->request->post->forMetaTags('description');
+
+// Encodes quotes in the string
+$encodedString = $App->request->post->encodeQuotes('quoteField');
+
+// Prepares a string for HTML editors
+$htmlSafe = $App->request->post->forHtmlEditors('content');
+
+// Prepares a string for HTML output
+$htmlOutput = $App->request->post->htmlOutput('title');
+
+// General string sanitizer
+$cleanBio = $App->request->post->sanitize('bio', 1);
+
+// Full HTML entity encoding sanitizer
+$fullySanitized = $App->request->post->sanitize('comment', 3);
+
+// Escapes special characters for HTML output
+$escapedComment = $App->request->post->escape('comment');
+
+// Returns the raw request body (for PUT, PATCH, etc.)
+$rawInput = $App->request->put->raw();
+
+// Returns the request data as an array
+$postArray = $App->request->post->array();
+
+// Returns the request data as an object
+$getObject = $App->request->get->object();
 ```
-
-### Available Filter Methods
-
-Each method accepts a field name (e.g., 'amount') and returns the cleaned value, or null if not present.
-
 
 
 ## Summary
