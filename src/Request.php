@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.5.0
+ * @version v1.5.1
  * 
  * Available keys
  * method # GET,POST,etc
@@ -137,63 +137,65 @@ class Request
 		}
 
 		// Handle all content types
-		switch ($cleanedContentType) {
-			case 'application/json':
-			case 'application/ld+json':
-			case 'application/activity+json':
-				$decodedJson = json_decode($requestBody, true);
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decodedJson)) {
-					$this->$requestKey = new \True\RequestData($requestBody);
-					foreach ($decodedJson as $k => $v) {
+		if ($this->method !== 'GET' || !empty($requestBody)) {
+			switch ($cleanedContentType) {
+				case 'application/json':
+				case 'application/ld+json':
+				case 'application/activity+json':
+					$decodedJson = json_decode($requestBody);  // Decodes to nested stdClass objects
+					if (json_last_error() === JSON_ERROR_NONE && is_object($decodedJson)) {
+						$this->$requestKey = new \True\RequestData($requestBody);
+						
+						foreach ($decodedJson as $k => $v)
 							$this->$requestKey->$k = $v;
 					}
-				}
 				break;
-			case 'application/x-www-form-urlencoded':
-				parse_str($requestBody, $formData);
-				if (is_array($formData)) {
-					$this->$requestKey = new \True\RequestData($requestBody);
-					foreach ($formData as $k => $v) {
-							$this->$requestKey->$k = $v;
+				case 'application/x-www-form-urlencoded':
+					parse_str($requestBody, $formData);
+					if (is_array($formData)) {
+						$this->$requestKey = new \True\RequestData($requestBody);
+						foreach ($formData as $k => $v) {
+								$this->$requestKey->$k = $v;
+						}
 					}
-				}
-				break;
-			case 'multipart/form-data':
-				// Already handled by $_POST and $_FILES
-				break;
-			case 'text/xml':
-			case 'application/xml':
-				$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
-				if ($xml) {
-					$this->$requestKey = new \True\RequestData($requestBody);
-					$array = json_decode(json_encode((array)$xml), true);
-					foreach ($array as $k => $v) {
-							$this->$requestKey->$k = $v;
+					break;
+				case 'multipart/form-data':
+					// Already handled by $_POST and $_FILES
+					break;
+				case 'text/xml':
+				case 'application/xml':
+					$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
+					if ($xml) {
+						$this->$requestKey = new \True\RequestData($requestBody);
+						$array = json_decode(json_encode((array)$xml), true);
+						foreach ($array as $k => $v) {
+								$this->$requestKey->$k = $v;
+						}
 					}
-				}
-				break;
-			case 'application/octet-stream':
-				$this->$requestKey = new \True\RequestData($requestBody);
-				$this->$requestKey->raw = $requestBody;
-				break;
-			default:
-				$this->$requestKey = new \True\RequestData($requestBody);
-				$this->$requestKey->raw = $requestBody;
-				break;
-		}
+					break;
+				case 'application/octet-stream':
+					$this->$requestKey = new \True\RequestData($requestBody);
+					$this->$requestKey->raw = $requestBody;
+					break;
+				default:
+					$this->$requestKey = new \True\RequestData($requestBody);
+					$this->$requestKey->raw = $requestBody;
+					break;
+			}
 
-		// Build $this->all using RequestData
-		$this->all = new \True\RequestData($requestBody);
-		$dataSources = [
-			(array) $this->get,
-			(array) $this->post,
-			(array) $this->put,
-			(array) $this->patch,
-			(array) $this->delete
-		];
-		foreach ($dataSources as $source) {
-			foreach ($source as $k => $v) {
-				$this->all->$k = $v;
+			// Build $this->all using RequestData
+			$this->all = new \True\RequestData($requestBody);
+			$dataSources = [
+				(array) $this->get,
+				(array) $this->post,
+				(array) $this->put,
+				(array) $this->patch,
+				(array) $this->delete
+			];
+			foreach ($dataSources as $source) {
+				foreach ($source as $k => $v) {
+					$this->all->$k = $v;
+				}
 			}
 		}
 	}
