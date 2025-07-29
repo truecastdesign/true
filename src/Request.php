@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.5.1
+ * @version v1.5.2
  * 
  * Available keys
  * method # GET,POST,etc
@@ -116,11 +116,19 @@ class Request
 		$cleanedContentType = trim($contentType[0] ?? 'text/html');
 		$requestBody = file_get_contents('php://input') ?: '';
 
-		$this->get = new \True\RequestData($requestBody);
-		$this->post = new \True\RequestData($requestBody);
+		if ($this->method === 'POST' && in_array($cleanedContentType, ['application/x-www-form-urlencoded', 'multipart/form-data'])) {
+			$reconstructedRaw = http_build_query($_POST);
+			$this->post = new \True\RequestData($reconstructedRaw);
+		} else {
+			$this->post = new \True\RequestData($requestBody);
+		}
+			
+
+		$this->get = new \True\RequestData($_SERVER['QUERY_STRING']);
 		$this->put = new \True\RequestData($requestBody);
 		$this->delete = new \True\RequestData($requestBody);
 		$this->patch = new \True\RequestData($requestBody);
+		$this->all = new \True\RequestData($requestBody);
 
 		// Populate GET data
 		if (isset($_GET) && is_array($_GET)) {
@@ -135,69 +143,128 @@ class Request
 				$this->post->$k = $v;
 			}
 		}
+		
+		if (in_array($this->method, ['POST', 'PUT', 'PATCH', 'DELETE']) && !empty($requestBody)) {
+			// PUT/PATCH/DELETE: Parse body based on Content-Type
+			
+			$parsedData = null; // Will hold parsed data
 
-		// Handle all content types
-		if ($this->method !== 'GET' || !empty($requestBody)) {
 			switch ($cleanedContentType) {
-				case 'application/json':
-				case 'application/ld+json':
-				case 'application/activity+json':
-					$decodedJson = json_decode($requestBody);  // Decodes to nested stdClass objects
-					if (json_last_error() === JSON_ERROR_NONE && is_object($decodedJson)) {
-						$this->$requestKey = new \True\RequestData($requestBody);
+					case 'application/json':
+					case 'application/ld+json':
+					case 'application/activity+json':
+						$parsedData = json_decode($requestBody);
+						if (json_last_error() !== JSON_ERROR_NONE) {
+							error_log("JSON parsing error: " . json_last_error_msg());
+							$parsedData = new \stdClass(); // Fallback to empty
+						}
+						break;
+					case 'application/x-www-form-urlencoded':
+					case 'multipart/form-data':
 						
-						foreach ($decodedJson as $k => $v)
-							$this->$requestKey->$k = $v;
-					}
-				break;
-				case 'application/x-www-form-urlencoded':
-					parse_str($requestBody, $formData);
-					if (is_array($formData)) {
-						$this->$requestKey = new \True\RequestData($requestBody);
-						foreach ($formData as $k => $v) {
-								$this->$requestKey->$k = $v;
+						break;
+					case 'text/xml':
+					case 'application/xml':
+						$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
+						if ($xml === false) {
+							error_log("XML parsing error");
+							$parsedData = new \stdClass();
+						} else {
+							$parsedData = json_decode(json_encode($xml)); // Convert to stdClass
 						}
-					}
-					break;
-				case 'multipart/form-data':
-					// Already handled by $_POST and $_FILES
-					break;
-				case 'text/xml':
-				case 'application/xml':
-					$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
-					if ($xml) {
-						$this->$requestKey = new \True\RequestData($requestBody);
-						$array = json_decode(json_encode((array)$xml), true);
-						foreach ($array as $k => $v) {
-								$this->$requestKey->$k = $v;
-						}
-					}
-					break;
-				case 'application/octet-stream':
-					$this->$requestKey = new \True\RequestData($requestBody);
-					$this->$requestKey->raw = $requestBody;
-					break;
-				default:
-					$this->$requestKey = new \True\RequestData($requestBody);
-					$this->$requestKey->raw = $requestBody;
-					break;
+						break;
+				
+					case 'application/octet-stream':
+					case 'text/plain':
+					default:
+						// For binary or unknown, store as raw property
+						$parsedData = new \stdClass();
+						$parsedData->raw = $requestBody;
+						break;
 			}
 
-			// Build $this->all using RequestData
-			$this->all = new \True\RequestData($requestBody);
-			$dataSources = [
-				(array) $this->get,
-				(array) $this->post,
-				(array) $this->put,
-				(array) $this->patch,
-				(array) $this->delete
-			];
-			foreach ($dataSources as $source) {
-				foreach ($source as $k => $v) {
-					$this->all->$k = $v;
-				}
+			// Assign parsed data to the method-specific RequestData
+			if ($parsedData) {
+					foreach ($parsedData as $k => $v) {
+						$this->{$requestKey}->$k = $v;
+					}
 			}
 		}
+
+		// Build $this->all: Merge GET with the active method's data
+		
+		// Always include GET
+		foreach ((array) $this->get as $k => $v) {
+			$this->all->$k = $v;
+		}
+		// Add active method's data (overwrites if keys conflict)
+		$activeData = $this->{$requestKey} ?? new \True\RequestData('');
+		foreach ((array) $activeData as $k => $v) {
+			$this->all->$k = $v;
+		}
+
+		// Handle all content types
+		// if ($this->method !== 'GET' || !empty($requestBody)) {
+		// 	switch ($cleanedContentType) {
+		// 		case 'application/json':
+		// 		case 'application/ld+json':
+		// 		case 'application/activity+json':
+		// 			$decodedJson = json_decode($requestBody);  // Decodes to nested stdClass objects
+		// 			if (json_last_error() === JSON_ERROR_NONE && is_object($decodedJson)) {
+		// 				$this->$requestKey = new \True\RequestData($requestBody);
+						
+		// 				foreach ($decodedJson as $k => $v)
+		// 					$this->$requestKey->$k = $v;
+		// 			}
+		// 		break;
+		// 		case 'application/x-www-form-urlencoded':
+		// 			parse_str($requestBody, $formData);
+		// 			if (is_array($formData)) {
+		// 				$this->$requestKey = new \True\RequestData($requestBody);
+		// 				foreach ($formData as $k => $v) {
+		// 						$this->$requestKey->$k = $v;
+		// 				}
+		// 			}
+		// 			break;
+		// 		case 'multipart/form-data':
+		// 			// Already handled by $_POST and $_FILES
+		// 			break;
+		// 		case 'text/xml':
+		// 		case 'application/xml':
+		// 			$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
+		// 			if ($xml) {
+		// 				$this->$requestKey = new \True\RequestData($requestBody);
+		// 				$array = json_decode(json_encode((array)$xml), true);
+		// 				foreach ($array as $k => $v) {
+		// 						$this->$requestKey->$k = $v;
+		// 				}
+		// 			}
+		// 			break;
+		// 		case 'application/octet-stream':
+		// 			$this->$requestKey = new \True\RequestData($requestBody);
+		// 			$this->$requestKey->raw = $requestBody;
+		// 			break;
+		// 		default:
+		// 			$this->$requestKey = new \True\RequestData($requestBody);
+		// 			$this->$requestKey->raw = $requestBody;
+		// 			break;
+		// 	}
+
+		// 	// Build $this->all using RequestData
+		// 	$this->all = new \True\RequestData($requestBody);
+		// 	$dataSources = [
+		// 		(array) $this->get,
+		// 		(array) $this->post,
+		// 		(array) $this->put,
+		// 		(array) $this->patch,
+		// 		(array) $this->delete
+		// 	];
+		// 	foreach ($dataSources as $source) {
+		// 		foreach ($source as $k => $v) {
+		// 			$this->all->$k = $v;
+		// 		}
+		// 	}
+		// }
 	}
 
 	/**

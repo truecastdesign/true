@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3
+ * @version 1.3.1
  */
 #[\AllowDynamicProperties]
 class RequestData {
