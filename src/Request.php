@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.5.2
+ * @version v1.5.3
  * 
  * Available keys
  * method # GET,POST,etc
@@ -153,6 +153,7 @@ class Request
 					case 'application/json':
 					case 'application/ld+json':
 					case 'application/activity+json':
+					case 'application/octet-stream':
 						$parsedData = json_decode($requestBody);
 						if (json_last_error() !== JSON_ERROR_NONE) {
 							error_log("JSON parsing error: " . json_last_error_msg());
@@ -174,7 +175,6 @@ class Request
 						}
 						break;
 				
-					case 'application/octet-stream':
 					case 'text/plain':
 					default:
 						// For binary or unknown, store as raw property
