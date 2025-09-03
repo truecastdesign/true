@@ -333,24 +333,20 @@ class Router
 
 	/**
 	 * Return the full controller path
-	 * @param  string  $path                 The filename or the path inside the controller dir and the filename
+	 * @param  string  $path                 The path to the path.php file in the controller dir
 	 * @return string                        Return server root path to controller file
 	 */
 	public function controller($path)
 	{
-		if (empty($path)) {
+		if (empty($path))
 			$path = 'index.php';
-		}
 
-		if (!strstr($path, '.php')) {
-			$path = $path.'.php';
-		}
+		$path = $path.'.php';
 
-		if ($this->startsWith($path, BP)) {
+		if ($this->startsWith($path, BP))
 			return $path;
-		} else {
+		else
 			return BP. '/app/controllers/' . $path;
-		} 
 	}
 
 	/**
