@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.1.3
+ * @version 1.1.4
  */
 class Router
 {
@@ -323,7 +323,7 @@ class Router
 		
 		global $App; 
 
-		$fullControllerPath = $this->controller($controller);
+		$fullControllerPath = $this->startsWith($controller, BP)? $controller:BP. '/app/controllers/'.$controller;
 
 		if (file_exists($fullControllerPath))
 			include $fullControllerPath;
