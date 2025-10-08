@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.13.0
+ * @version 1.13.1
  */
 class App
 {
@@ -199,6 +199,10 @@ class App
 	 */
 	public function writeConfig(string $filename, $data, array $parent = array())
 	{
+		if (!is_array($data) && !is_object($data)) {
+			throw new \Exception('Data must be an array or object');
+		}
+		
 		$out = $this->writeConfigRec((array)$data);
 		
 		if (substr($filename, 0, 1 ) != "/")

@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.3.1
+ * @version 1.3.2
  */
 class AuthenticationJWT
 {
@@ -227,7 +227,7 @@ class AuthenticationJWT
 			
 			$userInfo = $this->getUserInfo();
 
-			if ($userInfo->google2FAAuth == 'on')
+			if (isset($userInfo->google2FAAuth) && $userInfo->google2FAAuth == 'on')
 				if ($payload->status != 'authenticated')
 					return false;		
 
