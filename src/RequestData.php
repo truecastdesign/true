@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.1
+ * @version 1.4.0
  */
 #[\AllowDynamicProperties]
 class RequestData {
@@ -96,6 +96,20 @@ class RequestData {
 
 	public function float(string $key): ?float {
 		return isset($this->$key) ? floatval(filter_var($this->$key, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)) : null;
+	}
+
+	public function bool(string $key): ?bool {
+		if (!isset($this->$key)) return null;
+
+		$val = strtolower(trim((string)$this->$key));
+
+		$truthy = ['1','true','yes','on'];
+		$falsy  = ['0','false','no','off',''];
+
+		if (in_array($val, $truthy, true)) return true;
+		if (in_array($val, $falsy, true)) return false;
+
+		return null; // unknown
 	}
 
 	public function dateTime(string $key): ?string {

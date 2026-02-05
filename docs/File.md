@@ -30,11 +30,44 @@ $request->files->file->imageHeight = 800;
 $request->files->file->imageQuality = 80;
 
 try {
-    $request->files->file->resize();
+    $request->files->file->process();
     $request->files->file->move($path, $fileName);
     $App->response('{"result":"success", "filename":"'.$fileName.'"}', 'json');
 } catch (Exception $e) {
     $App->response('{"result":"error", "error":"'.$e->getMessage().'"}', 'json', 422);
+}
+```
+
+### Example 4: Changing Format of an Uploaded Image
+
+```php
+$request->files->file->format = 'jpg';
+$request->files->file->imageWidth = 800;
+$request->files->file->imageHeight = 800;
+$request->files->file->imageQuality = 80;
+
+// An array specifying the crop dimensions as `[top, right, bottom, left]
+$request->files->file->crop = [0,0,20,20];
+// OR
+
+// Automatically crops the image to make it a square by removing portions from both sides of the longest dimension.
+$request->files->file->crop = 'square';
+// OR 
+
+// Crops the image from the bottom to make it a square.
+$request->files->file->crop = 'bottomSquare';
+// OR 
+
+// Crops the image from the top to make it a square.
+$request->files->file->crop = 'topSquare';
+
+
+try {
+	$request->files->file->process();
+	$request->files->file->move($path, $fileName);
+	$App->response('{"result":"success", "filename":"'.$fileName.'"}', 'json');
+} catch (Exception $e) {
+	$App->response('{"result":"error", "error":"'.$e->getMessage().'"}', 'json', 422);
 }
 ```
 
@@ -69,53 +102,10 @@ public function move(string $path, string $filename): void
 #### Throws
 - **Exception**: If the file cannot be moved.
 
-### `resize()`
-Resizes the uploaded image to the specified dimensions while maintaining the aspect ratio.
-
-#### Signature
-```php
-public function resize(): void
-```
 
 #### Usage
 Set the `imageWidth`, `imageHeight`, and `imageQuality` properties before calling this method.
 
-### `crop()`
-Crops the image based on the provided coordinates.
-
-#### Signature
-```php
-public function crop(array $coordinates): void
-```
-
-#### Parameters
-- **`$coordinates`** (array): An array specifying the crop dimensions as `[top, right, bottom, left]`.
-
-### `cropSquare()`
-Automatically crops the image to make it a square by removing portions from both sides of the longest dimension.
-
-#### Signature
-```php
-public function cropSquare(): void
-```
-
-### `cropBottomSquare()`
-Crops the image from the bottom to make it a square.
-
-#### Signature
-```php
-public function cropBottomSquare(): void
-```
-
-### `cropTopSquare()`
-Crops the image from the top to make it a square.
-
-#### Signature
-```php
-public function cropTopSquare(): void
-```
-
----
 
 ## Properties
 

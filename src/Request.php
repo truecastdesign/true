@@ -4,7 +4,7 @@ namespace True;
 /**
  * Request object
  * 
- * @version v1.5.3
+ * @version v1.5.4
  * 
  * Available keys
  * method # GET,POST,etc
@@ -84,7 +84,8 @@ class Request
 						for ($i = 0; $i < count($file['name']); $i++) {
 								$newFile = [
 									'name' => $file['name'][$i] ?? '',
-									'uploaded' => isset($file['error'][$i]) && $file['error'][$i] == 0,
+									'error' => $file['error'][$i] ?? UPLOAD_ERR_NO_FILE,
+  									'uploaded' => isset($file['error'][$i]) && $file['error'][$i] == 0,
 									'type' => $file['type'][$i] ?? '',
 									'tmp_name' => $file['tmp_name'][$i] ?? '',
 									'size' => $file['size'][$i] ?? 0
@@ -98,7 +99,8 @@ class Request
 					} else {
 						$newFile = [
 								'name' => $file['name'] ?? '',
-								'uploaded' => isset($file['error']) && $file['error'] == 0,
+								'error' => $file['error'] ?? UPLOAD_ERR_NO_FILE,
+  								'uploaded' => isset($file['error']) && $file['error'] == 0,
 								'type' => $file['type'] ?? '',
 								'tmp_name' => $file['tmp_name'] ?? '',
 								'size' => $file['size'] ?? 0
@@ -115,6 +117,7 @@ class Request
 		$contentType = explode(';', $this->contentType);
 		$cleanedContentType = trim($contentType[0] ?? 'text/html');
 		$requestBody = file_get_contents('php://input') ?: '';
+		
 
 		if ($this->method === 'POST' && in_array($cleanedContentType, ['application/x-www-form-urlencoded', 'multipart/form-data'])) {
 			$reconstructedRaw = http_build_query($_POST);
@@ -202,69 +205,6 @@ class Request
 		foreach ((array) $activeData as $k => $v) {
 			$this->all->$k = $v;
 		}
-
-		// Handle all content types
-		// if ($this->method !== 'GET' || !empty($requestBody)) {
-		// 	switch ($cleanedContentType) {
-		// 		case 'application/json':
-		// 		case 'application/ld+json':
-		// 		case 'application/activity+json':
-		// 			$decodedJson = json_decode($requestBody);  // Decodes to nested stdClass objects
-		// 			if (json_last_error() === JSON_ERROR_NONE && is_object($decodedJson)) {
-		// 				$this->$requestKey = new \True\RequestData($requestBody);
-						
-		// 				foreach ($decodedJson as $k => $v)
-		// 					$this->$requestKey->$k = $v;
-		// 			}
-		// 		break;
-		// 		case 'application/x-www-form-urlencoded':
-		// 			parse_str($requestBody, $formData);
-		// 			if (is_array($formData)) {
-		// 				$this->$requestKey = new \True\RequestData($requestBody);
-		// 				foreach ($formData as $k => $v) {
-		// 						$this->$requestKey->$k = $v;
-		// 				}
-		// 			}
-		// 			break;
-		// 		case 'multipart/form-data':
-		// 			// Already handled by $_POST and $_FILES
-		// 			break;
-		// 		case 'text/xml':
-		// 		case 'application/xml':
-		// 			$xml = simplexml_load_string($requestBody, 'SimpleXMLElement', LIBXML_NOCDATA);
-		// 			if ($xml) {
-		// 				$this->$requestKey = new \True\RequestData($requestBody);
-		// 				$array = json_decode(json_encode((array)$xml), true);
-		// 				foreach ($array as $k => $v) {
-		// 						$this->$requestKey->$k = $v;
-		// 				}
-		// 			}
-		// 			break;
-		// 		case 'application/octet-stream':
-		// 			$this->$requestKey = new \True\RequestData($requestBody);
-		// 			$this->$requestKey->raw = $requestBody;
-		// 			break;
-		// 		default:
-		// 			$this->$requestKey = new \True\RequestData($requestBody);
-		// 			$this->$requestKey->raw = $requestBody;
-		// 			break;
-		// 	}
-
-		// 	// Build $this->all using RequestData
-		// 	$this->all = new \True\RequestData($requestBody);
-		// 	$dataSources = [
-		// 		(array) $this->get,
-		// 		(array) $this->post,
-		// 		(array) $this->put,
-		// 		(array) $this->patch,
-		// 		(array) $this->delete
-		// 	];
-		// 	foreach ($dataSources as $source) {
-		// 		foreach ($source as $k => $v) {
-		// 			$this->all->$k = $v;
-		// 		}
-		// 	}
-		// }
 	}
 
 	/**
@@ -310,9 +250,13 @@ class Request
 	 * $App->request->has('GET', 'name', function($val) { return strlen($val) > 3; }); // Checks with a custom closure.
 	 */
 	public function has(string $method, $keys, $value = null): bool
-	{
+	{ 
 		$method = strtolower($method);
-		$data = $this->$method ?? null;
+		$data = $this->$method ?? null; 
+		
+		// dump($this->method, '$this->method');
+		// dump($data, '$data');
+		// dump($method, '$method');
 
 		if ($method !== 'get' && $this->method !== strtoupper($method))
 			return false;

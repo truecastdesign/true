@@ -4,10 +4,9 @@ namespace True;
 /**
  * PHP template system
  *
- *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.9.11
+ * @version 5.10.0
  */
 
 class PhpView
@@ -15,45 +14,48 @@ class PhpView
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
 	static $version = "5.9.10";
-	
+
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
-	# in the route or controller, set meta data using $App->view->meta_name. 
-	# meta_names are: title, description, css, js, cache, sort, not_live, label, not_in_nav
-	# They work the same as the inline meta data in the view file
-	# These inline meta data in the view file will override these if they are set.
+	public $definedMetaVars = ['base_path', 'assets_path', 'base_assets_path', 'layout', '404', '401', '403', 'error_page', 'cache', 'variables', 'styles', 'css', 'js', 'headHtml', 'headOutput', 'title', 'description', 'keywords', 'canonical', 'modified', 'timezone', 'footer_controls', 'head', 'body', 'admin', 'status'];
+
+	# Head systems
+	private $headMeta = [];		// deduped meta tags
+	private $headLinks = [];	// deduped link tags
+	private $headStyles = [];	// {style} blocks
+	private $headScripts = [];	// {script} blocks
+	private $headRaw = '';		// {head} blocks (raw injection)
+	private $jsonld = [];		// {jsonld} blocks
 
 	public function __construct($args = null)
 	{
 		global $App;
-		
-		if (isset($App->config->site->public_dir))
-			$publicDir = $App->config->site->public_dir;
-		else
-			$publicDir = 'public_html';
-		
+
+		if (isset($App->config->site->public_dir)) $publicDir = $App->config->site->public_dir;
+		else $publicDir = 'public_html';
+
 		# from root; end with /; ex: BP.'/app/views/'
 		$this->vars['base_path'] = (isset($args['base_path'])? $args['base_path']:BP.'/app/views/');
-		
+
 		# from root; end with /; ex: '/assets/'
 		$this->vars['assets_path'] = (isset($args['assets_path'])? $args['assets_path']:'/assets/');
-		
+
 		# from root; end with /; ex: BP.'/public_html/assets/'
-		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/'.$publicDir.'/assets/'); 
-		
+		$this->vars['base_assets_path'] = (isset($args['assets_path'])? $args['assets_path']:BP.'/'.$publicDir.'/assets/');
+
 		# from root; end with /; ex: BP.'/app/views/_layouts/base.phtml'
-		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml'); 
-		
+		$this->vars['layout'] = (isset($args['layout'])? $args['layout']:BP.'/app/views/_layouts/base.phtml');
+
 		# put in base_path dir; ex: 404-error.phtml
-		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml'); 
-		
+		$this->vars['404'] = (isset($args['404'])? $args['404']:'404-error.phtml');
+
 		# put in base_path dir; ex: 401-error.phtml
-		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml'); 
-		
-		# put in base_path dir; ex: 403-error.phtml
-		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml'); 
+		$this->vars['401'] = (isset($args['401'])? $args['401']:'401-error.phtml');
 
 		# put in base_path dir; ex: 403-error.phtml
+		$this->vars['403'] = (isset($args['403'])? $args['403']:'403-error.phtml');
+
+		# put in base_path dir; ex: error.phtml
 		$this->vars['error_page'] = (isset($args['error_page'])? $args['error_page']:'error.phtml');
 
 		# turn on or off page caching
@@ -64,19 +66,16 @@ class PhpView
 
 		# styles
 		$this->vars['styles'] = '';
+
+		# defaults
+		$this->vars['headHtml'] = '';
+		$this->vars['headOutput'] = '';
 	}
 
 	/**
 	 * Used to add global css and js files
-	 * ex: $App->view->css = 'assets/css/global.css';
-	 * $App->view->modified // set to date time modified for page
-	 * $App->view->timezone // use to set the timezone of the modified date so it will be converted to GMT
-	 * $App->view->title // use to set the title tag value
-	 * $App->view->description // use to set the meta description and og:description value
-	 * $App->view->canonical // use to set the canonical url value
 	 *
 	 * @return void
-	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
 	public function __set($key, $value)
 	{
@@ -86,15 +85,12 @@ class PhpView
 			break;
 			case 'css':
 			case 'js':
-				if (!empty($this->vars[$key])) {
-					$this->vars[$key] .= ', '.$value;
-				} else {
-					$this->vars[$key] = $value;
-				}		 
+				if (!empty($this->vars[$key])) $this->vars[$key] .= ', '.$value;
+				else $this->vars[$key] = $value;
 			break;
 			default:
 				$this->vars[$key] = $value;
-		}	
+		}
 	}
 
 	/**
@@ -112,68 +108,34 @@ class PhpView
 			break;
 			case 'css':
 			case 'js':
-				if (!empty($this->vars[$key])) {
-					$this->vars[$key] .= ', '.$value;
-				} else {
-					$this->vars[$key] = $value;
-				}		 
+				if (!empty($this->vars[$key])) $this->vars[$key] .= ', '.$value;
+				else $this->vars[$key] = $value;
 			break;
 			default:
 				$this->vars[$key] = $value;
-		}	
-	}
-
-	/**
-	 * Use to access values in the $vars array
-	 *
-	 * Example: echo $App->view->passedKey
-	 * 
-	 *
-	 * @param string $key the key you want to return the value for.
-	 * @return string
-	 * @author Daniel Baldwin
-	 *
-	 */
-	public function __get($key)
-	{
-		if (array_key_exists($key, $this->vars)) {
-			return $this->vars[$key];
-		} else {
-			return '';
 		}
 	}
 
 	/**
-	 * Allows you to clear out js and css files to cache
-	 *
-	 * @param string $key
+	 * Use to access values in the $vars array
 	 */
-	public function __unset($key) {
-		$this->vars[$key] = '';
+	public function __get($key)
+	{
+		if (array_key_exists($key, $this->vars)) return $this->vars[$key];
+		return '';
 	}
 
-	/**
-	 * Check if the variable is set
-	 *
-	 * @param string $key
-	 * @return bool
-	 */
-	public function isset(string $key)
-	{
-		return isset($this->vars[$key]);
-	}
+	public function __unset($key) { $this->vars[$key] = ''; }
 
-	public function __isset($key)
-	{
-		return isset($this->vars[$key]);
-	}
+	public function isset(string $key) { return isset($this->vars[$key]); }
+
+	public function __isset($key) { return isset($this->vars[$key]); }
 
 	public function __call(string $name, array $args)
-	{	
+	{
 		switch ($name) {
 			case 'created':
-				if (!isset($this->vars['created']))
-					$this->vars['created'] = date("Y-m-d");
+				if (!isset($this->vars['created'])) $this->vars['created'] = date("Y-m-d");
 				$DateTime = new \DateTime($this->vars['created']);
 				return $DateTime->format($args[0]);
 			break;
@@ -184,24 +146,247 @@ class PhpView
 		}
 	}
 
+	/* =======================
+		HEAD HELPERS
+	======================= */
+
+	private function resetHeadBuckets()
+	{
+		$this->headMeta = [];
+		$this->headLinks = [];
+		$this->headStyles = [];
+		$this->headScripts = [];
+		$this->headRaw = '';
+		$this->jsonld = [];
+	}
+
+	private function e($s)
+	{
+		// decode first so INI values like &amp; don't become &amp;amp;
+		return htmlspecialchars(html_entity_decode((string)$s, ENT_QUOTES, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	}
+
+	private function inferMetaAttr($key)
+	{
+		$k = strtolower($key);
+		if (strpos($k, 'og:') === 0) return 'property';
+		if (strpos($k, 'fb:') === 0) return 'property';
+		if (strpos($k, 'article:') === 0) return 'property';
+		return 'name'; // twitter:* and everything else
+	}
+
+	private function addHeadMeta($attr, $key, $content)
+	{
+		$attr = strtolower(trim($attr));
+		$k = $attr.'|'.$key;
+		$this->headMeta[$k] = ['attr'=>$attr, 'key'=>$key, 'content'=>$content];
+	}
+
+	private function addHeadMetaFromIniKey($iniKey, $value)
+	{
+		$iniKey = trim($iniKey);
+
+		// Explicit prefix: property:, name:, http-equiv:, link:
+		if (strpos($iniKey, ':') !== false) {
+			list($prefix, $rest) = explode(':', $iniKey, 2);
+			$prefix = strtolower($prefix);
+			$rest = trim($rest);
+
+			if ($prefix === 'property' || $prefix === 'name' || $prefix === 'http-equiv') {
+				$this->addHeadMeta($prefix, $rest, $value);
+				return;
+			}
+
+			if ($prefix === 'link') {
+				$this->addHeadLink($rest, $value);
+				return;
+			}
+		}
+
+		// Fallback: normal <meta name="...">
+		$this->addHeadMeta('name', $iniKey, $value);
+	}
+
+	private function addHeadLink($rel, $href)
+	{
+		$rel = strtolower(trim($rel));
+		$href = trim($href);
+		$k = $rel.'|'.$href;
+		$this->headLinks[$k] = ['rel'=>$rel, 'href'=>$href];
+	}
+
+	private function addHeadStyle($css)
+	{
+		$css = trim((string)$css);
+		if ($css) $this->headStyles[] = $css;
+	}
+
+	private function addHeadScript($js)
+	{
+		$js = trim((string)$js);
+		if ($js) $this->headScripts[] = $js;
+	}
+
+	private function addHeadRaw($html)
+	{
+		$html = trim((string)$html);
+		if (!$html) return;
+		$this->headRaw .= ($this->headRaw ? "\n" : '').$html;
+	}
+
+	private function addJsonLdBlock($json)
+	{
+		$json = trim((string)$json);
+		if ($json) $this->jsonld[] = $json;
+	}
+
+	public function hasHeadMeta($attr, $key) { return isset($this->headMeta[strtolower($attr).'|'.$key]); }
+
+	public function getHeadMeta($attr, $key)
+	{
+		$k = strtolower($attr).'|'.$key;
+		return isset($this->headMeta[$k]) ? $this->headMeta[$k]['content'] : null;
+	}
+
+	private function applyDefaults()
+	{
+		// og:type default
+		if (!$this->hasHeadMeta('property', 'og:type'))
+			$this->addHeadMeta('property', 'og:type', 'website');
+
+		// og:description from description
+		if ($this->isset('description') && !$this->hasHeadMeta('property', 'og:description'))
+			$this->addHeadMeta('property', 'og:description', $this->vars['description']);
+
+		// Resolve URL for og:url
+		if (!$this->hasHeadMeta('property', 'og:url')) {
+
+			if ($this->isset('canonical')) {
+				$url = $this->vars['canonical'];
+			} else {
+				$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+				$scheme = $https ? 'https' : 'http';
+				$host = $_SERVER['HTTP_HOST'] ?? '';
+				$uri = $_SERVER['REQUEST_URI'] ?? '/';
+				$url = $scheme.'://'.$host.$uri;
+			}
+
+			$this->addHeadMeta('property', 'og:url', $url);
+		}
+	}
+
+	private function resolvePlaceholders($value)
+	{
+		global $App;
+
+		if (!is_string($value) || strpos($value, '{') === false) return $value;
+
+		$url = isset($App->request->url->full) ? $App->request->url->full : '';
+		$canonical = $this->isset('canonical') ? $this->vars['canonical'] : $url;
+		$image = $this->getHeadMeta('property', 'og:image');
+		if (!$image && $this->isset('og:image')) $image = $this->vars['og:image'];
+
+		$map = [
+			'{title}' => $this->vars['title'] ?? '',
+			'{description}' => $this->vars['description'] ?? '',
+			'{url}' => $url,
+			'{canonical}' => $canonical,
+			'{image}' => $image ?? ''
+		];
+
+		return strtr($value, $map);
+	}
+
+	private function buildHeadOutput()
+	{
+		global $App;
+
+		$lines = [];
+
+		// title
+		if ($this->isset('title')) {
+			$title = $this->resolvePlaceholders($this->vars['title']);
+			$lines[] = "<title>".$this->e($title)."</title>";
+		}
+
+		// description
+		if ($this->isset('description')) {
+			$desc = $this->resolvePlaceholders($this->vars['description']);
+			$lines[] = "<meta name=\"description\" content=\"".$this->e($desc)."\">";
+		}
+
+		// keywords
+		if ($this->isset('keywords')) {
+			$kw = $this->resolvePlaceholders($this->vars['keywords']);
+			$lines[] = "<meta name=\"keywords\" content=\"".$this->e($kw)."\">";
+		}
+
+		// canonical: explicit > accessed url
+		if ($this->isset('canonical')) {
+			$this->addHeadLink('canonical', $this->vars['canonical']);
+		} elseif (isset($App->request->url->full)) {
+			$this->addHeadLink('canonical', $App->request->url->full);
+		}
+
+		// links
+		foreach ($this->headLinks as $l) {
+			$href = $this->resolvePlaceholders($l['href']);
+			$lines[] = "<link rel=\"".$this->e($l['rel'])."\" href=\"".$this->e($href)."\">";
+		}
+
+		// meta tags
+		foreach ($this->headMeta as $m) {
+			$content = $this->resolvePlaceholders($m['content']);
+			$lines[] = "<meta ".$this->e($m['attr'])."=\"".$this->e($m['key'])."\" content=\"".$this->e($content)."\">";
+		}
+
+		// inline styles
+		if (!empty($this->headStyles)) {
+			$lines[] =
+				"<style>\n\t".
+				implode("\n\n\t", $this->headStyles).
+				"\n\t</style>";
+		}
+
+		// JSON-LD
+		foreach ($this->jsonld as $json) {
+			$json = $this->resolvePlaceholders($json);
+			$lines[] =
+				"<script type=\"application/ld+json\">\n\t".
+				$json.
+				"\n\t</script>";
+		}
+
+		// inline scripts
+		if (!empty($this->headScripts)) {
+			$lines[] =
+				"<script>\n\t".
+				implode("\n\n\t", $this->headScripts).
+				"\n\t</script>";
+		}
+
+		// raw head HTML
+		if ($this->headRaw) {
+			$lines[] = $this->resolvePlaceholders(rtrim($this->headRaw));
+		}
+
+		// legacy headHtml (kept last on purpose)
+		if ($this->isset('headHtml')) {
+			$hh = trim($this->vars['headHtml']);
+			if ($hh) $lines[] = $this->resolvePlaceholders($hh);
+		}
+
+		// one tab indentation, no double-tab bugs
+		return "\t".implode("\n\t", $lines)."\n";
+	}
+
 	/**
 	 * Render views. Use .phtml file
-	 * Format files with meta data at the top with {endmeta} before the html starts
-	 * Meta data example (use ini format): 
-	 * title="The text that goes in the title tag" -> access using $_metaTitle
-	 * description="The text that goes in the meta description tag" -> access using $_metaDescription
-	 * css="/assets/css/site.css, /vendor/company/project/assets/css/style.css, /app/assets/css/style2.css" -> access using $_css
-	 * js="/assets/js/site.js, https://cdn.domain.com/script.js, /vendor/company/project/assets/js/file.js, /app/assets/js/file.js"  -> access using $_js
-	 * cache=false # use for pages you don't want the browser to cache
-	 * headHtml="<script type="module" src="path/to/file.js"></script>" -> access using $_headHTML
-	 * indexing = Off # use to turn off page indexing with noindex meta tag
 	 *
 	 * @param String $taView - path and filename.phtml to render
 	 * @param Array $variables - variables to pass to view file
 	 * @param Array $renderConfig - ['noPartials'=>true]
-	 * noPartials is used to disable the {partial:file.phtml} string replacement incase is causes problems with your code.
 	 * @return void
-	 * @author Daniel Baldwin - danb@truecastdesign.com
 	 **/
 	public function render(string $taView, array $variables = [], $renderConfig = [])
 	{
@@ -211,40 +396,38 @@ class PhpView
 		$searchTags = [];
 		$httpCodesHeaders = ['301'=>'Moved Permanently', '302'=>'Found', '303'=>'See Other', '304'=>'Not Modified', '307'=>'Temporary Redirect', '308'=>'Permanent Redirect', '400'=>'Bad Request', '401'=>'Unauthorized', '403'=>'Forbidden', '404'=>'Not Found', '405'=>'Method Not Allowed'];
 
+		$this->resetHeadBuckets();
+
 		# check for error page
 		if (is_int($taView)) {
 			header("HTTP/2 ".$taView." ".$httpCodesHeaders[$taView]);
 			$this->metaData['_metaTitle'] = $httpCodesHeaders[$taView];
-			if (key_exists($taView, $this->vars)) {
-				$taView = $this->vars['base_path'].$this->vars[$taView];
-			} else {
+			if (key_exists($taView, $this->vars)) $taView = $this->vars['base_path'].$this->vars[$taView];
+			else {
 				$variables['errorCode'] = $taView;
 				$variables['errorText'] = $httpCodesHeaders[$taView];
 				$taView = $this->vars['base_path'].$this->vars['error_page'];
-			}			
+			}
 		}
 
 		if (!is_array($variables))
-			throw new \Exception("variables passed needs to be inside an array. ['varname'=>'value'].");
+			throw new \Exception("variables passed needs to be inside an array. ['varname'=>'value].");
 
-		if (empty($taView) or $taView == '.phtml')
-			$taView = 'index.phtml';
-		
+		if (empty($taView) or $taView == '.phtml') $taView = 'index.phtml';
+
 		$fullPath = ($taView[0] == '/')? true:false;
 
 		header('X-Frame-Options: SAMEORIGIN');
-		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on')
-			header('Strict-Transport-Security: max-age=31536000');
-		
+		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') header('Strict-Transport-Security: max-age=31536000');
+
 		header('X-Content-Type-Options: nosniff');
 		header('Referrer-Policy: same-origin');
 		header('X-Frame-Options: sameorigin');
 		header("Feature-Policy: vibrate 'self'; microphone 'self'; camera 'self'; notifications 'self'; gyroscope 'self'");
 		header_remove("X-Powered-By");
-				
-		if (isset($this->vars['base_path']) and !$fullPath)
-			$taView = $this->vars['base_path'].$taView;
-		
+
+		if (isset($this->vars['base_path']) and !$fullPath) $taView = $this->vars['base_path'].$taView;
+
 		if (file_exists($taView) === false) {
 			header("HTTP/2 404 Not Found");
 			$this->metaData['_metaTitle'] = "File Not Found";
@@ -253,7 +436,7 @@ class PhpView
 
 		$this->vars['headHtml'] = '';
 
-		ob_start(); 
+		ob_start();
 			global $App;
 			extract($this->vars['variables']);
 			extract($variables);
@@ -263,66 +446,98 @@ class PhpView
 
 		# find the break point for the meta data
 		$fileParts = explode("{endmeta}", $fileContents, 2);
-		
+
 		# if no {endmeta}, just use the file contents
 		if (count($fileParts) == 1) {
 			$fileParts[1] = $fileContents;
 			unset($fileParts[0]);
 		}
-		
-		if (isset($fileParts[0]) and isset($fileParts[1])) {  # does the template have meta data
-			$metaDataArray = parse_ini_string($fileParts[0]);
-			
-			foreach ($metaDataArray as $metaKey=>$metaValue) {
-				if ($metaKey == 'cache')
-					$metaValue = ($metaValue == 1) ? true:false;
 
-				$this->addVar($metaKey, $metaValue);
+		$metaDataArray = null;
+
+		if (isset($fileParts[0]) && isset($fileParts[1])) {
+
+			$header = $fileParts[0];
+
+			// {head}...{/head} (multiple)
+			if (preg_match_all('/\{head\}(.*?)\{\/head\}/s', $header, $mm)) {
+				foreach ($mm[1] as $block) $this->addHeadRaw($block);
+				$header = preg_replace('/\{head\}(.*?)\{\/head\}/s', '', $header);
+			}
+
+			// {jsonld}...{/jsonld} (multiple)
+			if (preg_match_all('/\{jsonld\}(.*?)\{\/jsonld\}/s', $header, $mm)) {
+				foreach ($mm[1] as $block) $this->addJsonLdBlock($block);
+				$header = preg_replace('/\{jsonld\}(.*?)\{\/jsonld\}/s', '', $header);
+			}
+
+			// {style}...{/style} (multiple)
+			if (preg_match_all('/\{style\}(.*?)\{\/style\}/s', $header, $mm)) {
+				foreach ($mm[1] as $block) $this->addHeadStyle($block);
+				$header = preg_replace('/\{style\}(.*?)\{\/style\}/s', '', $header);
+			}
+
+			// {script}...{/script} (multiple)
+			if (preg_match_all('/\{script\}(.*?)\{\/script\}/s', $header, $mm)) {
+				foreach ($mm[1] as $block) $this->addHeadScript($block);
+				$header = preg_replace('/\{script\}(.*?)\{\/script\}/s', '', $header);
+			}
+
+			$metaDataArray = parse_ini_string($header);
+
+			if (is_array($metaDataArray))
+			foreach ($metaDataArray as $metaKey=>$metaValue) {
+
+				if ($metaKey == 'cache') $metaValue = ($metaValue == 1) ? true:false;
+
+				// Standard vars (stored as vars)
+				if ($metaKey == 'title' || $metaKey == 'description' || $metaKey == 'keywords' || $metaKey == 'canonical' || $metaKey == 'modified' || $metaKey == 'timezone' || $metaKey == 'headHtml' || $metaKey == 'indexing' || $metaKey == 'cache' || $metaKey == 'css' || $metaKey == 'js' || $metaKey == 'status' || $metaKey == 'footer_controls') {
+					$this->addVar($metaKey, $metaValue);
+					continue;
+				}
+
+				// Everything else becomes a generated <meta ...> tag
+				$this->addHeadMetaFromIniKey($metaKey, $metaValue);
 			}
 		}
-		
+
 		if (isset($metaDataArray) && is_array($metaDataArray) and array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
 			$this->vars['headHtml'] .= "\n".'<meta name="robots" content="noindex">'."\n";
 
 		// List of time zones: https://www.w3schools.com/PHP/php_ref_timezones.asp
 		if (isset($this->vars['modified'])) {
-			
+
 			if (isset($this->vars['timezone'])) {
 				$modifiedDate = new \DateTime($this->vars['modified'], new \DateTimeZone($this->vars['timezone']));
 				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$modifiedDate = new \DateTime($this->vars['modified']);
-			}		
+			} else $modifiedDate = new \DateTime($this->vars['modified']);
 
 			$this->vars['modifiedRaw'] = $this->vars['modified'];
 			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
 		} else {
 			if (isset($this->vars['timezone'])) {
 				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)), new \DateTimeZone($this->vars['timezone']));
-				
 				$modifiedDate->setTimezone(new \DateTimeZone('Europe/London'));
-			} else {
-				$modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
-			}
+			} else $modifiedDate = new \DateTime(date("Y-m-d H:i:s",filemtime($taView)));
 
 			$this->vars['modifiedRaw'] = date("Y-m-d H:i:s",filemtime($taView));
 			$this->vars['modified'] = $modifiedDate->format("D, d M Y H:i:s")." GMT";
-			
+
 			header("Last-Modified: " . $modifiedDate->format("D, d M Y H:i:s")." GMT");
 		}
 
-		$this->processMetaData(); # just process global meta data	
-		
+		$this->processMetaData(); # just process global meta data
+
 		# if status in view is set but not to published it will return 404 page.
 		if (isset($this->vars['status']) and $this->vars['status'] != 'published') {
 			$this->vars['status'] = null;
 			$this->render($this->vars['base_path'].$this->vars['404'], $variables);
 		}
-		
+
 		# insert template into page if needed
 		if (is_array($renderConfig) and !isset($renderConfig['noPartials'])) {
 			preg_match_all("/\{partial:(.*)}/", $fileContents, $outputArray);
-			
+
 			if (is_array($outputArray[1])) {
 				foreach ($outputArray[1] as $partial)
 				{
@@ -331,18 +546,17 @@ class PhpView
 						extract($variables);
 						extract($this->metaData);
 						if (isset($partial[0]) && $partial[0] === '/') {
-							if (!include(BP.$partial)) 
+							if (!include(BP.$partial))
 								throw new \Exception("Included partial not found: ".BP.$partial);
 						} else {
-							if (!include(BP.'/app/views/_partials/'.$partial)) 
+							if (!include(BP.'/app/views/_partials/'.$partial))
 								throw new \Exception("Included partial not found: ".BP.'/app/views/_partials/'.$partial);
 						}
-											
 					$replaceTags[] = ob_get_clean();
 					$searchTags[] = "{partial:".$partial."}";
 				}
 			}
-			
+
 			if (is_array($outputArray[0])) {
 				foreach ($outputArray[0] as $tag) {
 					$replaceTags[] = '';
@@ -350,7 +564,7 @@ class PhpView
 				}
 			}
 		}
-		
+
 		if (isset($outputArray) and is_array($outputArray[0])) {
 			foreach ($outputArray[0] as $tag) {
 				$replaceTags[] = '';
@@ -361,27 +575,22 @@ class PhpView
 		# find and replace special tags
 		if (isset($fileParts[1]))
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
-		
+
 		if (!$this->vars['cache']) {
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("-4 hours")).' GMT');
 			header_remove("Pragma");
 			header("Pragma: no-cache");
 			header_remove("Cache-Control");
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-		} else { 
+		} else {
 			header_remove("Pragma");
 			header('Cache-Control: max-age=3600, public'); # 1 hour
 			header('Expires: '.gmdate("D, d M Y H:i:s", strtotime("+1 hour")).' GMT');
 		}
 
-		if (isset($fileParts[1]))
-			$this->metaData['_html'] = $fileParts[1];
-		
-		elseif (isset($fileParts[0]))
-			$this->metaData['_html'] = $fileParts[0];
-		
-		else
-			$this->metaData['_html'] = '';
+		if (isset($fileParts[1])) $this->metaData['_html'] = $fileParts[1];
+		elseif (isset($fileParts[0])) $this->metaData['_html'] = $fileParts[0];
+		else $this->metaData['_html'] = '';
 
 		$this->vars['html'] = $this->metaData['_html'];
 
@@ -407,30 +616,26 @@ class PhpView
 
 		// Step 3: Check if the ETag matches the client's request
 		if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === "\"$etag\"") {
-			// ETag matches; send a 304 Not Modified response
 			header("HTTP/1.1 304 Not Modified");
 			exit;
 		}
-		
+
+		// Apply automatic defaults (og:*, urls, etc.)
+		$this->applyDefaults();
+
+		// Build head output now that everything is known (meta, moved styles, etc.)
+		$this->vars['headOutput'] = $this->buildHeadOutput();
+
 		if (isset($this->vars['layout'])) {
 			require_once $this->vars['layout'];
-			
 			die();
-		}	
+		}
 		else {
 			echo $this->metaData['_html'];
 			die();
 		}
 	}
 
-	/**
-	 * Simple way to display error pages
-	 * 
-	 * Be sure to have the error page view files created based on the names listed at the top of this script.
-	 *
-	 * @param integer $type
-	 * @return void
-	 */
 	public function error(int $type)
 	{
 		switch ($type) {
@@ -448,24 +653,18 @@ class PhpView
 				header("HTTP/2 401 Forbidden");
 				$this->render($this->vars['403']);
 			break;
-		}		
+		}
 	}
 
 	private function processMetaData($metaData = null)
-	{	
-		if ($metaData == null)
-			$metaData = [];
-
-		//global $App;
+	{
+		if ($metaData == null) $metaData = [];
 
 		$css = [];
 		$js = [];
 
-		if (isset($this->vars['css']))
-			$css = explode(',',trim($this->vars['css']));
-		
-		if (isset($this->vars['js']))
-			$js = explode(',',trim($this->vars['js']));
+		if (isset($this->vars['css'])) $css = explode(',',trim($this->vars['css']));
+		if (isset($this->vars['js'])) $js = explode(',',trim($this->vars['js']));
 
 		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
 		$protocol = $_SERVER['REQUEST_SCHEME'] ?? $https ? 'https':'http';
@@ -482,16 +681,13 @@ class PhpView
 			}
 		}
 
-		if (isset($metaData['css']))
-			$css = array_merge($css, explode(',',trim($metaData['css'])));
-
-		if (isset($metaData['js']))
-			$js = array_merge($js, explode(',',trim($metaData['js'])));
+		if (isset($metaData['css'])) $css = array_merge($css, explode(',',trim($metaData['css'])));
+		if (isset($metaData['js'])) $js = array_merge($js, explode(',',trim($metaData['js'])));
 
 		$css = $this->processAssetsPaths($css);
 		$js = $this->processAssetsPaths($js);
-		
-		if (is_array($js)) {	
+
+		if (is_array($js)) {
 			$this->metaData['_js'] = $this->buildJSFile($js);
 			$this->vars['jsoutput'] = $this->metaData['_js'];
 		}
@@ -505,159 +701,110 @@ class PhpView
 	private function processAssetsPaths($list)
 	{
 		$assetList = [];
-		
+
 		foreach($list as $value)
 		{
-			if (isset($value))
-				$value = trim($value);
+			if (isset($value)) $value = trim($value);
 
-			if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app')
-			{
-				$assetList[] = BP.rtrim($value, '/');
-			}
-			elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false)
-			{
-				$assetList[] = $_SERVER['DOCUMENT_ROOT'].$value;
-			}
-			elseif(!empty($value))
-			{
-				$assetList[] = $value;
-			}
+			if(strtok($value, '/') == 'vendor' OR strtok($value, '/') == 'app') $assetList[] = BP.rtrim($value, '/');
+			elseif( strpos($value, '://') === false and !empty($value) and strpos($value, '*') === false) $assetList[] = $_SERVER['DOCUMENT_ROOT'].$value;
+			elseif(!empty($value)) $assetList[] = $value;
 		}
 
 		return $assetList;
 	}
 
-	/**
-	 * process css files and return html to include them
-	 *
-	 * @param array $cssList list of css files with paths
-	 * @return string html
-	 * @author Daniel Baldwin - danb@truecastdesign.com
-	 **/
 	private function buildCSSFile(array $cssList)
 	{
 		$firstPartFilename = $this->generateFileHash($cssList);
-	
+
 		$cssCachePath = $this->vars['assets_path'].'css/cache/';
 		$cssCacheRootPath = $this->vars['base_assets_path'].'css/cache/';
-				
+
 		if (!empty($firstPartFilename))
 		{
 			$cacheFilename = $firstPartFilename.'.css';
-		
+
 			if (file_exists($cssCachePath.$cacheFilename))
 				return '<link rel="stylesheet" href="'.$cssCachePath.$cacheFilename.'">'."\n";
-			
+
 			else {
-				# make one instance of SCSS parser
-				if (in_array('.scss', $cssList) !== false)
-					$TAscss = new \True\SCSS;
-			
+				if (in_array('.scss', $cssList) !== false) $TAscss = new \True\SCSS;
+
 				$cachedStr = '';
-			
+
 				foreach ($cssList as $file)
 				{
-					# check to make sure it is a css file
-					if (substr($file, strrpos($file, '.') + 1) == 'css') { 
-						if (file_exists($file))
-							$cachedStr .= file_get_contents($file);
+					if (substr($file, strrpos($file, '.') + 1) == 'css') {
+						if (file_exists($file)) $cachedStr .= file_get_contents($file);
 					}
-			
 					elseif (substr($file, strrpos($file, '.') + 1) == 'scss')
 					{
-						if (file_exists($file))
-							$cachedStr .= $TAscss->compile( file_get_contents($file) );
+						if (file_exists($file)) $cachedStr .= $TAscss->compile( file_get_contents($file) );
 					}
-				} # end foreach
-			
-				# minify css string
+				}
+
 				$cachedStrMin = \True\CSSMini::process($cachedStr);
-				
-				# put contents in file with hashed filename
+
 				file_put_contents($cssCacheRootPath.$cacheFilename, $cachedStrMin);
-			
+
 				return '<link rel="stylesheet" href="'.$cssCachePath.$cacheFilename.'">'."\n";
 			}
-		}	
+		}
 	}
 
-	/**
-	 * build js compressed file
-	 *
-	 * @param array $jsFiles list of js files
-	 * @return string html for including js files
-	 * @author Daniel Baldwin - danb@truecastdesign.com
-	 **/
 	private function buildJSFile(array $jsFiles)
 	{
 		$cacheFilename = $this->generateFileHash($jsFiles);
 
 		$jsCachePath = $this->vars['assets_path'].'js/cache/'.$cacheFilename.'.js';
 		$jsCacheRootPath = $this->vars['base_assets_path'].'js/cache/'.$cacheFilename.'.js';
-		
+
 		$jsScripts = '';
 		$cachedJSStr = '';
 
-		# check if only non local files or combined files have already been cached
 		if ($cacheFilename === false OR file_exists($jsCacheRootPath)) {
 			if (is_array($jsFiles))
 			foreach ($jsFiles as $file) {
 				if (strpos($file, '://') !== false OR strpos($file, '*') !== false) {
 					$file = str_replace('*', '', $file);
-
 					$jsScripts .= '<script src="'.$file.'"></script>'."\n";
-				}	
-			}
-
-			if ($cacheFilename !== false)
-				$jsScripts .= '<script src="'.$jsCachePath.'"></script>'."\n";
-			
-			return $jsScripts;
-		}
-		# generate new js files and include them
-		else {
-			foreach ($jsFiles as $file) {
-			
-				# check to make sure it is a js file
-				if (substr($file, strrpos($file, '.') + 1) == 'js')
-				{
-					if (strpos($file, '://') !== false OR strpos($file, '*') !== false)
-						$cdnFiles[] = $file;
-					else
-						if(file_exists($file))
-							$cachedJSStr .= file_get_contents($file)."\n";
 				}
 			}
-			
-			# check and add in external or non cached js files
-			
+
+			if ($cacheFilename !== false) $jsScripts .= '<script src="'.$jsCachePath.'"></script>'."\n";
+
+			return $jsScripts;
+		}
+		else {
+			foreach ($jsFiles as $file) {
+
+				if (substr($file, strrpos($file, '.') + 1) == 'js')
+				{
+					if (strpos($file, '://') !== false OR strpos($file, '*') !== false) $cdnFiles[] = $file;
+					else if(file_exists($file)) $cachedJSStr .= file_get_contents($file)."\n";
+				}
+			}
+
 			if (isset($cdnFiles))
 			foreach($cdnFiles as $file) {
 				$file = str_replace('*', '', $file);
-
 				$jsScripts .= '<script src="'.$file.'"></script>'."\n";
 			}
-			
-			# check to make sure there is some js code to put in file, else there probably was noting but CDN files.
+
 			if (!empty($cachedJSStr)) {
-				# minify js string
 				$cachedJSStrMin = \True\JSMin::process($cachedJSStr);
-			
-				# check for failed minity
-				if(empty($cachedJSStrMin) and !empty($cachedJSStr))
-					$cachedJSStrMin = $cachedJSStr;
-			
-				# put contents in file with hashed filename
+
+				if(empty($cachedJSStrMin) and !empty($cachedJSStr)) $cachedJSStrMin = $cachedJSStr;
+
 				file_put_contents($jsCacheRootPath, $cachedJSStrMin);
-				
-				# add to site header
+
 				$jsScripts .= '<script src="'.$jsCachePath.'"></script>'."\n";
 			}
-		} 
+		}
 		return $jsScripts;
 	}
-	
+
 	/**
 	 * get the contents of the files, combine them, and return the hash
 	 *

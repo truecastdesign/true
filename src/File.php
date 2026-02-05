@@ -6,7 +6,7 @@ namespace True;
  *
  * @package Truecast
  * @author Daniel Baldwin
- * @version 1.2.6
+ * @version 1.3.0
  * 
  * Use:
  * 
@@ -38,6 +38,7 @@ class File
 	var $imageHeight = null;
 	var $imageWidth = null;
 	var $imageQuality = 90;
+	var $format = '';
 	var $cropTop = 0;
 	var $cropRight = 0;
 	var $cropBottom = 0;
@@ -59,8 +60,10 @@ class File
 	{
 		# check for multiple files on one field
 		$this->file = $file;
-		$this->file['uploaded'] = ($file['error']==0? true:false);
-		if ($this->file['uploaded'] and !empty($this->file['tmp_name'])) {
+
+		$this->file['uploaded'] = isset($file['error']) && $file['error'] === UPLOAD_ERR_OK &&!empty($file['tmp_name']) && is_readable($file['tmp_name']) && filesize($file['tmp_name']) > 0;
+
+		if ($this->file['uploaded']) {
 			$this->file['ext'] = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 			$this->file['mime'] = mime_content_type($file['tmp_name']);
 		}
@@ -87,111 +90,220 @@ class File
 	{
 		$path = rtrim($path, '/') . '/';
 		
-		if (!@copy($this->file['tmp_name'], $path.$filename))
-			throw new \Exception("The file could not be moved to the right folder!");
+		try {
+			if (!copy($this->file['tmp_name'], $path . $filename))
+				throw new \Exception("The file could not be moved to the right folder!");
+		} catch (\Throwable $e) {
+			throw new \Exception("File move failed: " . $e->getMessage(), 0, $e);
+		}
 	}
 
 	/**
-	 * Resizes and optionally crops the uploaded image.
+	 * Resizes and optionally converts or crops the uploaded image.
 	 *
 	 * This method performs the following operations:
 	 * - Retrieves the source image dimensions using `getimagesize()`.
-	 * - Calculates the target dimensions based on provided width and height properties.
-	 *   If neither is provided, the source dimensions are used. If only one is provided,
-	 *   the other is computed to maintain the aspect ratio.
-	 * - Loads the image from its temporary location using the appropriate GD function,
-	 *   depending on the MIME type (supports JPEG, GIF, PNG, and WebP).
-	 * - Applies cropping offsets if any of the crop properties (`cropTop`, `cropRight`, 
-	 *   `cropBottom`, `cropLeft`) are set, adjusting both the source dimensions and target dimensions.
-	 * - Creates a new true color image and, for PNG and GIF files, preserves transparency.
-	 * - Resamples the source image into the target image using `imagecopyresampled()`.
-	 * - Saves the resized image back to the original temporary file location.
-	 * - Resets the crop and dimension properties to their default values after processing.
+	 * - Calculates the target dimensions based on provided width and height.
+	 *   If neither is provided, the original dimensions are used.
+	 *   If only one is provided, the other is calculated to preserve aspect ratio.
+	 * - Loads the image using the appropriate GD function (JPEG, PNG, GIF, WebP, AVIF).
+	 * - Applies cropping offsets if any of the crop properties (`cropTop`, `cropRight`, `cropBottom`, `cropLeft`) are set.
+	 * - Creates a new true-color image canvas, preserving transparency for PNG/GIF sources.
+	 * - Resamples the source image into the new dimensions.
+	 * - Optionally converts the image to a new format if `$outputFormat` is provided (`'jpg'`, `'png'`, `'webp'`).
+	 * - Saves the resulting image back to the temporary file location.
+	 * - Resets the crop and dimension properties after processing.
 	 *
+	 * Example:
+	 * ```php
+	 * $request->files->photo->imageWidth = 800;
+	 * $request->files->photo->resize('jpg'); // resize and convert to JPEG
+	 * ```
+	 *
+	 * @param string|null $outputFormat Optional. Target format to convert to ('jpg', 'png', 'webp'). If omitted, the original format is preserved.
 	 * @return void
 	 *
-	 * @throws \Exception If the image file type is unsupported or if the image cannot be processed.
+	 * @throws \Exception If the image type is unsupported or cannot be processed.
 	 */
 	public function resize()
 	{
-		list($sourceXSize, $sourceYSize) = getimagesize($this->file['tmp_name']);
-
-		if ($sourceXSize > 0 && $sourceYSize > 0)
-			$sourceRatio = $sourceXSize / $sourceYSize;
-		else
-			$sourceRatio = 1;
-
-		if (is_null($this->imageWidth) and is_null($this->imageHeight)) {
-			$this->imageHeight = $sourceYSize;
-			$this->imageWidth = $sourceXSize;
-		}
-
-		if (is_int($this->imageWidth) and is_null($this->imageHeight))
-			$this->imageHeight = $this->imageWidth / $sourceRatio;
-
-		elseif (is_int($this->imageHeight) and is_null($this->imageWidth))
-			$this->imageWidth = $this->imageHeight / $sourceRatio;
-
+		list($srcW, $srcH) = getimagesize($this->file['tmp_name']);
 		$image = $this->file['tmp_name'];
 
 		switch ($this->file['mime']) {
-			case 'image/jpeg': $sourceImage = imagecreatefromjpeg($image); break;
-			case 'image/gif': $sourceImage = imagecreatefromgif($image); break;
-			case 'image/webp': $sourceImage = imagecreatefromwebp($image); break;
-			case 'image/png': $sourceImage = imagecreatefrompng($image); break;
-			case 'image/avif': $sourceImage = imagecreatefromavif($image); break;
+			case 'image/jpeg': $src = imagecreatefromjpeg($image); break;
+			case 'image/gif': $src = imagecreatefromgif($image); break;
+			case 'image/webp': $src = imagecreatefromwebp($image); break;
+			case 'image/png': $src = imagecreatefrompng($image); break;
+			case 'image/avif': $src = imagecreatefromavif($image); break;
+			default: throw new \Exception('Unsupported source mime: '.$this->file['mime']);
 		}
 
-		$cropX = 0;
-		$cropY = 0;
+		// --- crop box (effective source area)
+		$cropX = max(0, (int)$this->cropLeft);
+		$cropY = max(0, (int)$this->cropTop);
+		$effW = max(1, (int)($srcW - $this->cropLeft - $this->cropRight));
+		$effH = max(1, (int)($srcH - $this->cropTop  - $this->cropBottom));
 
-		if ($this->cropTop > 0) {
-			$cropY = $this->cropTop;
-			$this->imageHeight -= $this->cropTop;
+		// --- target size
+		if ($this->imageWidth === null && $this->imageHeight === null) { $dstW=$effW; $dstH=$effH; }
+		elseif ($this->imageWidth !== null && $this->imageHeight === null) { $dstW=(int)round($this->imageWidth); $dstH=(int)round($dstW*($effH/$effW)); }
+		elseif ($this->imageHeight !== null && $this->imageWidth === null) { $dstH=(int)round($this->imageHeight); $dstW=(int)round($dstH*($effW/$effH)); }
+		else { $dstW=(int)round($this->imageWidth); $dstH=(int)round($this->imageHeight); }
+
+		$dstW = max(1,$dstW); $dstH = max(1,$dstH);
+
+		$dst = imagecreatetruecolor($dstW, $dstH);
+		if (in_array($this->file['mime'], ['image/gif','image/png'])) {
+			imagecolortransparent($dst, imagecolorallocatealpha($dst, 0,0,0,127));
+			imagealphablending($dst, false);
+			imagesavealpha($dst, true);
 		}
 
-		if ($this->cropRight > 0) {
-			$sourceXSize -= $this->cropRight;
-			$this->imageWidth -= $this->cropRight;
-		}
+		imagecopyresampled($dst, $src, 0,0, $cropX,$cropY, $dstW,$dstH, $effW,$effH);
 
-		if ($this->cropBottom > 0) {
-			$sourceYSize -= $this->cropBottom;
-			$this->imageHeight -= $this->cropBottom;
-		}
-			
-		if ($this->cropLeft > 0) {
-			$cropX = $this->cropLeft;
-			$this->imageWidth -= $this->cropLeft;
-		}
+		// --- choose encoder based on $this->format (fallback: keep source mime)
+		$fmt = strtolower(trim($this->format));
 
-		$targetImage = imagecreatetruecolor($this->imageWidth, $this->imageHeight);
-
-		if ($this->file['mime'] == "image/gif" or $this->file['mime'] == "image/png") {
-			imagecolortransparent($targetImage, imagecolorallocatealpha($targetImage, 0, 0, 0, 127));
-			imagealphablending($targetImage, false);
-			imagesavealpha($targetImage, true);
-		}		
-		
-		if ($this->cropTop > 0 or $this->cropRight > 0 or $this->cropBottom > 0 or $this->cropLeft > 0) {
-			imagecopyresampled($targetImage, $sourceImage, 0,0,$cropX,$cropY, $this->imageWidth, $this->imageHeight, $sourceXSize - $cropX, $sourceYSize - $cropY);
+		if ($fmt !== '') {
+			switch ($fmt) {
+				case 'jpg':
+				case 'jpeg':
+					$flat = imagecreatetruecolor($dstW,$dstH);
+					$white = imagecolorallocate($flat,255,255,255);
+					imagefill($flat,0,0,$white);
+					imagecopy($flat,$dst,0,0,0,0,$dstW,$dstH);
+					if (!imagejpeg($flat,$image,$this->imageQuality)) throw new \Exception('JPEG save failed');
+					imagedestroy($flat);
+					$this->file['ext']='jpg'; $this->file['mime']='image/jpeg';
+					break;
+				case 'png':
+					imagesavealpha($dst,true);
+					$c = 9 - (int)round($this->imageQuality/10); if ($c<0) $c=0; if ($c>9) $c=9;
+					if (!imagepng($dst,$image,$c)) throw new \Exception('PNG save failed');
+					$this->file['ext']='png'; $this->file['mime']='image/png';
+					break;
+				case 'webp':
+					imagesavealpha($dst,true);
+					if (!imagewebp($dst,$image,$this->imageQuality)) throw new \Exception('WebP save failed');
+					$this->file['ext']='webp'; $this->file['mime']='image/webp';
+					break;
+				case 'avif':
+					if (!function_exists('imageavif')) throw new \Exception('AVIF not supported by GD');
+					imagesavealpha($dst,true);
+					if (!imageavif($dst,$image,$this->imageQuality)) throw new \Exception('AVIF save failed');
+					$this->file['ext']='avif'; $this->file['mime']='image/avif';
+					break;
+				case 'gif':
+					if (!imagegif($dst,$image)) throw new \Exception('GIF save failed');
+					$this->file['ext']='gif'; $this->file['mime']='image/gif';
+					break;
+				default: throw new \Exception('Unsupported output format: '.$fmt);
+			}
 		} else {
-			imagecopyresampled($targetImage, $sourceImage, 0,0,0,0, $this->imageWidth, $this->imageHeight, $sourceXSize, $sourceYSize);
-		}		
-	
-		switch ($this->file['mime']) {
-			case 'image/jpeg': imagejpeg($targetImage, $image); break;
-			case 'image/gif': imagegif($targetImage, $image); break;
-			case 'image/webp': imagewebp($targetImage, $image); break;
-			case 'image/png': imagepng($targetImage, $image); break;
+			switch ($this->file['mime']) {
+				case 'image/jpeg': if (!imagejpeg($dst,$image,$this->imageQuality)) throw new \Exception('JPEG save failed'); break;
+				case 'image/gif':  if (!imagegif($dst,$image)) throw new \Exception('GIF save failed'); break;
+				case 'image/webp': if (!imagewebp($dst,$image,$this->imageQuality)) throw new \Exception('WebP save failed'); break;
+				case 'image/png':
+					imagesavealpha($dst,true);
+					$c = 9 - (int)round($this->imageQuality/10); if ($c<0) $c=0; if ($c>9) $c=9;
+					if (!imagepng($dst,$image,$c)) throw new \Exception('PNG save failed');
+					break;
+				case 'image/avif':
+					if (!function_exists('imageavif')) throw new \Exception('AVIF not supported by GD');
+					imagesavealpha($dst,true);
+					if (!imageavif($dst,$image,$this->imageQuality)) throw new \Exception('AVIF save failed');
+					break;
+				default: throw new \Exception('Saving in original mime failed/unsupported');
+			}
 		}
 
-		$this->cropTop = 0;
-		$this->cropRight = 0;
-		$this->cropBottom = 0;
-		$this->cropLeft = 0;
-		$this->imageWidth = null;
-		$this->imageHeight = null; 
+		imagedestroy($src);
+		imagedestroy($dst);
+
+		$this->cropTop = $this->cropRight = $this->cropBottom = $this->cropLeft = 0;
+		$this->imageWidth = $this->imageHeight = null;
+	}
+
+	/**
+	 * Converts the uploaded image to a specified format without resizing.
+	 *
+	 * This method re-encodes the temporary image file into a new format.
+	 * If the image is already in the requested format, it will simply re-save it.
+	 * Transparency in PNG or GIF images is flattened to white when converting to JPEG.
+	 *
+	 * Supported formats: `'jpg'`, `'jpeg'`, `'png'`, `'webp'`.
+	 *
+	 * Example:
+	 * ```php
+	 * $request->files->photo->convert('jpg');  // convert PNG to JPG
+	 * $request->files->photo->convert('webp'); // re-encode image to WebP
+	 * ```
+	 *
+	 * @param string $format Target format ('jpg', 'jpeg', 'png', or 'webp').
+	 * @param resource|null $sourceImage Optional. Existing GD image resource to convert from.
+	 *                                   If omitted, the method loads the current file automatically.
+	 * @return void
+	 *
+	 * @throws \Exception If the format is unsupported or conversion fails.
+	 */
+	public function convert(string $format, $gdImage): void
+	{
+		$format = strtolower(trim($format)) ?: 'jpg';
+		$path   = $this->file['tmp_name'];
+
+		$w = imagesx($gdImage);
+		$h = imagesy($gdImage);
+
+		switch ($format) {
+			case 'jpg':
+			case 'jpeg':
+				// Flatten transparency onto white for JPEG
+				$flat = imagecreatetruecolor($w, $h);
+				$white = imagecolorallocate($flat, 255, 255, 255);
+				imagefilledrectangle($flat, 0, 0, $w, $h, $white);
+				imagecopy($flat, $gdImage, 0, 0, 0, 0, $w, $h);
+
+				if (!imagejpeg($flat, $path, $this->imageQuality)) throw new \Exception('Failed to write JPEG');
+				imagedestroy($flat);
+
+				$this->file['ext']  = 'jpg';
+				$this->file['mime'] = 'image/jpeg';
+				break;
+
+			case 'png':
+				// Preserve alpha for PNG
+				imagealphablending($gdImage, false);
+				imagesavealpha($gdImage, true);
+				// Convert quality (0–100) to PNG compression (0–9); higher compression is slower.
+				$compression = max(0, min(9, 9 - (int)round($this->imageQuality / 10)));
+				if (!imagepng($gdImage, $path, $compression)) throw new \Exception('Failed to write PNG');
+
+				$this->file['ext']  = 'png';
+				$this->file['mime'] = 'image/png';
+				break;
+
+			case 'webp':
+				if (!function_exists('imagewebp')) throw new \Exception('WEBP not supported by GD');
+				if (!imagewebp($gdImage, $path, $this->imageQuality)) throw new \Exception('Failed to write WEBP');
+
+				$this->file['ext']  = 'webp';
+				$this->file['mime'] = 'image/webp';
+				break;
+
+			case 'avif':
+				if (!function_exists('imageavif')) throw new \Exception('AVIF not supported by GD');
+				// PHP/GD AVIF quality is typically 0–100 as well
+				if (!imageavif($gdImage, $path, $this->imageQuality)) throw new \Exception('Failed to write AVIF');
+
+				$this->file['ext']  = 'avif';
+				$this->file['mime'] = 'image/avif';
+				break;
+
+			default:
+				throw new \Exception('Unsupported output format: ' . $format);
+		}
 	}
 
 	/**
