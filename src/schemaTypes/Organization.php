@@ -88,11 +88,13 @@ class Organization
 			switch ($key) {
 				case 'address':
 					$data['address'] = ['@type'=>'PostalAddress'];
-					
+
 					$addressKeys = ['street'=>'streetAddress', 'city'=>'addressLocality', 'state'=>'addressRegion', 'postalcode'=>'postalCode', 'country'=>'addressCountry'];
 
-					foreach ($data['address'] as $key => $value)
-						$date['address'][$addressKeys[$key]] = $value;
+					foreach ($value as $k => $v) {
+						if (isset($addressKeys[$k]) && !empty($v))
+							$data['address'][$addressKeys[$k]] = $v;
+					}
 				break;
 
 				case 'aggregateRating':

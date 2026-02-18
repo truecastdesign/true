@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.3.7
+ * @version 1.3.8
  */
 class SEO
 {
@@ -48,6 +48,12 @@ class SEO
 			break;
 			case 'product':
 				$Schema = new \True\schemaTypes\Products;
+			break;
+			case 'localbusiness':
+				$Schema = new \True\schemaTypes\LocalBusiness;
+			break;
+			case 'itemlist':
+				$Schema = new \True\schemaTypes\ItemList;
 			break;
 		}
 

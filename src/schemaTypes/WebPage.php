@@ -48,7 +48,7 @@ class WebPage
 	{
 		$data = [
 			"@context" => "http://schema.org",
-			"@type"=>'WebSite'
+			"@type"=>'WebPage'
 		];
 
 		$info = (array) $info;
