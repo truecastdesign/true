@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.13.1
+ * @version 1.13.2
  */
 class App
 {
@@ -345,6 +345,17 @@ class App
 	 *
 	 * @return void
 	 */
+	/**
+	 * Trigger a PHP error with a given severity level.
+	 *
+	 * Accepts a string or an array of error messages and triggers a user-level error
+	 * using PHP's trigger_error(). Severity can be 'notice', 'warning', or 'error'.
+	 *
+	 * @param string|array $message  The error message(s) to report. Arrays will be joined with newlines.
+	 * @param string       $level    The severity level: 'notice', 'warning', or 'error'. Default is 'warning'.
+	 *
+	 * @return void
+	 */
 	public function error($message, $level = 'warning')
 	{
 		// Normalize message to a string
@@ -418,43 +429,48 @@ class App
 	  **/
 	public function displayErrors($params = [])
 	{
-		$noticeBox = isset($params['noticeBox']) ? $params['noticeBox'] : 'displayNoticeBox';
-		$debugError = isset($params['debugError']) ? $params['debugError'] : 'displayDebugError';
-		$userError = isset($params['userError']) ? $params['userError'] : 'displayUserError';
-		$userWarning = isset($params['userWarning']) ? $params['userWarning'] : 'displayUserWarning';
-		$userNotice = isset($params['userNotice']) ? $params['userNotice'] : 'displayUserNotice';
+		$id = $params['noticeBox'] ?? 'displayNoticeBox';
 
 		$errors = [
-			'userNotice' => isset($GLOBALS['errorUserNotice']) ? $GLOBALS['errorUserNotice'] : '',
-			'userWarning' => isset($GLOBALS['errorUserWarning']) ? $GLOBALS['errorUserWarning'] : '',
-			'userError' => isset($GLOBALS['errorUserError']) ? $GLOBALS['errorUserError'] : '',
-			'pageErrors' => isset($GLOBALS['pageErrors']) ? $GLOBALS['pageErrors'] : ''
+			'userError'   => $GLOBALS['errorUserError']   ?? '',
+			'userWarning' => $GLOBALS['errorUserWarning']  ?? '',
+			'userNotice'  => $GLOBALS['errorUserNotice']   ?? '',
+			'pageErrors'  => $GLOBALS['pageErrors']        ?? '',
 		];
 
-		extract($params);
-	
-		$displayClasses = [
-			'userNotice' => $userNotice,
-			'userWarning' => $userWarning,
-			'userError' => $userError,
-			'pageErrors' => $debugError
+		$list = [];
+		foreach (['userError','userWarning','userNotice','pageErrors'] as $k)
+			if (!empty($errors[$k])) $list[] = ['key'=>$k,'msg'=>$errors[$k]];
+
+		if (empty($list)) return;
+
+		$p = $list[0];
+
+		$types = [
+			'userNotice'  => ['bg'=>'#74AD53','img'=>'/assets/trueadmin/images/messageNotice.png'],
+			'userWarning' => ['bg'=>'#F5A623','img'=>'/assets/trueadmin/images/messageWarning.png'],
+			'userError'   => ['bg'=>'#D90000','img'=>'/assets/trueadmin/images/messageError.png'],
+			'pageErrors'  => ['bg'=>'#D90000','img'=>'/assets/trueadmin/images/messageError.png'],
 		];
-	
-		foreach ($errors as $key => $message) {
-			if (!empty($message)) {
-				echo '<div id="' . $noticeBox . '"><div id="' . $displayClasses[$key] . '"><div>' . $message . '</div><button id="displayUserCloseButton"></button></div></div>';
-			}
-		}
-	
-		if (!empty($errors['pageErrors']) || !empty($errors['userError']) || !empty($errors['userWarning']) || !empty($errors['userNotice'])) {
-			echo "<script>
-				document.querySelectorAll('#displayUserCloseButton').forEach(button => {
-					button.onclick = function() {
-						this.closest('#{$noticeBox}').remove();
-					}
-				});
-			</script>";
-		}
+		$t  = $types[$p['key']] ?? $types['userWarning'];
+		$jid = json_encode($id);
+
+		echo "<style>#{$id}::backdrop{background:rgba(0,0,0,.4);}</style>";
+		echo "<dialog id=\"{$id}\" style=\"border:none;padding:0;border-radius:12px;width:min(480px,calc(100vw - 32px));overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);\">";
+
+		echo "<div style=\"background:{$t['bg']};height:100px;display:flex;align-items:center;justify-content:center;\">";
+		echo "<img src=\"{$t['img']}\" alt=\"\" style=\"width:72px;height:72px;\">";
+		echo "</div>";
+
+		echo "<div style=\"background:#fff; padding:28px 24px 32px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;\">";
+		echo "<p style=\"margin:0 0 28px;font-size:20px;line-height:1.4;color:#1c1c1e;\">{$p['msg']}</p>";
+		for ($i = 1; $i < count($list); $i++)
+			echo "<p style=\"margin:0 0 10px;font-size:14px;color:#555;\">{$list[$i]['msg']}</p>";
+		echo "<div style=\"text-align:center;\"><button onclick=\"document.getElementById('{$id}').close()\" style=\"padding:14px 60px;border:none;border-radius:10px;background:#007AFF;color:#fff;font-size:20px;font-weight:600;cursor:pointer;font-family:inherit; outline:none\">OK</button></div>";
+		echo "</div>";
+
+		echo "</dialog>";
+		echo "<script>(() => { const d=document.getElementById({$jid}); if(d&&typeof d.showModal==='function') d.showModal(); })();</script>";
 	}
 
 	/**

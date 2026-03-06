@@ -2,7 +2,7 @@
 namespace True;
 
 /**
- * @version 1.4.0
+ * @version 1.4.1
  */
 #[\AllowDynamicProperties]
 class RequestData {
@@ -20,11 +20,9 @@ class RequestData {
 
 	public function __set($name, $value)
 	{
-		// Sanitize property name to remove null bytes and invalid characters
-		$sanitizedName = preg_replace('/[^a-zA-Z0-9_]/', '', $name);
-		if ($sanitizedName && strpos($sanitizedName, "\0") === false) {
-			$this->$sanitizedName = $value;
-		}
+		if (strpos($name, "\0") !== false) 
+			return;
+		$this->$name = $value;
 	}
 
 	public function object()
