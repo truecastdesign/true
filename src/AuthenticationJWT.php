@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.3.3
+ * @version 1.3.4
  */
 class AuthenticationJWT
 {
@@ -65,6 +65,12 @@ class AuthenticationJWT
 		if (is_null($this->config->encryptionPasswordFile))
 			throw new \Exception("The encryptionPasswordFile with the trueadminAuth.ini file path is missing!");
 
+		// If pemkeyPassword is missing, existing keys are unusable — delete them to force regeneration
+		if (is_null($this->config->pemkeyPassword)) {
+			@unlink($this->config->privateKeyFile);
+			@unlink($this->config->publicKeyFile);
+		}
+
 		// If encryption keys are not available, create them and save password
 		if (!file_exists($this->config->privateKeyFile) or !file_exists($this->config->publicKeyFile)) {
 			$conf = [
@@ -111,8 +117,6 @@ class AuthenticationJWT
 			$this->logout();
 		}
 			
-		if (is_null($this->config->pemkeyPassword))
-			throw new \Exception("The private encription key password is missing. Pass it in the 'pemkeyPassword' array key in the config paramater of the construct.");
 	}
 
 	public function login(string $username, string $password): bool
