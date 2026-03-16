@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 1.13.2
+ * @version 2.0
  */
 class App
 {
@@ -362,21 +362,15 @@ class App
 		if (is_array($message)) 
 			$message = implode("<br>", $message);
 
-		// Map string level to PHP error constant
 		switch (strtolower($level)) {
-			case 'notice':
-				$phpLevel = E_USER_NOTICE;
-				break;
 			case 'error':
-				$phpLevel = E_USER_ERROR;
-				break;
+				throw new UserError($message);
+			case 'notice':
+				throw new UserNotice($message);
 			case 'warning':
 			default:
-				$phpLevel = E_USER_WARNING;
-				break;
+				throw new UserWarning($message);
 		}
-
-		trigger_error($message, $phpLevel);
 	}
 
 	// trigger_error("Error Message", E_USER_WARNING);
@@ -418,6 +412,32 @@ class App
 			default:
 				if ($GLOBALS['debug']) $GLOBALS['pageErrors'].= !empty($GLOBALS['pageErrors']) ? $lb.$errNo.' '.$errStr.$debugError : $errStr.$debugError;
 		}
+	}
+
+	public static function exceptionHandler($e)
+	{
+		$debugError = $e->getMessage() . ': FILE:' . $e->getFile() . ' LINE:' . $e->getLine();
+		$lb = '<br>';
+
+		if ($e instanceof UserWarning) {
+			$GLOBALS['errorUserWarning'] .= !empty($GLOBALS['errorUserWarning']) ? $lb.$e->getMessage() : $e->getMessage();
+			return;
+		}
+
+		if ($e instanceof UserNotice) {
+			$GLOBALS['errorUserNotice'] .= !empty($GLOBALS['errorUserNotice']) ? $lb.$e->getMessage() : $e->getMessage();
+			return;
+		}
+
+		if ($e instanceof UserError) {
+			$GLOBALS['errorUserError'] .= !empty($GLOBALS['errorUserError']) ? $lb.$e->getMessage() : $e->getMessage();
+			return;
+		}
+
+		$GLOBALS['errorUserError'] .= !empty($GLOBALS['errorUserError']) ? $lb.$e->getMessage() : $e->getMessage();
+
+		if ($GLOBALS['debug'])
+			$GLOBALS['pageErrors'] .= !empty($GLOBALS['pageErrors']) ? $lb.$lb.$debugError : $debugError;
 	}
 
 	/**
