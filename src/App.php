@@ -40,10 +40,8 @@ class App
 		if (!isset($GLOBALS['debug'])) 
 			$GLOBALS['debug'] = false;
 		
-		set_error_handler(array(
-			$this,
-			'errorHandler'
-		));
+		set_error_handler([$this, 'errorHandler']);
+		set_exception_handler([$this, 'exceptionHandler']);
 	}
 
 	/**
@@ -552,3 +550,7 @@ class App
 		return 'no';
 	}
 }
+
+class UserWarning extends \RuntimeException {}
+class UserNotice extends \RuntimeException {}
+class UserError extends \RuntimeException {}
