@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 2.0
+ * @version 2.1
  */
 class App
 {
@@ -357,17 +357,22 @@ class App
 	public function error($message, $level = 'warning')
 	{
 		// Normalize message to a string
-		if (is_array($message)) 
+		if (is_array($message))
 			$message = implode("<br>", $message);
+
+		$lb = '<br>';
 
 		switch (strtolower($level)) {
 			case 'error':
-				throw new UserError($message);
+				$GLOBALS['errorUserError'] .= !empty($GLOBALS['errorUserError']) ? $lb.$message : $message;
+			break;
 			case 'notice':
-				throw new UserNotice($message);
+				$GLOBALS['errorUserNotice'] .= !empty($GLOBALS['errorUserNotice']) ? $lb.$message : $message;
+			break;
 			case 'warning':
 			default:
-				throw new UserWarning($message);
+				$GLOBALS['errorUserWarning'] .= !empty($GLOBALS['errorUserWarning']) ? $lb.$message : $message;
+			break;
 		}
 	}
 
