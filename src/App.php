@@ -8,7 +8,7 @@ use Exception;
  *
  * @package True Framework
  * @author Daniel Baldwin
- * @version 2.1
+ * @version 2.0
  */
 class App
 {
@@ -357,28 +357,31 @@ class App
 	public function error($message, $level = 'warning')
 	{
 		// Normalize message to a string
-		if (is_array($message))
+		if (is_array($message)) 
 			$message = implode("<br>", $message);
-
-		$lb = '<br>';
 
 		switch (strtolower($level)) {
 			case 'error':
-				$GLOBALS['errorUserError'] .= !empty($GLOBALS['errorUserError']) ? $lb.$message : $message;
-			break;
+				$GLOBALS['errorUserError'] .= $message;
+				break;
 			case 'notice':
-				$GLOBALS['errorUserNotice'] .= !empty($GLOBALS['errorUserNotice']) ? $lb.$message : $message;
-			break;
+				$GLOBALS['errorUserNotice'] .= $message;
+				break;
 			case 'warning':
 			default:
-				$GLOBALS['errorUserWarning'] .= !empty($GLOBALS['errorUserWarning']) ? $lb.$message : $message;
-			break;
+				$GLOBALS['errorUserWarning'] .= $message;
+				break;
 		}
 	}
 
 	// trigger_error("Error Message", E_USER_WARNING);
 	public static function errorHandler($errNo, $errStr, $errFile, $errLine, $errContext='')
 	{
+		// Suppress @-silenced errors and include/require failures
+		if (error_reporting() === 0) return true;
+		
+		if (stripos($errStr, 'include(') !== false || stripos($errStr, 'Failed to open stream') !== false) return true;
+
 		$debugError = $errStr . ': FILE:' . $errFile . ' LINE:' . $errLine;
 
 		$lb = '<br>';
@@ -440,7 +443,7 @@ class App
 		$GLOBALS['errorUserError'] .= !empty($GLOBALS['errorUserError']) ? $lb.$e->getMessage() : $e->getMessage();
 
 		if ($GLOBALS['debug'])
-			$GLOBALS['pageErrors'] .= !empty($GLOBALS['pageErrors']) ? $lb.$lb.$debugError : $debugError;
+			echo !empty($GLOBALS['pageErrors']) ? $lb.$lb.$debugError : $debugError;
 	}
 
 	/**
