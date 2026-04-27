@@ -4,7 +4,7 @@ True - Base classes for True framework
 
 These classes form the basic functionality of True framework.
 
-Requires PHP 8.0 or newer.
+Requires PHP 8.2 or newer.
 
 Install
 -------
