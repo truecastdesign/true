@@ -5,7 +5,7 @@ namespace True;
 /**
  * Send email class using SMTP Authentication
  * 
- * @version 1.6.5
+ * @version 1.7
  * 
 $mail = new \True\Email('domain.com', 587, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
@@ -513,9 +513,17 @@ class Email
 			}			
 		}		
 
-		$this->logs['AUTH'] = 'AUTH '.strtoupper($this->authMethod).': '.$this->sendCommand('AUTH '.strtoupper($this->authMethod));
-		$this->logs['USERNAME'] = $this->sendCommand(base64_encode($this->username));
-		$this->logs['PASSWORD'] = $this->sendCommand(base64_encode($this->password));
+		$method = strtolower((string) $this->authMethod);
+		$this->logs['AUTH'] = 'AUTH '.strtoupper($method).': '.$this->sendCommand('AUTH '.strtoupper($method));
+
+		if ($method === 'plain') {
+			// RFC 4616: a single base64("\0username\0password") line follows the 334.
+			$this->logs['CREDENTIALS'] = $this->sendCommand(base64_encode("\0".$this->username."\0".$this->password));
+		} else {
+			// LOGIN (and lib's existing default): two-step username then password.
+			$this->logs['USERNAME'] = $this->sendCommand(base64_encode($this->username));
+			$this->logs['PASSWORD'] = $this->sendCommand(base64_encode($this->password));
+		}
 		
 		$this->logs['MAIL_FROM'] = $this->sendCommand('MAIL FROM: <' . $this->from[0] . '>');
 
@@ -634,22 +642,12 @@ class Email
 	*/
 	protected function getServer()
 	{
-		// if (is_null($this->protocol) and $this->protocol != 'none') {
-		// 	switch ($this->port) {
-		// 		case 25:
-		// 			$this->protocol = 'tcp';
-		// 		break;
-		// 		case 587:
-		// 		case 465:
-		// 		case 2525:
-		// 			$this->protocol = 'ssl';
-		// 		break;
-		// 		default:
-		// 			$this->protocol = 'tcp';
-		// 	}
-		// }
-		
-		#return ($this->protocol != 'none') ? $this->protocol . '://' . $this->server : $this->server;
+		// SMTPS (port 465 / protocol=ssl) requires a TLS-wrapped socket from the start.
+		// fsockopen needs the ssl:// transport prefix; otherwise the server never sends
+		// a banner and every subsequent SMTP command silently fails.
+		if (!empty($this->isSSL)) {
+			return 'ssl://' . $this->server;
+		}
 		return $this->server;
 	}
 
