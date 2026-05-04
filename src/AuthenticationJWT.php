@@ -153,16 +153,20 @@ class AuthenticationJWT
 		if (($userInfo->google2FAAuth ?? 'off') == 'on') {
 			$partialToken = $this->JWT->encode([
 				'userId' => $userInfo->id,
-				'status' => '2fa_pending'
+				'status' => '2fa_pending',
+				'iat'    => time(),
+				'exp'    => time() + $this->config->ttl,
 			], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
-	
+
 			$this->setCookie($partialToken); // Set a cookie with the partial JWT
 			return false; // Indicate that 2FA is needed
 		}
-	
+
 		$fullToken = $this->JWT->encode([
 			'userId' => $userInfo->id,
-			'status' => 'authenticated'
+			'status' => 'authenticated',
+			'iat'    => time(),
+			'exp'    => time() + $this->config->ttl,
 		], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
 	
 		$this->loginAttempts->set(["lockout_time"=>0, "count"=>0]); // Reset login attempts after successful login
@@ -181,7 +185,9 @@ class AuthenticationJWT
 			// Generate a new JWT for fully authenticated session
 			$fullToken = $this->JWT->encode([
 				'userId' => $userId,
-				'status' => 'authenticated'
+				'status' => 'authenticated',
+				'iat'    => time(),
+				'exp'    => time() + $this->config->ttl,
 			], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
 
 			$this->setCookie($fullToken);
@@ -192,11 +198,47 @@ class AuthenticationJWT
 	}
 
 	/**
+	 * Issue an authenticated JWT cookie for $userId without checking a password.
+	 * Use only after another factor has cryptographically authenticated the
+	 * user (e.g. WebAuthn assertion, magic-link click). Does not run 2FA;
+	 * pass-through assumes the upstream factor is sufficient.
+	 */
+	public function loginUser(int $userId): bool
+	{
+		$row = (array) $this->user->get($userId, ['fields' => 'id']);
+		if (empty($row['id']) || (int) $row['id'] !== $userId) return false;
+
+		$this->userId = $userId;
+
+		$fullToken = $this->JWT->encode([
+			'userId' => $userId,
+			'status' => 'authenticated',
+			'iat'    => time(),
+			'exp'    => time() + $this->config->ttl,
+		], $this->config->privateKeyFile, $this->config->pemkeyPassword, $this->config->alg);
+
+		$this->setCookie($fullToken);
+
+		if ($this->loginAttempts) {
+			$this->loginAttempts->set(['lockout_time' => 0, 'count' => 0]);
+		}
+
+		return true;
+	}
+
+	/**
 	 * When your checking googleAuth2fAStep() and want to return to login form
 	 */
 	public function cancel2FA()
 	{
-		setcookie($this->config->cookie, '', -3600, '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);	
+		setcookie($this->config->cookie, '', [
+			'expires'  => time() - 3600,
+			'path'     => '/',
+			'domain'   => $this->getDomain(),
+			'secure'   => $this->config->https,
+			'httponly' => $this->config->httpOnly,
+			'samesite' => 'Strict',
+		]);
 	}
 
 	public function logout(): void
@@ -219,17 +261,23 @@ class AuthenticationJWT
 		
 		try {
 			$payload = $this->JWT->decode($jwtToken, $this->config->publicKeyFile, [$this->config->alg]);
-			
+
+			// Require an explicit expiration claim — JWT::decode itself only
+			// checks `exp` when present, which would let pre-fix tokens (issued
+			// without `exp`) live forever.
+			if (!isset($payload->exp) || (int) $payload->exp < time())
+				return false;
+
 			if (!is_numeric($payload->userId))
 				return false;
-			
+
 			$this->userId = $payload->userId;
-			
+
 			$userInfo = $this->getUserInfo();
 
 			if (($userInfo->google2FAAuth ?? 'off') == 'on')
 				if ($payload->status != 'authenticated')
-					return false;		
+					return false;
 
 			$this->setCookie($jwtToken);
 
@@ -353,11 +401,22 @@ class AuthenticationJWT
 	}
 	
 	private function setCookie(string $jwtToken, $time=null): void
-	{  
-		if (is_null($time)) 
+	{
+		if (is_null($time))
 			$time = $this->config->ttl;
-	
-		setcookie($this->config->cookie, $jwtToken, intval(time()+$time), '/', $this->getDomain(), $this->config->https, $this->config->httpOnly);
+
+		// Use the PHP 7.3+ array signature so we can set SameSite. Strict
+		// keeps the JWT from being sent on any cross-site nav (clicked links
+		// from email, OAuth bounces, etc.) — the auth cookie should only flow
+		// when the user is actively on the admin host.
+		setcookie($this->config->cookie, $jwtToken, [
+			'expires'  => intval(time() + $time),
+			'path'     => '/',
+			'domain'   => $this->getDomain(),
+			'secure'   => $this->config->https,
+			'httponly' => $this->config->httpOnly,
+			'samesite' => 'Strict',
+		]);
 	}
 
 	// Dynamically fetch the list of supported algorithms

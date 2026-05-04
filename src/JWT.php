@@ -17,7 +17,6 @@ class JWT
 	public static $leeway = 0;                      // allows for nbf, iat or exp clock skew
 	public static $timestamp = null;                // allow timestamp to be specified for testing. Defaults to php (time) if null.
 	public static $supported_algs = [
-		'SHA1' => ['openssl', OPENSSL_ALGO_SHA1],
 		'RS256' => ['openssl', OPENSSL_ALGO_SHA256],
 		'RS384' => ['openssl', OPENSSL_ALGO_SHA384],
 		'RS512' => ['openssl', OPENSSL_ALGO_SHA512]
@@ -36,8 +35,7 @@ class JWT
 	*/
 	public function decode(string $token, string $key, array $allowed_algs = array())
 	{
-		if ((!isset($timestamp)) || (is_null($timestamp)))
-			$timestamp = time();
+		$timestamp = static::$timestamp ?? time();
 		
 		if (empty($key))
 			throw new \Exception('Invalid or missing key.');
@@ -160,7 +158,7 @@ class JWT
 		switch($function) {
 			case 'openssl':
 					$signature = '';
-					$keyObj = openssl_get_privatekey("file://$key", $keyPassword);
+					$keyObj = openssl_pkey_get_private("file://$key", $keyPassword);
 					$success = openssl_sign($msg, $signature, $keyObj, $algorithm);
 					
 					if (!$success)
@@ -190,7 +188,7 @@ class JWT
 		
 		switch($function) {
 			case 'openssl':
-				$publicKeyObj = openssl_get_publickey("file://$key");
+				$publicKeyObj = openssl_pkey_get_public("file://$key");
 				$success = openssl_verify($msg, $signature, $publicKeyObj, $algorithm);
 				
 				if ($success === -1)
