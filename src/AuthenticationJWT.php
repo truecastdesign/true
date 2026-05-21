@@ -132,7 +132,10 @@ class AuthenticationJWT
 		$password = trim(strip_tags($password));
 
 		if ($this->loginAttempts->lockout_time > time()) {
-			throw new \Exception("Sorry, please wait ".\True\Functions::timeToStr($this->loginAttempts->lockout_time - time())." before logging in again.");
+			// timeToStr expects two timestamps; passing a raw delta as $from
+			// makes the function compute abs(delta - time()) and report a
+			// 50+ year wait. Pass time() and the lockout-until timestamp.
+			throw new \Exception("Sorry, please wait ".\True\Functions::timeToStr(time(), $this->loginAttempts->lockout_time)." before logging in again.");
 		}
 
 		# check if they have any attempts left
@@ -243,7 +246,23 @@ class AuthenticationJWT
 
 	public function logout(): void
 	{
-		$this->setCookie('', -3600);
+		// Wipe the cookie value AND set a far-past expiry. Same path / domain
+		// / secure / httponly / samesite as how the cookie was issued, so the
+		// browser actually accepts the deletion.
+		setcookie($this->config->cookie, '', [
+			'expires'  => time() - 86400,
+			'path'     => '/',
+			'domain'   => $this->getDomain(),
+			'secure'   => $this->config->https,
+			'httponly' => $this->config->httpOnly,
+			'samesite' => 'Strict',
+		]);
+		// Belt-and-suspenders: also clear from $_COOKIE so any code running
+		// after this in the same request can't think the user is still in.
+		unset($_COOKIE[$this->config->cookie]);
+		// Stop intermediaries (and the browser) from caching the redirect.
+		header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+		header('Pragma: no-cache');
 	}
 
 	/**
