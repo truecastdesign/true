@@ -197,20 +197,7 @@ $App->router->group('/login', function () use ($App) {
 
 ### Behaviour
 
-When the limit is exceeded the middleware emits a `429 Too Many Requests` with `Retry-After` and `X-RateLimit-*` headers, then calls `exit` — the request terminates immediately, so no later route (including any catch-all at the bottom of `routes.php`) gets a chance to run. If the resolved `Limit` has a `->response()` callback, that runs instead of the default 429 body, then `exit`. On a successful pass it increments the counter and adds the same `X-RateLimit-*` headers to the response.
-
-### Rate-limiting a URL handled by a catch-all
-
-Sometimes you want to throttle a path (e.g. an admin login at `/trueadmin/login`) that isn't registered as an explicit route — it's served by a catch-all like `$App->router->any('/*:path', ...)` at the bottom of `routes.php`. You can still apply the middleware by registering an **empty** group whose pattern matches just that URL:
-
-```php
-$App->router->group('/trueadmin/login', function () use ($App) {
-    // Intentionally empty — the middleware fires when this URL is hit,
-    // then the catch-all below handles the actual response.
-}, [ new \True\Middleware\RateLimitMiddleware('trueadmin-login', 5, 60) ]);
-```
-
-The group's middleware fires on every matching request regardless of whether the callable registers routes. If the limit is exceeded the middleware `exit`s with a 429; otherwise control falls through to whatever route handler does the real work.
+When the limit is exceeded the middleware returns `false`, which tells the Router to skip the group, emits a `429 Too Many Requests`, and sets `Retry-After` and `X-RateLimit-*` headers. On a successful pass it increments the counter and adds the same `X-RateLimit-*` headers to the response. If the resolved `Limit` has a `->response()` callback, that runs instead of the default 429 body.
 
 ### Stacking with other middleware
 

@@ -17,7 +17,7 @@ class PhpView
 
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
-	public $definedMetaVars = ['base_path', 'assets_path', 'base_assets_path', 'layout', '404', '401', '403', 'error_page', 'cache', 'variables', 'styles', 'css', 'js', 'headHtml', 'headOutput', 'title', 'description', 'keywords', 'canonical', 'modified', 'timezone', 'footer_controls', 'head', 'body', 'admin', 'status'];
+	public $definedMetaVars = ['base_path', 'assets_path', 'base_assets_path', 'layout', '404', '401', '403', 'error_page', 'cache', 'variables', 'styles', 'css', 'js', 'headHtml', 'headOutput', 'title', 'description', 'keywords', 'canonical', 'modified', 'created', 'timezone', 'footer_controls', 'head', 'body', 'admin', 'status'];
 
 	# Head systems
 	private $headMeta = [];		// deduped meta tags
@@ -26,6 +26,10 @@ class PhpView
 	private $headScripts = [];	// {script} blocks
 	private $headRaw = '';		// {head} blocks (raw injection)
 	private $jsonld = [];		// {jsonld} blocks
+
+	# Breadcrumbs
+	private $breadcrumbs = [];				// [['name'=>..., 'url'=>...], ...] from breadcrumb[] meta
+	private $breadcrumbsDelimiter = '&gt;';	// HTML separator between crumbs; set via setBreadcrumbsDelimiter()
 
 	public function __construct($args = null)
 	{
@@ -158,6 +162,7 @@ class PhpView
 		$this->headScripts = [];
 		$this->headRaw = '';
 		$this->jsonld = [];
+		$this->breadcrumbs = [];
 	}
 
 	private function e($s)
@@ -238,6 +243,157 @@ class PhpView
 	{
 		$json = trim((string)$json);
 		if ($json) $this->jsonld[] = $json;
+	}
+
+	/* =======================
+		BREADCRUMBS
+
+		Define crumbs in a view's meta header with the INI array + pipe format:
+
+			breadcrumb[] = "Home|/"
+			breadcrumb[] = "Therapy Services|/services"
+			breadcrumb[] = "Anxiety"        ; no pipe = current page (rendered as plain text)
+
+		Output the visible trail anywhere in the body with {breadcrumbs}. The matching
+		BreadcrumbList JSON-LD is generated automatically and injected into the <head>.
+		Set the HTML separator once (e.g. in init.php):
+
+			$App->view->setBreadcrumbsDelimiter('&gt;');
+	======================= */
+
+	/**
+	 * Set the separator placed between breadcrumb links in the {breadcrumbs} HTML output.
+	 *
+	 * @param string $delimiter e.g. '&gt;' or '/'
+	 * @return self
+	 */
+	public function setBreadcrumbsDelimiter($delimiter)
+	{
+		$this->breadcrumbsDelimiter = (string)$delimiter;
+		return $this;
+	}
+
+	/**
+	 * Parse breadcrumb meta entries ("Name|/url") into the internal crumb list.
+	 *
+	 * @param string|array $value single entry or array of "Name|/url" strings
+	 * @return void
+	 */
+	private function setBreadcrumbsFromMeta($value)
+	{
+		$list = is_array($value) ? $value : [$value];
+		$crumbs = [];
+
+		foreach ($list as $entry) {
+			$entry = trim((string)$entry);
+			if ($entry === '') continue;
+
+			$parts = explode('|', $entry, 2);
+			$crumbs[] = [
+				'name' => trim($parts[0]),
+				'url'  => isset($parts[1]) ? trim($parts[1]) : ''
+			];
+		}
+
+		// Home is implied: unless the first crumb already links to "/" (with a custom
+		// label), prepend a default Home crumb so views don't have to repeat it.
+		if (!empty($crumbs) && $crumbs[0]['url'] !== '/')
+			array_unshift($crumbs, ['name' => 'Home', 'url' => '/']);
+
+		$this->breadcrumbs = $crumbs;
+	}
+
+	private function siteBaseUrl()
+	{
+		$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+		$scheme = $_SERVER['REQUEST_SCHEME'] ?? ($https ? 'https' : 'http');
+		$host = $_SERVER['HTTP_HOST'] ?? '';
+		return $scheme.'://'.$host;
+	}
+
+	/**
+	 * Turn a crumb path into an absolute URL for JSON-LD. Leaves already-absolute URLs alone.
+	 */
+	private function breadcrumbAbsoluteUrl($path)
+	{
+		$path = trim((string)$path);
+		if ($path === '') return '';
+		if (preg_match('#^https?://#i', $path)) return $path;
+		return rtrim($this->siteBaseUrl(), '/').'/'.ltrim($path, '/');
+	}
+
+	/**
+	 * Resolve the current page URL, used as the JSON-LD item for the final (link-less) crumb.
+	 */
+	private function breadcrumbCurrentUrl()
+	{
+		global $App;
+
+		if ($this->isset('canonical')) {
+			$canonical = $this->resolvePlaceholders($this->vars['canonical']);
+			if (!empty($canonical) && strpos($canonical, '{') === false) return $canonical;
+		}
+
+		if (isset($App->request->url->full)) return $App->request->url->full;
+
+		return $this->siteBaseUrl().($_SERVER['REQUEST_URI'] ?? '/');
+	}
+
+	/**
+	 * Build the visible breadcrumb trail that replaces {breadcrumbs} in the body.
+	 * Returns '' when no crumbs are defined (so the tag simply disappears).
+	 */
+	private function buildBreadcrumbsHtml()
+	{
+		if (empty($this->breadcrumbs)) return '';
+
+		$parts = [];
+		foreach ($this->breadcrumbs as $crumb) {
+			if ($crumb['url'] !== '')
+				$parts[] = '<a href="'.$crumb['url'].'">'.$crumb['name'].'</a>';
+			else
+				$parts[] = $crumb['name'];
+		}
+
+		$delim = ' '.$this->breadcrumbsDelimiter.' ';
+		return '<div id="breadcrumbs">'.implode($delim, $parts).'</div>';
+	}
+
+	/**
+	 * Generate the BreadcrumbList JSON-LD from the crumb list and queue it for the <head>.
+	 */
+	private function addBreadcrumbsJsonLd()
+	{
+		if (empty($this->breadcrumbs)) return;
+
+		$crumbs = array_values($this->breadcrumbs);
+		$count = count($crumbs);
+		$items = [];
+
+		foreach ($crumbs as $i => $crumb) {
+			$entry = [
+				'@type' => 'ListItem',
+				'position' => $i + 1,
+				'name' => $crumb['name']
+			];
+
+			$url = $crumb['url'];
+			if ($url === '' && $i === $count - 1)
+				$url = $this->breadcrumbCurrentUrl();
+
+			if ($url !== '')
+				$entry['item'] = $this->breadcrumbAbsoluteUrl($url);
+
+			$items[] = $entry;
+		}
+
+		$data = [
+			'@context' => 'https://schema.org',
+			'@type' => 'BreadcrumbList',
+			'itemListElement' => $items
+		];
+
+		$this->addJsonLdBlock(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 	}
 
 	public function hasHeadMeta($attr, $key) { return isset($this->headMeta[strtolower($attr).'|'.$key]); }
@@ -490,8 +646,14 @@ class PhpView
 
 				if ($metaKey == 'cache') $metaValue = ($metaValue == 1) ? true:false;
 
+				// Breadcrumbs: collected into the crumb list, not emitted as meta tags
+				if ($metaKey == 'breadcrumb') {
+					$this->setBreadcrumbsFromMeta($metaValue);
+					continue;
+				}
+
 				// Standard vars (stored as vars)
-				if ($metaKey == 'title' || $metaKey == 'description' || $metaKey == 'keywords' || $metaKey == 'canonical' || $metaKey == 'modified' || $metaKey == 'timezone' || $metaKey == 'headHtml' || $metaKey == 'indexing' || $metaKey == 'cache' || $metaKey == 'css' || $metaKey == 'js' || $metaKey == 'status' || $metaKey == 'footer_controls') {
+				if ($metaKey == 'title' || $metaKey == 'description' || $metaKey == 'keywords' || $metaKey == 'canonical' || $metaKey == 'modified' || $metaKey == 'created' || $metaKey == 'timezone' || $metaKey == 'headHtml' || $metaKey == 'indexing' || $metaKey == 'cache' || $metaKey == 'css' || $metaKey == 'js' || $metaKey == 'status' || $metaKey == 'footer_controls') {
 					$this->addVar($metaKey, $metaValue);
 					continue;
 				}
@@ -499,6 +661,9 @@ class PhpView
 				// Everything else becomes a generated <meta ...> tag
 				$this->addHeadMetaFromIniKey($metaKey, $metaValue);
 			}
+
+			// Queue the BreadcrumbList JSON-LD (if any crumbs were defined) for the <head>
+			$this->addBreadcrumbsJsonLd();
 		}
 
 		if (isset($metaDataArray) && is_array($metaDataArray) and array_key_exists('indexing', $metaDataArray) and $metaDataArray['indexing'] == '')
@@ -571,6 +736,10 @@ class PhpView
 				$searchTags[] = $tag;
 			}
 		}
+
+		# breadcrumbs HTML: {breadcrumbs} -> visible trail (empty string when no crumbs defined)
+		$searchTags[] = '{breadcrumbs}';
+		$replaceTags[] = $this->buildBreadcrumbsHtml();
 
 		# find and replace special tags
 		if (isset($fileParts[1]))
@@ -666,20 +835,8 @@ class PhpView
 		if (isset($this->vars['css'])) $css = explode(',',trim($this->vars['css']));
 		if (isset($this->vars['js'])) $js = explode(',',trim($this->vars['js']));
 
-		$https = array_key_exists('HTTPS', $_SERVER) ? ($_SERVER['HTTPS'] == 'on' ? true:false):false;
-		$protocol = $_SERVER['REQUEST_SCHEME'] ?? $https ? 'https':'http';
-		$urlStart = $protocol.'://'.$_SERVER['HTTP_HOST'];
-
-		$this->vars['breadcrumbs'] = [];
-
-		if (isset($metaData['breadcrumb'])) {
-			if (is_array($metaData['breadcrumb'])) {
-				foreach ($metaData['breadcrumb'] as $crumb) {
-					$parts = explode('|', $crumb);
-					$this->vars['breadcrumbs'][] = ['name'=>$parts[0], 'url'=>$urlStart.$parts[1]];
-				}
-			}
-		}
+		// Breadcrumbs are handled by the breadcrumb[] meta + {breadcrumbs} tag system
+		// (see setBreadcrumbsFromMeta / buildBreadcrumbsHtml / addBreadcrumbsJsonLd).
 
 		if (isset($metaData['css'])) $css = array_merge($css, explode(',',trim($metaData['css'])));
 		if (isset($metaData['js'])) $js = array_merge($js, explode(',',trim($metaData['js'])));

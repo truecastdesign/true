@@ -129,3 +129,331 @@ Example of using it to inject some HTML.
 $App->view->headHtml = '<meta name="robots" content="noindex">
 <link rel="canonical" href="https://www.example.com'.$canonicalUrl.'">';
 ```
+
+# Meta tags (Open Graph, Twitter Cards, etc.)
+
+Beyond the standard `title`, `description` and `keywords` keys, any other key you put in the view's meta header is turned into a `<meta>` tag in the `<head>` automatically. This is how you add Open Graph, Twitter Card, and other social/SEO tags per page.
+
+A plain key with no prefix becomes a `<meta name="...">` tag. To control which attribute is used, prefix the key with `property:`, `name:`, `http-equiv:`, or `link:` followed by the real tag name. The prefix is stripped and only sets the attribute — it is not part of the output.
+
+```HTML
+title = "This is the title of the page"
+description = "This is the meta description of the page."
+
+property:og:type = "website"
+property:og:title = "This is the title of the page"
+property:og:url = "{url}"
+property:og:description = "This is the meta description of the page."
+property:og:image = "https://www.domain.com/image.jpg"
+property:og:image:width = "1200"
+property:og:image:height = "630"
+property:og:site_name = "The Site Name"
+property:og:locale = "en_US"
+
+name:twitter:card = "summary_large_image"
+name:twitter:url = "{url}"
+name:twitter:title = "This is the title of the page"
+name:twitter:description = "This is the meta description of the page."
+{endmeta}
+```
+
+That produces:
+
+```HTML
+<meta property="og:title" content="This is the title of the page">
+<meta property="og:description" content="This is the meta description of the page.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://www.example.com/about">
+<meta name="twitter:title" content="This is the title of the page">
+<meta name="twitter:description" content="This is the meta description of the page.">
+```
+
+## Choosing the attribute
+
+| Prefix | Output |
+| --- | --- |
+| `property:og:title` | `<meta property="og:title" content="...">` — use for Open Graph (`og:*`, `fb:*`, `article:*`) |
+| `name:twitter:card` | `<meta name="twitter:card" content="...">` — use for Twitter Cards and other `name`-based tags |
+| `http-equiv:refresh` | `<meta http-equiv="refresh" content="...">` |
+| `link:author` | `<link rel="author" href="...">` — emits a `<link>` rather than a `<meta>` |
+| *(no prefix)* `robots` | `<meta name="robots" content="...">` — defaults to the `name` attribute |
+
+Because Open Graph tags require the `property` attribute (not `name`), always prefix them with `property:`.
+
+## Placeholders
+
+Meta values support a few placeholders that are filled in at render time, so you don't have to hard-code per-page URLs:
+
+| Placeholder | Replaced with |
+| --- | --- |
+| `{url}` | The current request URL |
+| `{canonical}` | The `canonical` value if set, otherwise the current URL |
+| `{title}` | The page `title` |
+| `{description}` | The page `description` |
+| `{image}` | The `og:image` value if one was set |
+
+```HTML
+property:og:url = "{canonical}"
+property:og:image = "https://www.example.com/assets/img/social.jpg"
+name:twitter:url = "{url}"
+{endmeta}
+```
+
+## Automatic defaults
+
+To save repeating common tags on every page, a few Open Graph tags are filled in automatically when you don't supply them:
+
+- `og:type` defaults to `website`.
+- `og:description` is copied from the page `description` if you didn't set an `og:description`.
+- `og:url` is set to the `canonical` value, or the current URL when no canonical is defined.
+
+Anything you set explicitly always wins over these defaults. Duplicate keys are de‑duplicated by attribute + name, so setting the same tag twice keeps the last value rather than emitting it twice.
+
+## Output
+
+These tags are part of the head output, so the base template must echo it inside `<head>` (TrueFramework templates already do):
+
+```HTML
+<?=$App->view->headOutput?>
+```
+
+# Canonical URL
+
+The `canonical` meta key sets the page's `<link rel="canonical">` tag, which tells search engines the preferred URL for the page. You can hard-code an absolute URL, but the easiest approach is to use the `{url}` placeholder, which is replaced with the current request URL at render time:
+
+```HTML
+title = "This is the title of the page"
+canonical = "{url}"
+{endmeta}
+```
+
+That outputs the canonical link for whatever URL the page was requested at:
+
+```HTML
+<link rel="canonical" href="https://www.example.com/about">
+```
+
+If you don't set `canonical` at all, the framework still adds a canonical link using the accessed URL, so `canonical = "{url}"` mainly makes that behavior explicit. Set it to a fixed URL instead when several paths serve the same page and you want them to consolidate on one address:
+
+```HTML
+canonical = "https://www.example.com/about"
+{endmeta}
+```
+
+The canonical value also feeds the `{canonical}` placeholder and the automatic `og:url` default described above, so setting it once keeps your canonical link and Open Graph URL in sync.
+
+# Last-Modified date and the timezone key
+
+PhpView sends a `Last-Modified` HTTP header for every page so browsers and caches can revalidate it. By default the date comes from the view file's own modification time. You can override it with the `modified` meta key, and use the `timezone` key to tell the framework which timezone that date is written in.
+
+The `timezone` key only matters in combination with a date — it states the timezone of the `modified` value (or of the file's modification time when you don't set `modified`). The date is then converted to GMT for the `Last-Modified` header, so getting the timezone right keeps that header accurate.
+
+```HTML
+title = "This is the title of the page"
+modified = "2026-01-12 09:30:00"
+timezone = "America/Los_Angeles"
+{endmeta}
+```
+
+In this example the `modified` time is interpreted as 9:30 AM Pacific and converted to the correct GMT time in the `Last-Modified` header.
+
+Notes:
+
+- `timezone` accepts any valid PHP timezone identifier, e.g. `America/New_York`, `America/Los_Angeles`, `Europe/London`, `UTC`. See the [list of supported timezones](https://www.w3schools.com/PHP/php_ref_timezones.asp).
+- If you set `modified` but omit `timezone`, the date is parsed with the server's default timezone.
+- If you omit `modified` entirely, the view file's last-changed time is used (interpreted with `timezone` if provided).
+
+You can also output the modified date in the page using the `modified()` helper, which formats the stored date with any [PHP date format](https://www.php.net/manual/en/datetime.format.php):
+
+```HTML
+<p>Last updated: <?=$App->view->modified('F j, Y')?></p>
+```
+
+# Created date
+
+The `created` meta key records the date a page was first published. Unlike `modified`, it does not affect any HTTP headers — it is purely a value you can display in the page (for example a "Published on" line, or to feed a `datePublished` field in JSON-LD).
+
+```HTML
+title = "This is the title of the page"
+created = "2026-06-01"
+{endmeta}
+```
+
+Output the date with the `created()` helper, passing any [PHP date format](https://www.php.net/manual/en/datetime.format.php):
+
+```HTML
+<p>Published: <?=$App->view->created('F j, Y')?></p>
+```
+
+That prints `Published: June 1, 2026`. If you don't set `created`, the helper falls back to today's date.
+
+# Author
+
+The `author` meta key names the person or organization responsible for the page. It isn't a special key — like any unprefixed key it is emitted as a standard `<meta name="author">` tag (see [Meta tags](#meta-tags-open-graph-twitter-cards-etc)), which is the conventional way to declare authorship for search engines and readers.
+
+```HTML
+title = "This is the title of the page"
+author = "Author Name, Title"
+{endmeta}
+```
+
+That produces:
+
+```HTML
+<meta name="author" content="Author Name, Title">
+```
+
+The tag is part of the head output, so the base template must echo `<?=$App->view->headOutput?>` inside `<head>` (TrueFramework templates already do).
+
+# JSON-LD structured data
+
+To add your own structured data to the `<head>`, wrap raw JSON in a `{jsonld}...{/jsonld}` block in the view's meta header (above `{endmeta}`). The contents are output verbatim inside a `<script type="application/ld+json">` tag, so you write standard schema.org JSON exactly as you want it to appear.
+
+```HTML
+title = "This is the title of the page"
+description = "This is the meta description of the page."
+
+{jsonld}
+{
+	"@context": "https://schema.org",
+	"@type": "Article",
+	"headline": "This is the title of the page",
+	"author": {
+		"@type": "Person",
+		"name": "Author Name"
+	},
+	"publisher": {
+		"@type": "Organization",
+		"name": "Company Name",
+		"logo": {
+			"@type": "ImageObject",
+			"url": "https://www.example.com/assets/images/logo.png"
+		}
+	},
+	"datePublished": "2026-01-01",
+	"dateModified": "2026-01-12",
+	"description": "This is the meta description of the page."
+}
+{/jsonld}
+{endmeta}
+
+<h1>This is the title of the page</h1>
+```
+
+That outputs into the head:
+
+```HTML
+<script type="application/ld+json">
+{
+	"@context": "https://schema.org",
+	"@type": "Article",
+	"headline": "This is the title of the page",
+	...
+}
+</script>
+```
+
+Notes:
+
+- You can include more than one `{jsonld}` block in the same page — each becomes its own `<script type="application/ld+json">` tag.
+- Placeholders such as `{url}`, `{canonical}`, `{title}`, `{description}` and `{image}` are filled in inside the block, so you can reuse page values without repeating them.
+- The block must be valid JSON; it is emitted as‑is and is not validated for you.
+- This is independent of the breadcrumb `BreadcrumbList` JSON-LD (described below), which is generated automatically — both can appear on the same page.
+
+For arbitrary head markup that isn't JSON-LD (extra `<link>`, `<meta>`, verification tags, etc.), use a `{head}...{/head}` block the same way; its contents are injected into the `<head>` unchanged.
+
+# Breadcrumbs
+
+PhpView can build SEO breadcrumbs for a page from a single set of meta entries. From one definition it produces two things:
+
+1. A visible breadcrumb trail you can drop anywhere in the page body with the `{breadcrumbs}` tag.
+2. A matching `BreadcrumbList` JSON-LD block that is generated automatically and injected into the `<head>` for search engines.
+
+## Defining the crumbs
+
+Add `breadcrumb[]` entries to the view's meta data header (the .ini block above `{endmeta}`). Each entry is a `Label|/url` pair. The `breadcrumb[]` array syntax lets you list as many levels as you need, in order from the top of the site down to the current page.
+
+```HTML
+title = "Anxiety Therapy"
+description = "How we help with anxiety."
+breadcrumb[] = "Therapy Services|/services"
+breadcrumb[] = "Anxiety"
+{endmeta}
+
+<h1>Anxiety Therapy</h1>
+```
+
+The last crumb is normally the current page, so leave off its `|/url` part. A crumb with no URL is rendered as plain text (not a link) in the trail, and in the JSON-LD it automatically uses the current page's URL (taken from the `canonical` meta if set, otherwise the requested URL).
+
+### Home is implied
+
+You do not need to add a Home crumb. Unless your first entry already links to `/`, a `Home` → `/` crumb is prepended automatically. So the example above produces:
+
+```
+Home  >  Therapy Services  >  Anxiety
+```
+
+If you want a different label or want to control it yourself, make the first entry point at `/`:
+
+```HTML
+breadcrumb[] = "Start|/"
+breadcrumb[] = "Therapy Services|/services"
+breadcrumb[] = "Anxiety"
+{endmeta}
+```
+
+## Outputting the visible trail
+
+Place the `{breadcrumbs}` tag anywhere in the body of the view (or in a partial). It is replaced with the rendered trail. If no `breadcrumb[]` entries were defined, the tag simply disappears (replaced with an empty string), so it is safe to leave in a shared template.
+
+```HTML
+{endmeta}
+
+{breadcrumbs}
+
+<h1>Anxiety Therapy</h1>
+```
+
+The generated HTML looks like this — linked crumbs use the URLs you supplied and the final crumb is plain text:
+
+```HTML
+<div id="breadcrumbs"><a href="/">Home</a> &gt; <a href="/services">Therapy Services</a> &gt; Anxiety</div>
+```
+
+Style it however you like via the `#breadcrumbs` id.
+
+## Changing the separator
+
+The separator between crumbs defaults to `&gt;` (a `>` character). Set your own once, typically in `init.php` so it applies site‑wide:
+
+```php
+$App->view->setBreadcrumbsDelimiter('/');
+```
+
+Any string works (`'/'`, `'&raquo;'`, `'›'`, etc.). The method returns the view object so it can be chained.
+
+## JSON-LD for search engines
+
+When breadcrumbs are defined, a `BreadcrumbList` structured data block is generated automatically and added to the head output. URLs are converted to absolute URLs (using the current scheme and host), and the final link‑less crumb is resolved to the current page URL. You do not call anything to enable this — it happens whenever `breadcrumb[]` entries are present.
+
+For the JSON-LD to actually appear, your base template must output the head buckets. TrueFramework base templates do this inside the `<head>`:
+
+```HTML
+<?=$App->view->headOutput?>
+```
+
+The result added to the head looks like:
+
+```HTML
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.example.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Therapy Services", "item": "https://www.example.com/services" },
+        { "@type": "ListItem", "position": 3, "name": "Anxiety", "item": "https://www.example.com/anxiety-therapy" }
+    ]
+}
+</script>
+```
