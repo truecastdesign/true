@@ -204,6 +204,7 @@ name:twitter:url = "{url}"
 To save repeating common tags on every page, a few Open Graph tags are filled in automatically when you don't supply them:
 
 - `og:type` defaults to `website`.
+- `og:title` is copied from the page `title` if you didn't set an `og:title`.
 - `og:description` is copied from the page `description` if you didn't set an `og:description`.
 - `og:url` is set to the `canonical` value, or the current URL when no canonical is defined.
 
@@ -304,6 +305,16 @@ That produces:
 ```
 
 The tag is part of the head output, so the base template must echo `<?=$App->view->headOutput?>` inside `<head>` (TrueFramework templates already do).
+
+# Label
+
+The `label` meta key is a short display name for the page, used by navigation helpers or admin UIs that need a title shorter than the full `title` tag. It does not produce any HTML output on its own — it is stored as a view variable and available to layouts and partials as `$App->view->label`.
+
+```HTML
+title = "The Complete Guide to Anxiety Therapy"
+label = "Anxiety Therapy"
+{endmeta}
+```
 
 # JSON-LD structured data
 
@@ -457,3 +468,33 @@ The result added to the head looks like:
 }
 </script>
 ```
+
+# Site-wide meta defaults
+
+`setDefaults()` lets you register a single INI file whose values are applied to every page before that page's own `{endmeta}` block is parsed. This means you can set a site-wide `og:site_name`, a default social image, or any other tag once and let individual views override it.
+
+```php
+// typically in init.php, right after creating the view
+$App->view->setDefaults('metadata-defaults.ini');
+```
+
+The path is resolved the same way as other config files: a leading `/` is treated as an absolute path; anything else is resolved relative to `BP."/app/config/"`. So `'metadata-defaults.ini'` looks for `BP/app/config/metadata-defaults.ini`.
+
+## Format of the defaults file
+
+The file uses the same INI format as a view's meta header. Every key supported in a view is supported here — standard keys (`title`, `description`, `keywords`, `canonical`, `css`, `js`, `cache`, `label`, etc.), prefixed meta/link keys (`property:og:*`, `name:twitter:*`, `http-equiv:*`, `link:*`), and `breadcrumb[]` entries.
+
+```ini
+; app/config/metadata-defaults.ini
+
+property:og:site_name = "My Site"
+property:og:locale    = "en_US"
+property:og:image     = "https://www.example.com/assets/images/social-default.jpg"
+name:twitter:card     = "summary_large_image"
+```
+
+## Override priority
+
+Values from the defaults file are loaded first. Anything a view sets in its own `{endmeta}` block wins. So a view that sets `property:og:image` will use its own image; a view that doesn't will fall back to the site-wide default.
+
+The automatic defaults (e.g. `og:title` from `title`, `og:url` from `canonical`) still apply on top of both layers and only fill in tags that remain unset after both the defaults file and the view's meta header have been processed.

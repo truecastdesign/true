@@ -6,14 +6,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.10.0
+ * @version 5.11
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.9.10";
+	static $version = "5.11";
 
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -30,6 +30,9 @@ class PhpView
 	# Breadcrumbs
 	private $breadcrumbs = [];				// [['name'=>..., 'url'=>...], ...] from breadcrumb[] meta
 	private $breadcrumbsDelimiter = '&gt;';	// HTML separator between crumbs; set via setBreadcrumbsDelimiter()
+
+	# Site-wide defaults loaded from an ini file (set via setDefaults())
+	private $defaultsIniPath = null;
 
 	public function __construct($args = null)
 	{
@@ -274,6 +277,61 @@ class PhpView
 	}
 
 	/**
+	 * Register an ini file of site-wide meta defaults. Values are applied before each
+	 * view's own {meta}...{endmeta} block, so anything a view sets overrides the default.
+	 *
+	 * Path resolution follows App::load() — a leading "/" is treated as absolute,
+	 * anything else is resolved against BP."/app/config/".
+	 *
+	 * Supported keys mirror a view's meta header: standard keys (title, description,
+	 * keywords, canonical, css, js, etc.) plus prefixed meta/link keys
+	 * (property:og:*, name:twitter:*, http-equiv:*, link:*).
+	 *
+	 * @param string $path e.g. 'metadata-defaults.ini'
+	 * @return self
+	 */
+	public function setDefaults($path)
+	{
+		$this->defaultsIniPath = (string)$path;
+		return $this;
+	}
+
+	/**
+	 * Load and apply the defaults file registered via setDefaults().
+	 * Called from render() before the view's own meta header is parsed.
+	 */
+	private function applyMetaIniDefaults()
+	{
+		if (!$this->defaultsIniPath) return;
+
+		$file = $this->defaultsIniPath;
+		if (substr($file, 0, 1) !== '/') {
+			$file = BP.'/app/config/'.$file;
+		}
+
+		if (!file_exists($file)) return;
+
+		$values = parse_ini_file($file, false, INI_SCANNER_TYPED);
+		if (!is_array($values)) return;
+
+		$standardVars = ['title','description','keywords','canonical','modified','created','timezone','headHtml','indexing','cache','css','js','status','footer_controls','label'];
+
+		foreach ($values as $key => $value) {
+			if ($key === 'breadcrumb') {
+				$this->setBreadcrumbsFromMeta($value);
+				continue;
+			}
+
+			if (in_array($key, $standardVars, true)) {
+				$this->addVar($key, $value);
+				continue;
+			}
+
+			$this->addHeadMetaFromIniKey($key, $value);
+		}
+	}
+
+	/**
 	 * Parse breadcrumb meta entries ("Name|/url") into the internal crumb list.
 	 *
 	 * @param string|array $value single entry or array of "Name|/url" strings
@@ -410,6 +468,10 @@ class PhpView
 		if (!$this->hasHeadMeta('property', 'og:type'))
 			$this->addHeadMeta('property', 'og:type', 'website');
 
+		// og:title from title
+		if ($this->isset('title') && !$this->hasHeadMeta('property', 'og:title'))
+			$this->addHeadMeta('property', 'og:title', $this->vars['title']);
+
 		// og:description from description
 		if ($this->isset('description') && !$this->hasHeadMeta('property', 'og:description'))
 			$this->addHeadMeta('property', 'og:description', $this->vars['description']);
@@ -496,6 +558,12 @@ class PhpView
 			$lines[] = "<meta ".$this->e($m['attr'])."=\"".$this->e($m['key'])."\" content=\"".$this->e($content)."\">";
 		}
 
+		// compiled site stylesheet (built from $App->view->css in processMetaData)
+		// Emitted before inline styles so per-page <style> blocks can override.
+		if (!empty($this->vars['cssoutput'])) {
+			$lines[] = $this->vars['cssoutput'];
+		}
+
 		// inline styles
 		if (!empty($this->headStyles)) {
 			$lines[] =
@@ -553,6 +621,7 @@ class PhpView
 		$httpCodesHeaders = ['301'=>'Moved Permanently', '302'=>'Found', '303'=>'See Other', '304'=>'Not Modified', '307'=>'Temporary Redirect', '308'=>'Permanent Redirect', '400'=>'Bad Request', '401'=>'Unauthorized', '403'=>'Forbidden', '404'=>'Not Found', '405'=>'Method Not Allowed'];
 
 		$this->resetHeadBuckets();
+		$this->applyMetaIniDefaults();
 
 		# check for error page
 		if (is_int($taView)) {
@@ -653,7 +722,7 @@ class PhpView
 				}
 
 				// Standard vars (stored as vars)
-				if ($metaKey == 'title' || $metaKey == 'description' || $metaKey == 'keywords' || $metaKey == 'canonical' || $metaKey == 'modified' || $metaKey == 'created' || $metaKey == 'timezone' || $metaKey == 'headHtml' || $metaKey == 'indexing' || $metaKey == 'cache' || $metaKey == 'css' || $metaKey == 'js' || $metaKey == 'status' || $metaKey == 'footer_controls') {
+				if ($metaKey == 'title' || $metaKey == 'description' || $metaKey == 'keywords' || $metaKey == 'canonical' || $metaKey == 'modified' || $metaKey == 'created' || $metaKey == 'timezone' || $metaKey == 'headHtml' || $metaKey == 'indexing' || $metaKey == 'cache' || $metaKey == 'css' || $metaKey == 'js' || $metaKey == 'status' || $metaKey == 'footer_controls' || $metaKey == 'label') {
 					$this->addVar($metaKey, $metaValue);
 					continue;
 				}
