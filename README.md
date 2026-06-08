@@ -76,6 +76,16 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Caching](./docs/Caching.md)
 
+[Folder](./docs/Folder.md)
+
+[PHP View](./docs/PhpView.md)
+
+[Rate Limiter](./docs/RateLimiter.md)
+
+[Response](./docs/Response.md)
+
+[Task Scheduler](./docs/TaskScheduler.md)
+
 ## Files Setup
 
 ### /public_html/index.php
