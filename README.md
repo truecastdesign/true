@@ -40,6 +40,8 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Request](./docs/Request.md)
 
+[Redirects](./docs/Redirects.md)
+
 [DataCleaner](./docs/DataCleaner.md)
 
 [Authentication](./docs/Auth.md)
