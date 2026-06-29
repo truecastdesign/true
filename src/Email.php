@@ -4,9 +4,30 @@ namespace True;
 
 /**
  * Send email class using SMTP Authentication
- * 
- * @version 1.7
- * 
+ *
+ * @version 1.8
+ *
+ * --- Quick-start with a config file (recommended) ---
+ *
+ * $mail = new \True\Email;
+ * $mail->setConfig('email.ini')   // reads server, port, protocol, authMethod, username, password, fromEmail, fromName
+ *      ->addTo('user@domain.com', 'Jane Doe')
+ *      ->setSubject('Hello')
+ *      ->setHtmlMessage('<p>Hello!</p>')
+ *      ->send();
+ *
+ * --- Config file keys (app/config/email.ini) ---
+ * server     = "smtp.domain.com"
+ * port       = 587
+ * protocol   = "tls"          ; tls or ssl
+ * authMethod = "login"        ; plain, login, cram-md5
+ * username   = "user@domain.com"
+ * password   = "secret"
+ * fromEmail  = "user@domain.com"
+ * fromName   = "Sender Name"
+ *
+ * --- Manual construction (legacy) ---
+ *
 $mail = new \True\Email('domain.com', 587, 'tls', 'plain');  # domain, port, ssl/tls, auth method (plain, login, cram-md5)
 $mail->setLogin('user@domain.com', 'password')
 ->setFrom('user@domain.com', 'name')
@@ -16,7 +37,7 @@ $mail->setLogin('user@domain.com', 'password')
 ->addBcc('user@domain.com', 'name')
 ->addAttachment(BP.'/path/to/filename.jpg')
 ->addHeader('header-title', 'header value')
-->setCharset('utf-16', 'header value') // default: utf-8;  values: utf-16, utf-32, ascii, iso 8859-1 
+->setCharset('utf-16', 'header value') // default: utf-8;  values: utf-16, utf-32, ascii, iso 8859-1
 ->setSubject('Test subject')
 ->setTextMessage('Plain text message')
 ->setHtmlMessage('<strong>HTML Text Message</strong>')
@@ -26,7 +47,7 @@ $mail->setLogin('user@domain.com', 'password')
 ->addDKIM(BP.'/app/data/dkim.private', 'domain.com'); # usually not needed
 
 if ($mail->send()) {
-	echo 'SMTP Email has been sent' . PHP_EOL;   
+	echo 'SMTP Email has been sent' . PHP_EOL;
 } else {
 	echo 'An error has occurred. Please check the logs below:' . PHP_EOL;
 	pr($mail->getLogs());
@@ -130,7 +151,7 @@ class Email
 	* @param string $protocol // leave null for auto detection. Values: tls or ssl
 	* @param string $authMethod // Values: plain, login, cram-md5
 	*/
-	public function __construct($server, $port = 25, $protocol = 'tls', $authMethod = 'plain')
+	public function __construct($server = 'domain.com', $port = 25, $protocol = 'tls', $authMethod = 'plain')
 	{
 		$this->port = $port;
 		$this->server = $server;
@@ -140,6 +161,48 @@ class Email
 		$this->authMethod = $authMethod;
 		$this->hostname = gethostname();
 		$this->headers['MIME-Version'] = '1.0';
+	}
+
+	/**
+	 * Configure the mailer from a standard ini file.
+	 *
+	 * Accepted ini keys:
+	 *   server, port, protocol, authMethod, username, password, fromEmail, fromName
+	 *
+	 * Pass just the filename (e.g. 'email.ini') to resolve from BP/app/config/,
+	 * or pass a full absolute path.
+	 *
+	 * @param string $filename  Filename relative to BP/app/config/, or absolute path.
+	 * @return Email
+	 */
+	public function setConfig(string $filename): self
+	{
+		if ($filename[0] === '/') {
+			$path = $filename;
+		} else {
+			$base = defined('BP') ? BP . '/app/config/' : __DIR__ . '/../../../app/config/';
+			$path = $base . $filename;
+		}
+
+		if (!file_exists($path))
+			throw new \Exception("Email config file not found: $path");
+
+		$c = parse_ini_file($path);
+		if ($c === false)
+			throw new \Exception("Could not parse email config file: $path");
+
+		if (!empty($c['server']))     $this->server     = $c['server'];
+		if (!empty($c['port']))       $this->port       = (int) $c['port'];
+		if (!empty($c['protocol']))   $this->setProtocol($c['protocol']);
+		if (!empty($c['authMethod'])) $this->authMethod = $c['authMethod'];
+
+		if (!empty($c['username']) && !empty($c['password']))
+			$this->setLogin($c['username'], $c['password']);
+
+		if (!empty($c['fromEmail']))
+			$this->setFrom($c['fromEmail'], $c['fromName'] ?? null);
+
+		return $this;
 	}
 
 	/**

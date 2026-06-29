@@ -6,12 +6,12 @@ The **Email** class provides a robust solution for sending emails using SMTP aut
 ---
 
 ## Constructor: `__construct()`
-The constructor initializes the **Email** class with the necessary SMTP server details.
+The constructor initializes the **Email** class with the necessary SMTP server details. All parameters are optional — use `setConfig()` to configure via an INI file instead.
 
 ### Signature
 ```php
 public function __construct(
-    string $server,
+    string $server = 'domain.com',
     int $port = 25,
     string $protocol = 'tls',
     string $authMethod = 'plain'
@@ -19,15 +19,72 @@ public function __construct(
 ```
 
 ### Parameters
-- **`$server`**: The SMTP server domain (e.g., `smtp.domain.com`).
+- **`$server`**: The SMTP server domain (e.g., `smtp.domain.com`). Defaults to `'domain.com'`.
 - **`$port`**: The port number to connect to the SMTP server (commonly `25`, `465`, or `587`).
 - **`$protocol`**: The protocol to use for secure connections (`tls` or `ssl`).
 - **`$authMethod`**: The authentication method (`plain`, `login`, `cram-md5`).
 
 #### Example Usage
 ```php
+// Minimal — configure via setConfig()
+$mail = new \True\Email;
+
+// Explicit
 $mail = new \True\Email('smtp.domain.com', 587, 'tls', 'plain');
 ```
+
+---
+
+## `setConfig()`
+Loads SMTP and sender settings from an INI file. This is the recommended way to configure the class when the same settings are reused across the application (e.g., via a shared `$App->email` instance).
+
+### Signature
+```php
+public function setConfig(string $filename): Email
+```
+
+### Parameters
+- **`$filename`**: Path to the INI file. A bare filename (e.g., `'email.ini'`) resolves relative to `app/config/`. An absolute path is used as-is.
+
+### INI File Keys
+| Key | Description |
+|-----|-------------|
+| `server` | SMTP server hostname |
+| `port` | SMTP port number |
+| `protocol` | `tls` or `ssl` |
+| `authMethod` | `plain`, `login`, or `cram-md5` |
+| `username` | SMTP username |
+| `password` | SMTP password |
+| `fromEmail` | Default sender email address |
+| `fromName` | Default sender display name (optional) |
+
+### Example INI File (`app/config/email.ini`)
+```ini
+server="smtp.example.com"
+port=587
+protocol="tls"
+authMethod="login"
+username="noreply@example.com"
+password="secret"
+fromEmail="noreply@example.com"
+fromName="My Site"
+```
+
+### Example Usage
+```php
+// Typical setup in init.php — shared instance for the whole application
+$App->email = new \True\Email;
+$App->email->setConfig('email.ini');
+
+// Elsewhere in the app
+$App->email
+    ->addTo('customer@example.com')
+    ->setSubject('Your order receipt')
+    ->setHtmlMessage($html)
+    ->send();
+```
+
+> **Note:** `setConfig()` returns `$this`, so it can be chained. Calling it multiple times merges settings — later calls override earlier ones.
 
 ---
 
@@ -224,8 +281,22 @@ if ($mail->send()) {
 ---
 
 ## Example Usage
-Here is a complete example demonstrating how to use the **Email** class to send an email with attachments, CC, and BCC recipients:
 
+### Using `setConfig()` (recommended for application-wide use)
+```php
+// init.php — set up once
+$App->email = new \True\Email;
+$App->email->setConfig('email.ini');
+
+// Any controller
+$App->email
+    ->addTo('recipient@domain.com', 'Jane Doe')
+    ->setSubject('Test Subject')
+    ->setHtmlMessage('<strong>Hello!</strong>')
+    ->send();
+```
+
+### Manual configuration
 ```php
 $mail = new \True\Email('smtp.domain.com', 587, 'tls', 'plain');
 $mail->setLogin('user@domain.com', 'password')

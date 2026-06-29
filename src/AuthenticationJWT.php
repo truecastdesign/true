@@ -8,7 +8,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 1.3.1
+ * @version 1.3.2
  */
 class AuthenticationJWT
 {
@@ -319,7 +319,7 @@ class AuthenticationJWT
 			return ($payload->status == '2fa_pending')? true:false;
 			
 		} catch (\Exception $ex) {
-			
+			return false;
 		}
 	}
 

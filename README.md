@@ -36,25 +36,21 @@ AddHandler application/x-httpd-php .html .phtml .php
 ## Table of Contents
 [App](./docs/App.md)
 
-[Routing](./docs/Routes.md)
-
-[Request](./docs/Request.md)
-
-[Redirects](./docs/Redirects.md)
-
-[DataCleaner](./docs/DataCleaner.md)
-
 [Authentication](./docs/Auth.md)
 
 [Authentication JWT](./docs/AuthenticationJWT.md)
 
+[Caching](./docs/Caching.md)
+
 [CSS Minify](./docs/CSSMini.md)
+
+[DataCleaner](./docs/DataCleaner.md)
 
 [Email SMTP](./docs/Email.md)
 
 [File Uploads](./docs/File.md)
 
-[Miscellaneous Functions](./docs/Functions.md)
+[Folder](./docs/Folder.md)
 
 [Google Authenticator](./docs/GoogleAuthenticator.md)
 
@@ -64,29 +60,33 @@ AddHandler application/x-httpd-php .html .phtml .php
 
 [Log Parser](./docs/LogParser.md)
 
-[Password Generator](./docs/PasswordGenerator.md)
-
-[SEO](./docs/SEO.md)
-
-[Template Filling](./docs/Templates.md)
-
-[Validator](./docs/Validator.md)
-
-[Task Queue](./docs/TaskQueue.md)
+[Miscellaneous Functions](./docs/Functions.md)
 
 [Nonce Generator](./docs/Nonce.md)
 
-[Caching](./docs/Caching.md)
-
-[Folder](./docs/Folder.md)
+[Password Generator](./docs/PasswordGenerator.md)
 
 [PHP View](./docs/PhpView.md)
 
 [Rate Limiter](./docs/RateLimiter.md)
 
+[Redirects](./docs/Redirects.md)
+
+[Request](./docs/Request.md)
+
 [Response](./docs/Response.md)
 
+[Routing](./docs/Routes.md)
+
+[SEO](./docs/SEO.md)
+
+[Task Queue](./docs/TaskQueue.md)
+
 [Task Scheduler](./docs/TaskScheduler.md)
+
+[Template Filling](./docs/Templates.md)
+
+[Validator](./docs/Validator.md)
 
 ## Files Setup
 
