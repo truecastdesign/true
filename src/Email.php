@@ -596,7 +596,11 @@ class Email
 		}
 
 		$this->headers['Date'] = date('r');
-		$this->headers['Subject'] = $this->subject;
+		// RFC 2047-encode non-ASCII subjects — a raw UTF-8 subject header is
+		// mis-rendered by clients ("—" becomes "â") and is a spam signal.
+		$this->headers['Subject'] = preg_match('/[^\x20-\x7E]/', $this->subject)
+			? '=?UTF-8?B?' . base64_encode($this->subject) . '?='
+			: $this->subject;
 		$this->headers['From'] = $this->formatAddress($this->from);
 		$this->headers['Return-Path'] = $this->formatAddress($this->from);
 		$this->headers['To'] = $this->formatAddressList($this->to);

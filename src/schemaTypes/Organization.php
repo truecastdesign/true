@@ -5,7 +5,7 @@ namespace True\schemaTypes;
 /**
  * Schema for Organization
  * 
- * @version 1.0.2
+ * @version 1.0.4
  */
 class Organization
 {
@@ -173,6 +173,18 @@ class Organization
 				default:
 					$data[$key] = $value;
 			}
+		}
+
+		// @id derives from the url so callers don't have to pass one. It is what
+		// other nodes point at to say "published by this organization", so it has
+		// to be stable. An explicitly supplied @id wins; array_merge keeps
+		// @context/@type/@id first for readability.
+		if (empty($data['@id']) and !empty($data['url'])) {
+			$data = array_merge([
+				"@context" => $data['@context'],
+				"@type" => $data['@type'],
+				"@id" => rtrim($data['url'], '/').'/#organization'
+			], $data);
 		}
 
 		$this->structure = $data;

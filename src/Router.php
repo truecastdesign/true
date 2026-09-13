@@ -25,7 +25,10 @@ class Router
 	 */
 	public function get($pattern, $callable, array $passedVars = [])
 	{
-		$this->router(['GET'], $pattern, $callable, $passedVars);		
+		// HEAD is answered by the GET route: HTTP requires a HEAD response to
+		// carry the same headers as the GET, and the web server drops the body
+		// for us. Without it a HEAD request matches no route at all.
+		$this->router(['GET', 'HEAD'], $pattern, $callable, $passedVars);
 	}
 
 	/**
@@ -109,7 +112,7 @@ class Router
 	 */
 	public function any($pattern, $callable, array $passedVars = [])
 	{
-		$this->router(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $passedVars);
+		$this->router(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], $pattern, $callable, $passedVars);
 	}
 
 	/**

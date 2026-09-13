@@ -659,7 +659,10 @@ class PhpView
 			$taView = $this->vars['base_path'].$this->vars['404'];
 		}
 
-		$this->vars['headHtml'] = '';
+		// Keep head HTML assigned before render() — site-wide additions made from
+		// app/routes.php (TrueAdmin's GTM + schema output, for example). Page-level
+		// content appends to it, and buildHeadOutput() emits the lot.
+		if (!isset($this->vars['headHtml'])) $this->vars['headHtml'] = '';
 
 		ob_start();
 			global $App;
