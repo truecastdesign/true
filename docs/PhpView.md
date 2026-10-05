@@ -130,6 +130,50 @@ $App->view->headHtml = '<meta name="robots" content="noindex">
 <link rel="canonical" href="https://www.example.com'.$canonicalUrl.'">';
 ```
 
+# Placeholders in the view body: replace() and {partial:…}
+
+A view can carry plain `{placeholder}` tags that PhpView fills in when the page renders. Two kinds are supported, both processed on the view's output (not the layout) in the same pass as `{breadcrumbs}`.
+
+## replace() — HTML supplied by the controller
+
+`$App->view->replace()` takes an array of `'{tag}' => 'html'` pairs. Each tag is replaced, anywhere in the view body, with the string you supply. The main use is keeping PHP out of views that non-developers edit in a visual page editor: the controller runs the logic and renders the dynamic fragments, the view holds only the placeholders, so it stays plain HTML that round-trips through an editor without anything being mangled.
+
+```php
+// app/controllers/contact.php
+$old = $_SESSION['contactForm']['old'] ?? ['email' => ''];
+$App->view->replace([
+	'{cfEmail}'   => '<input type="email" name="email" value="' . esc($old['email']) . '">',
+	'{cfAlert}'   => $sendError ? '<p class="formAlert">' . esc($sendError) . '</p>' : '',
+	'{sitePhone}' => esc($App->config->site->phone),
+]);
+```
+
+```HTML
+<!-- app/views/contact.phtml — no PHP anywhere -->
+{cfAlert}
+<label for="cfEmail">Email</label>
+{cfEmail}
+<p>Or call us at {sitePhone}.</p>
+```
+
+Notes:
+
+- Call it before `render()`. Several calls merge; a later call wins when the same tag is given twice.
+- Values are inserted as-is — escape anything that came from the user when you build them.
+- A tag with no replacement is left in the page untouched, so a typo is easy to spot.
+- Tags are plain text: they work inside attributes too (`<div data-state="{state}">`), which is handy for switching between two blocks of markup with CSS instead of a PHP `if`/`else`.
+
+## {partial:…} — include a partial
+
+`{partial:name.phtml}` is replaced with the output of `app/views/_partials/name.phtml`, rendered with the same variables the view has. A path starting with `/` is taken relative to the project root instead:
+
+```HTML
+{partial:newsletter-signup.phtml}
+{partial:/app/modules/shop/views/_partials/cart-summary.phtml}
+```
+
+A partial that cannot be found throws an exception, so a broken include fails loudly rather than rendering a blank spot.
+
 # Meta tags (Open Graph, Twitter Cards, etc.)
 
 Beyond the standard `title`, `description` and `keywords` keys, any other key you put in the view's meta header is turned into a `<meta>` tag in the `<head>` automatically. This is how you add Open Graph, Twitter Card, and other social/SEO tags per page.

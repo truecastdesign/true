@@ -6,7 +6,7 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.11
+ * @version 5.12
  */
 
 class PhpView
@@ -67,6 +67,7 @@ class PhpView
 
 		# turn on or off page caching
 		$this->vars['cache'] = (isset($args['cache'])? $args['cache']:true);
+		$this->vars['replacements'] = [];
 
 		# global variables for layout template
 		$this->vars['variables'] = (isset($args['variables'])? $args['variables']:[]);
@@ -98,6 +99,20 @@ class PhpView
 			default:
 				$this->vars[$key] = $value;
 		}
+	}
+
+	/**
+	 * Placeholder replacements for the rendered page: ['{cfName}' => '<input …>', …].
+	 *
+	 * A controller runs its PHP and hands the resulting HTML here; the view
+	 * holds only the placeholder, so it stays plain HTML the page editor can
+	 * open, edit and save without touching any PHP. Applied to the view's
+	 * output (not the layout) along with {partial:…} and {breadcrumbs}.
+	 * Several calls merge; a later call wins on the same key.
+	 */
+	public function replace(array $map): void
+	{
+		$this->vars['replacements'] = array_merge($this->vars['replacements'] ?? [], $map);
 	}
 
 	/**
@@ -813,6 +828,12 @@ class PhpView
 		$searchTags[] = '{breadcrumbs}';
 		$replaceTags[] = $this->buildBreadcrumbsHtml();
 
+		# controller-supplied placeholders (see replace())
+		foreach ((array)($this->vars['replacements'] ?? []) as $tag => $html) {
+			$searchTags[]  = (string)$tag;
+			$replaceTags[] = (string)$html;
+		}
+
 		# find and replace special tags
 		if (isset($fileParts[1]))
 			$fileParts[1] = str_replace($searchTags, $replaceTags, $fileParts[1]);
@@ -1068,9 +1089,13 @@ class PhpView
 		// Use placeholders for script tags to prevent DOMDocument from altering them
 		$scriptPlaceholder = '###SCRIPT###';
 		$scripts = [];
+		// The index is closed with a marker: an open-ended "###SCRIPT###1"
+		// is also the start of "###SCRIPT###10", so once a page had more
+		// than ten script blocks the restore below put block 1 (plus a
+		// stray "0") where block 10 belonged and block 10 never ran.
 		$htmlWithoutScripts = preg_replace_callback('/<script\b[^>]*>([\s\S]*?)<\/script>/i', function ($matches) use (&$scripts, $scriptPlaceholder) {
 			$scripts[] = $matches[0];
-			return $scriptPlaceholder . count($scripts) - 1;
+			return $scriptPlaceholder . (count($scripts) - 1) . '###';
 		}, $html);
 
 		// Create a new DOMDocument instance
@@ -1096,7 +1121,7 @@ class PhpView
 
 		// Restore the script tags that were temporarily removed
 		foreach ($scripts as $index => $scriptTag) {
-			$cleanedHTML = str_replace($scriptPlaceholder . $index, $scriptTag, $cleanedHTML);
+			$cleanedHTML = str_replace($scriptPlaceholder . $index . '###', $scriptTag, $cleanedHTML);
 		}
 		
 		return (object)[
