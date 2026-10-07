@@ -163,6 +163,29 @@ Notes:
 - A tag with no replacement is left in the page untouched, so a typo is easy to spot.
 - Tags are plain text: they work inside attributes too (`<div data-state="{state}">`), which is handy for switching between two blocks of markup with CSS instead of a PHP `if`/`else`.
 
+## {if …} blocks — conditional markup without PHP
+
+`{if name}…{endif}` keeps its contents when the `replace()` value for `name` is truthy (anything other than `''`, `'0'`, `0`, `null`, `false` or `[]`) and removes them otherwise. `{else}` gives the alternative, `{if not name}` inverts the test, and blocks nest. `name` is the replacement key with or without its braces, so `{if windowDays}` reads the value given as `'{windowDays}'`.
+
+```php
+$App->view->replace([
+	'{windowDays}' => $days > 0 ? (string)$days : '',
+	'{restockPct}' => $pct  > 0 ? (string)$pct  : '',
+]);
+```
+
+```HTML
+{if windowDays}
+<p>Returns are accepted within <strong>{windowDays} days of delivery</strong>.</p>
+{else}
+<p>There's no fixed return window — reach out and we'll take care of it.</p>
+{endif}
+
+<p>Refunds go back to your card{if restockPct}, less a {restockPct}% restocking fee{endif}.</p>
+```
+
+The blocks are resolved before the placeholders are filled in, on the view body only, with the innermost block first. Everything is plain text, so a visual page editor can open, edit and save the view without touching the logic — that lives in the controller. There is deliberately nothing more (no comparisons, loops or expressions): when a decision needs more than a yes/no, compute it in the controller and hand the view a flag.
+
 ## {partial:…} — include a partial
 
 `{partial:name.phtml}` is replaced with the output of `app/views/_partials/name.phtml`, rendered with the same variables the view has. A path starting with `/` is taken relative to the project root instead:

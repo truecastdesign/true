@@ -6,14 +6,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.12
+ * @version 5.13
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.11";
+	static $version = "5.13";
 
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -113,6 +113,50 @@ class PhpView
 	public function replace(array $map): void
 	{
 		$this->vars['replacements'] = array_merge($this->vars['replacements'] ?? [], $map);
+	}
+
+	/**
+	 * Resolve {if name}…{else}…{endif} blocks in a view body.
+	 *
+	 * `name` is a key given to replace(), with or without its braces; the
+	 * block is kept when that value is truthy (anything but '', '0', null or
+	 * false) and dropped otherwise. `{if not name}` inverts the test. Blocks
+	 * nest; the innermost is resolved first. Like the placeholders, the tags
+	 * are plain text, so a visual page editor round-trips them untouched.
+	 *
+	 *   {if windowDays}
+	 *     <p>Returns are accepted within <strong>{windowDays} days</strong>.</p>
+	 *   {else}
+	 *     <p>There's no fixed return window.</p>
+	 *   {endif}
+	 */
+	public static function conditionals(string $html, array $values): string
+	{
+		if (strpos($html, '{if ') === false) return $html;
+
+		$truthy = function (string $name) use ($values): bool {
+			foreach (['{' . $name . '}', $name] as $key) {
+				if (array_key_exists($key, $values)) {
+					$v = $values[$key];
+					return !($v === '' || $v === '0' || $v === null || $v === false || $v === 0 || $v === []);
+				}
+			}
+			return false;
+		};
+
+		// Innermost blocks first: a body that contains no further {if …}.
+		$pattern = '/\{if\s+(not\s+)?([A-Za-z0-9_]+)\s*\}((?:(?!\{if\s).)*?)\{endif\}/s';
+		for ($guard = 0; $guard < 200; $guard++) {
+			$out = preg_replace_callback($pattern, function ($m) use ($truthy) {
+				$keep  = $truthy($m[2]);
+				if (trim($m[1]) !== '') $keep = !$keep;
+				$parts = preg_split('/\{else\}/', $m[3], 2);
+				return $keep ? $parts[0] : ($parts[1] ?? '');
+			}, $html, -1, $count);
+			if ($out === null || $count === 0) break;
+			$html = $out;
+		}
+		return $html;
 	}
 
 	/**
@@ -833,6 +877,10 @@ class PhpView
 			$searchTags[]  = (string)$tag;
 			$replaceTags[] = (string)$html;
 		}
+
+		# {if name}…{else}…{endif} blocks, decided by the replace() values (see conditionals())
+		if (isset($fileParts[1]))
+			$fileParts[1] = self::conditionals($fileParts[1], (array)($this->vars['replacements'] ?? []));
 
 		# find and replace special tags
 		if (isset($fileParts[1]))
