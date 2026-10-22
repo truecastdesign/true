@@ -118,6 +118,14 @@ class Email
 	/** @var bool $isTLS */
 	protected $isTLS = false;
 	protected $isSSL = false;
+
+	/**
+	 * Verify the SMTP server's TLS certificate (name and chain). Turn off
+	 * with setVerifyPeer(false) for a server whose certificate is issued for
+	 * a different hostname than the one you connect to.
+	 * @var bool $verifyPeer
+	 */
+	protected $verifyPeer = true;
 	protected $authMethod = 'plain';
 
 	/** @var array $logs */
@@ -417,6 +425,17 @@ class Email
 	 * @param string $method # lowercase version: plain, login, cram-md5, digest-md5
 	 * @return Email
 	 */
+	/**
+	 * Enable or disable TLS certificate verification for the SMTP connection.
+	 * @param bool $verify
+	 * @return self
+	 */
+	public function setVerifyPeer(bool $verify): self
+	{
+		$this->verifyPeer = $verify;
+		return $this;
+	}
+
 	public function setAuthMethod(string $method)
 	{
 		$this->authMethod = $method;
@@ -546,12 +565,20 @@ class Email
 		if (empty($this->subject))
 			throw new \Exception("The email subject missing!");
 		
-		$this->socket = fsockopen(
-			$this->getServer(),
-			$this->port,
+		// stream_socket_client (not fsockopen) so the SSL context can carry the
+		// peer-verification settings for both ssl:// and STARTTLS connections.
+		$context = stream_context_create(['ssl' => [
+			'verify_peer' => $this->verifyPeer,
+			'verify_peer_name' => $this->verifyPeer,
+			'allow_self_signed' => !$this->verifyPeer,
+		]]);
+		$this->socket = @stream_socket_client(
+			$this->getServer() . ':' . $this->port,
 			$errorNumber,
 			$errorMessage,
-			$this->connectionTimeout
+			$this->connectionTimeout,
+			STREAM_CLIENT_CONNECT,
+			$context
 		);
 
 		$this->logs['SocketInfo'] = "Server: ".$this->getServer()."; Port: ".$this->port;
@@ -569,7 +596,13 @@ class Email
 		if ($this->isTLS) {
 			$this->logs['STARTTLS'] = $this->sendCommand('STARTTLS');
 			if (substr($this->logs['STARTTLS'], 0, 3) == "220") {
-				stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT);
+				$crypto = @stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT);
+				if ($crypto !== true) {
+					$err = error_get_last();
+					$this->logs['STARTTLS_ERRORS'] = 'TLS handshake failed' . (!empty($err['message']) ? ': ' . $err['message'] : '') . ' (use setVerifyPeer(false) if the certificate name does not match the host).';
+					fclose($this->socket);
+					return false;
+				}
 				$this->logs['HELLO'][2] = $this->sendCommand('EHLO ' . $this->hostname);
 			} else {
 				$this->logs['STARTTLS_ERRORS'] = "Server did not respond with 220 successful. Try ssl method.";

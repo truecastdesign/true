@@ -1,66 +1,46 @@
-# jsonredirects
-Json file based redirects with exact match and wildcard * matching for changing higher up paths with sub categories so the sub categories get redirected as well.
+# Redirects
 
-# Use
+JSON-file redirects with exact and wildcard matching. One class for the
+framework and every module. The default file is `app/data/redirects.json`
+(created as `{}` when missing).
+
+## Serve redirects
+
+In `app/routes.php`, before any other route:
 
 ```php
-True\Redirects::redirect(['request'=>$_SERVER['REQUEST_URI'], 'lookup'=>BP.'/redirects.json', 'type'=>'301']);
+True\Redirects::redirect(['request' => $_SERVER['REQUEST_URI'], 'type' => '301']);
 ```
 
-# JSON File 
+`lookup` (file path) is optional. Only the path is matched; the query string
+is passed along unless the target has its own. Types: 301, 302, 303, 307, 308.
+Returns false when nothing matches.
+
+## JSON file
 
 ```json
 {
-	"path1/path2/":"path3/",
-	"path4/path5/*":"path4/path6/*",
-	"path7/path9/*":"path7/path10/",
+	"old-page": "new-page",
+	"old-services/*": "services/*",
+	"old-blog/*": "blog",
+	"partner": "https://example.com/"
 }
 ```
 
-*First line:*
-Simple redirect. Key: request uri and value: redirected uri
+Paths are stored without leading or trailing slashes (older files with a
+trailing slash still match). A trailing `*` on From matches anything below
+it; a `*` on To receives what it matched. Exact matches win over wildcards,
+and the longest wildcard prefix wins.
 
-*Second line:*
-Matches "path4/path5/path8/" redirects to "path4/path6/path8/" The path that matches the * on the request is moved over to the end of the redirect uri in place of the *
+## Editing in PHP
 
-*Third line:*
-Matches "path7/path9/path8/" redirects to "path7/path10/" The path that matches the * on the request is NOT moved over to the end of the redirect uri because there is no * on the redirect
-
-# Editing JSON file with PHP
-
-## Add redirect
 ```php
-$Redirects = new True\Redirects(BP.'/config/redirects.json');
-$Redirects->add($App->request->post->fromUrl, $App->request->post->toUrl);
+$R = new True\Redirects();                 // or new True\Redirects($file)
+$R->add('/old', '/new');                    // add or replace
+$R->remove('/old');
+$R->pageMoved('/blog/old', '/blog/new');    // slug change: no loops or chains
+$R->pageMoved('/about', '/company', true);  // also about/* -> company/*
+$R->getRedirectsList();                     // ['from' => 'to', ...]
+$R->match('/old');                          // '/new' or null
+$R->isRedirected('/old');                   // bool
 ```
-
-## Remove redirect
-```php
-$Redirects = new True\Redirects(BP.'/config/redirects.json');
-$Redirects->remove($App->request->delete->fromUrl);
-```
-
-## Get redirects list
-```php
-$Redirects = new True\Redirects(BP.'/config/redirects.json');
-$list = $Redirects->getRedirectsList();
-
-// array ['from-url'=>'to-url', 'from-url'=>'to-url']
-```
-
-## Clean URL
-```php
-$Redirects = new True\Redirects(BP.'/config/redirects.json');
-$cleanedURL = $Redirects->cleanUrl($url);
-```
-
-# Notes
-
-This code works well in a routes script at the top before other custom routes are checked.
-
-It is only designed to match the end of the url and not a middle part like path/*/path 
-If that would be helpful, let me know and I will see what I can do.
-
-Thanks!
-
-I hope this is helpful.

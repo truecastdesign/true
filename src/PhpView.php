@@ -6,14 +6,14 @@ namespace True;
  *
  * @package True 6 framework
  * @author Daniel Baldwin
- * @version 5.13
+ * @version 5.14
  */
 
 class PhpView
 {
 	# used keys: js, css, head, body, footer_controls, admin, cache
 	private $vars = [];
-	static $version = "5.13";
+	static $version = "5.14";
 
 	private $metaData = ['_metaTitle'=>'', '_metaDescription'=>'', '_metaLinkText'=>'', '_js'=>'', '_css'=>''];
 
@@ -559,6 +559,7 @@ class PhpView
 		if (!is_string($value) || strpos($value, '{') === false) return $value;
 
 		$url = isset($App->request->url->full) ? $App->request->url->full : '';
+		$site = isset($App->request->url->protocolhost) ? $App->request->url->protocolhost : '';
 		$canonical = $this->isset('canonical') ? $this->vars['canonical'] : $url;
 		$image = $this->getHeadMeta('property', 'og:image');
 		if (!$image && $this->isset('og:image')) $image = $this->vars['og:image'];
@@ -567,6 +568,7 @@ class PhpView
 			'{title}' => $this->vars['title'] ?? '',
 			'{description}' => $this->vars['description'] ?? '',
 			'{url}' => $url,
+			'{site}' => $site,
 			'{canonical}' => $canonical,
 			'{image}' => $image ?? ''
 		];

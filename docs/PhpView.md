@@ -254,6 +254,7 @@ Meta values support a few placeholders that are filled in at render time, so you
 | Placeholder | Replaced with |
 | --- | --- |
 | `{url}` | The current request URL |
+| `{site}` | The protocol and host of the current request, with no trailing slash (e.g. `https://www.example.com`) |
 | `{canonical}` | The `canonical` value if set, otherwise the current URL |
 | `{title}` | The page `title` |
 | `{description}` | The page `description` |
@@ -265,6 +266,45 @@ property:og:image = "https://www.example.com/assets/img/social.jpg"
 name:twitter:url = "{url}"
 {endmeta}
 ```
+
+### Building absolute URLs with {site}
+
+Open Graph, Twitter Cards and JSON-LD expect absolute URLs. Use `{site}` in front of a root-relative path so the view doesn't hard-code the domain — the same view then works on your local, staging and live hosts:
+
+```HTML
+title = "About Us"
+description = "Learn about our company and team."
+
+property:og:url = "{canonical}"
+property:og:image = "{site}/assets/img/about-social.jpg"
+property:og:site_name = "The Site Name"
+
+name:twitter:card = "summary_large_image"
+name:twitter:image = "{site}/assets/img/about-social.jpg"
+
+link:icon = "{site}/favicon.ico"
+
+{jsonld}
+{
+	"@context": "https://schema.org",
+	"@type": "Organization",
+	"@id": "{site}/#organization",
+	"url": "{site}",
+	"logo": "{site}/assets/images/logo.png"
+}
+{/jsonld}
+{endmeta}
+```
+
+On a request to `https://www.example.com/about` that outputs:
+
+```HTML
+<meta property="og:image" content="https://www.example.com/assets/img/about-social.jpg">
+<meta name="twitter:image" content="https://www.example.com/assets/img/about-social.jpg">
+<link rel="icon" href="https://www.example.com/favicon.ico">
+```
+
+and the JSON-LD gets `"url": "https://www.example.com"` and `"@id": "https://www.example.com/#organization"`. Because `{site}` has no trailing slash, always start the path after it with `/`.
 
 ## Automatic defaults
 
@@ -434,7 +474,7 @@ That outputs into the head:
 Notes:
 
 - You can include more than one `{jsonld}` block in the same page — each becomes its own `<script type="application/ld+json">` tag.
-- Placeholders such as `{url}`, `{canonical}`, `{title}`, `{description}` and `{image}` are filled in inside the block, so you can reuse page values without repeating them.
+- Placeholders such as `{url}`, `{site}`, `{canonical}`, `{title}`, `{description}` and `{image}` are filled in inside the block, so you can reuse page values without repeating them.
 - The block must be valid JSON; it is emitted as‑is and is not validated for you.
 - This is independent of the breadcrumb `BreadcrumbList` JSON-LD (described below), which is generated automatically — both can appear on the same page.
 
